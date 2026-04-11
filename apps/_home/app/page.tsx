@@ -52,7 +52,7 @@ const apps: AppCard[] = [
     title: 'Gas Tracker',
     description: 'Live Ink gas price with short-horizon history.',
     subdomain: 'gas',
-    status: 'planned',
+    status: 'live',
   },
   {
     title: 'Whale Watcher',
@@ -133,9 +133,16 @@ export default function Home() {
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {apps.map((app) => (
-            <article
+            <a
               key={app.subdomain}
-              className="group rounded-xl bg-white/5 p-5 ring-1 ring-inset ring-white/10 transition hover:bg-white/10 hover:ring-ink-500/50"
+              href={app.status === 'live' ? `https://${app.subdomain}.inksuite.xyz` : undefined}
+              target={app.status === 'live' ? '_blank' : undefined}
+              rel={app.status === 'live' ? 'noopener noreferrer' : undefined}
+              className={`group block rounded-xl bg-white/5 p-5 ring-1 ring-inset ring-white/10 transition ${
+                app.status === 'live'
+                  ? 'hover:bg-white/10 hover:ring-ink-500/50 cursor-pointer'
+                  : 'opacity-70'
+              }`}
             >
               <div className="mb-2 flex items-start justify-between gap-2">
                 <h3 className="text-base font-semibold text-ink-50">{app.title}</h3>
@@ -147,7 +154,7 @@ export default function Home() {
               <div className="font-mono text-xs text-ink-100/40 group-hover:text-ink-500">
                 {app.subdomain}.inksuite.xyz
               </div>
-            </article>
+            </a>
           ))}
         </div>
       </section>
