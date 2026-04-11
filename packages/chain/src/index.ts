@@ -27,5 +27,6 @@ export const inkPublicClient = createPublicClient({
 
 export const CHAIN_ID = ink.id;
 export const EXPLORER_URL = ink.blockExplorers.default.url;
+export const BLOCKSCOUT_API_URL = ink.blockExplorers.default.apiUrl;
 
 export type { PublicClient } from 'viem';
