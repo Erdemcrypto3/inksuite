@@ -1806,6 +1806,2499 @@ export const puzzles: CrosswordPuzzle[] = [
       down: [],
     },
   },
+
+  // ============ PUZZLE 21: SCIENCE & CHEMISTRY – Elements ============
+  // Grid (11x11):
+  //    0  1  2  3  4  5  6  7  8  9  10
+  // 0  A  T  O  M  .  .  .  .  .  .  .
+  // 1  C  .  X  .  .  .  .  .  .  .  .
+  // 2  I  O  N  .  G  O  L  D  .  .  .
+  // 3  D  .  .  .  .  .  .  .  .  .  .
+  // 4  .  .  .  .  .  .  .  .  .  .  .
+  // 5  .  .  I  R  O  N  .  .  .  .  .
+  // 6  .  .  .  A  .  .  .  .  .  .  .
+  // 7  .  .  .  R  E  A  C  T  .  .  .
+  // 8  .  .  .  E  .  .  .  .  .  .  .
+  // 9  .  .  .  .  .  .  .  .  .  .  .
+  //10  .  .  .  .  M  O  L  E  .  .  .
+  //
+  // ATOM  A r0 c0: A(0,0)T(0,1)O(0,2)M(0,3)
+  // ACID  D r0 c0: A(0,0)C(1,0)I(2,0)D(3,0) shares A ✓
+  // OX    D r0 c2: O(0,2)X(1,2) shares O ✓
+  // ION   A r2 c0: I(2,0)O(2,1)N(2,2) shares I with ACID ✓, O not conflicting ✓
+  // GOLD  A r2 c4: G(2,4)O(2,5)L(2,6)D(2,7)
+  // IRON  A r5 c2: I(5,2)R(5,3)O(5,4)N(5,5)
+  // RARE  D r5 c3: R(5,3)A(6,3)R(7,3)E(8,3) shares R with IRON ✓
+  // REACT A r7 c3: R(7,3)E(7,4)A(7,5)C(7,6)T(7,7) shares R with RARE ✓
+  // MOLE  A r10 c4: M(10,4)O(10,5)L(10,6)E(10,7)
+  // Numbering:
+  // (0,0) ATOM(A)+ACID(D) → #1
+  // (0,2) part of ATOM, OX(D) → #2
+  // (2,0) ION(A), part of ACID → #3
+  // (2,4) GOLD(A) → #4
+  // (5,2) IRON(A) → #5
+  // (5,3) part of IRON, RARE(D) → #6
+  // (7,3) REACT(A), part of RARE → #7
+  // (10,4) MOLE(A) → #8
+  {
+    id: 21,
+    title: 'Science & Chemistry – Elements',
+    grid: [
+      ['A','T','O','M', null, null, null, null, null, null, null],
+      ['C', null,'X', null, null, null, null, null, null, null, null],
+      ['I','O','N', null,'G','O','L','D', null, null, null],
+      ['D', null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null,'I','R','O','N', null, null, null, null, null],
+      [null, null, null,'A', null, null, null, null, null, null, null],
+      [null, null, null,'R','E','A','C','T', null, null, null],
+      [null, null, null,'E', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'M','O','L','E', null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Smallest unit of an element', answer: 'ATOM' },
+        { number: 3, row: 2, col: 0, text: 'Charged particle', answer: 'ION' },
+        { number: 4, row: 2, col: 4, text: 'Precious yellow metal (Au)', answer: 'GOLD' },
+        { number: 5, row: 5, col: 2, text: 'Common metal (Fe)', answer: 'IRON' },
+        { number: 7, row: 7, col: 3, text: 'Undergo a chemical ___', answer: 'REACT' },
+        { number: 8, row: 10, col: 4, text: 'Unit of chemical amount (6.02×10²³)', answer: 'MOLE' },
+      ],
+      down: [
+        { number: 1, row: 0, col: 0, text: 'Corrosive substance with low pH', answer: 'ACID' },
+        { number: 2, row: 0, col: 2, text: 'Oxidize; chemical symbol O+X', answer: 'OX' },
+        { number: 6, row: 5, col: 3, text: 'Uncommon; ___ earth elements', answer: 'RARE' },
+      ],
+    },
+  },
+
+  // ============ PUZZLE 22: SCIENCE & CHEMISTRY – Lab ============
+  // BOIL  A r0 c0: B(0,0)O(0,1)I(0,2)L(0,3)
+  // BILE  D r0 c0: B(0,0)I(1,0)L(2,0)E(3,0) shares B ✓
+  // BASE  A r2 c2: B(2,2)A(2,3)S(2,4)E(2,5)
+  // BUBBLE D r2 c2: B(2,2)U(3,2)B(4,2)B(5,2)L(6,2)E(7,2) shares B ✓
+  // BOND  A r4 c2: B(4,2)O(4,3)N(4,4)D(4,5) shares B with BUBBLE ✓
+  // LAB   A r6 c2: L(6,2)A(6,3)B(6,4) shares L with BUBBLE ✓
+  // HEAT  A r8 c0: H(8,0)E(8,1)A(8,2)T(8,3)
+  // GAS   A r10 c2: G(10,2)A(10,3)S(10,4)
+  // (0,2)=I from BOIL: down from (0,2) = I(0,2) no letter at (1,2) → no down #
+  // Numbering: (0,0) BOIL+BILE=#1; (0,2) part of BOIL, nothing new; (2,0) L not starting anything;
+  //   (2,2) BASE(A)+BUBBLE(D)=#2; (4,2) BOND(A), part of BUBBLE=#3; (6,2) LAB(A), part of BUBBLE=#4;
+  //   (8,0) HEAT(A)=#5; (10,2) GAS(A)=#6
+  {
+    id: 22,
+    title: 'Science & Chemistry – Lab',
+    grid: [
+      ['B','O','I','L', null, null, null, null, null, null, null],
+      ['I', null, null, null, null, null, null, null, null, null, null],
+      ['L', null,'B','A','S','E', null, null, null, null, null],
+      ['E', null,'U', null, null, null, null, null, null, null, null],
+      [null, null,'B','O','N','D', null, null, null, null, null],
+      [null, null,'B', null, null, null, null, null, null, null, null],
+      [null, null,'L','A','B', null, null, null, null, null, null],
+      [null, null,'E', null, null, null, null, null, null, null, null],
+      ['H','E','A','T', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null,'G','A','S', null, null, null, null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Heat liquid to 100°C', answer: 'BOIL' },
+        { number: 2, row: 2, col: 2, text: 'Opposite of acid (chemistry)', answer: 'BASE' },
+        { number: 3, row: 4, col: 2, text: 'Chemical link between atoms', answer: 'BOND' },
+        { number: 4, row: 6, col: 2, text: 'Science research room', answer: 'LAB' },
+        { number: 5, row: 8, col: 0, text: 'Apply thermal energy', answer: 'HEAT' },
+        { number: 6, row: 10, col: 2, text: 'Gaseous state of matter', answer: 'GAS' },
+      ],
+      down: [
+        { number: 1, row: 0, col: 0, text: 'Yellow-green digestive fluid', answer: 'BILE' },
+        { number: 2, row: 2, col: 2, text: 'Transparent spheres of gas in liquid', answer: 'BUBBLE' },
+      ],
+    },
+  },
+
+  // ============ PUZZLE 23: SCIENCE & CHEMISTRY – Periodic Table ============
+  // NEON  A r0 c0: N(0,0)E(0,1)O(0,2)N(0,3)
+  // ZINC  A r4 c0: Z(4,0)I(4,1)N(4,2)C(4,3)
+  // LEAD  A r2 c4: L(2,4)E(2,5)A(2,6)D(2,7)
+  // TIN   A r7 c3: T(7,3)I(7,4)N(7,5)
+  // NEON starts down from (0,2): O(0,2)X(1,2)I(2,2)D(3,2)E(4,2) -- OXIDE D r0 c2
+  //   check (4,2)=N from ZINC, E≠N. Bad. Let's just use simple acrosses + 1 down.
+  // GOLD  A r6 c1: G(6,1)O(6,2)L(6,3)D(6,4)
+  // IRON  A r9 c2: I(9,2)R(9,3)O(9,4)N(9,5)
+  // Add down: NZGI from col 2 down → no clean word.
+  // Simple: just 6 acrosses, no down.
+  {
+    id: 23,
+    title: 'Science & Chemistry – Periodic Table',
+    grid: [
+      ['N','E','O','N', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'L','E','A','D', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      ['Z','I','N','C', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null,'G','O','L','D', null, null, null, null, null, null],
+      [null, null, null,'T','I','N', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null,'I','R','O','N', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Noble gas used in bright signs (Ne)', answer: 'NEON' },
+        { number: 2, row: 2, col: 4, text: 'Heavy toxic metal (Pb)', answer: 'LEAD' },
+        { number: 3, row: 4, col: 0, text: 'Galvanizing metal (Zn)', answer: 'ZINC' },
+        { number: 4, row: 6, col: 1, text: 'Precious yellow metal (Au)', answer: 'GOLD' },
+        { number: 5, row: 7, col: 3, text: 'Lightweight malleable metal (Sn)', answer: 'TIN' },
+        { number: 6, row: 9, col: 2, text: 'Magnetic metal (Fe)', answer: 'IRON' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 24: SCIENCE & CHEMISTRY – States of Matter ============
+  // SOLID A r0 c0: S(0,0)O(0,1)L(0,2)I(0,3)D(0,4)
+  // LIQUID D r0 c2: L(0,2)I(1,2)Q(2,2)U(3,2)I(4,2)D(5,2) shares L ✓
+  // GAS   A r6 c1: G(6,1)A(6,2)S(6,3) shares A? (6,2) from LIQUID? LIQUID ends at (5,2). No conflict ✓
+  //   Wait LIQUID D r0 c2: positions (0,2)(1,2)(2,2)(3,2)(4,2)(5,2). (6,2) is not part of it. ✓
+  //   GAS A r6 c1: (6,1)=G, (6,2)=A, (6,3)=S. No conflict.
+  // MASS  A r3 c4: M(3,4)A(3,5)S(3,6)S(3,7)
+  // HEAT  A r10 c2: H(10,2)E(10,3)A(10,4)T(10,5)
+  // GATE  D r6 c2 -- A at (6,2) from GAS. G(6,1) not used as start of down. Let's add ATOM A r8 c2: A(8,2)T(8,3)O(8,4)M(8,5)
+  {
+    id: 24,
+    title: 'Science & Chemistry – States of Matter',
+    grid: [
+      ['S','O','L','I','D', null, null, null, null, null, null],
+      [null, null,'I', null, null, null, null, null, null, null, null],
+      [null, null,'Q', null, null, null, null, null, null, null, null],
+      [null, null,'U', null,'M','A','S','S', null, null, null],
+      [null, null,'I', null, null, null, null, null, null, null, null],
+      [null, null,'D', null, null, null, null, null, null, null, null],
+      [null,'G','A','S', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null,'A','T','O','M', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null,'H','E','A','T', null, null, null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Fixed shape and volume state', answer: 'SOLID' },
+        { number: 3, row: 3, col: 4, text: 'Amount of matter in an object', answer: 'MASS' },
+        { number: 5, row: 6, col: 1, text: 'State with no fixed shape or volume', answer: 'GAS' },
+        { number: 6, row: 8, col: 2, text: 'Smallest unit of an element', answer: 'ATOM' },
+        { number: 7, row: 10, col: 2, text: 'Thermal energy causing phase changes', answer: 'HEAT' },
+      ],
+      down: [
+        { number: 2, row: 0, col: 2, text: 'Flows and takes container shape', answer: 'LIQUID' },
+      ],
+    },
+  },
+
+  // ============ PUZZLE 25: SCIENCE & CHEMISTRY – Reactions ============
+  // REDOX A r0 c0: R(0,0)E(0,1)D(0,2)O(0,3)X(0,4)
+  // ACID  A r3 c5: A(3,5)C(3,6)I(3,7)D(3,8)
+  // SALT  A r5 c1: S(5,1)A(5,2)L(5,3)T(5,4)
+  // PH    A r7 c2: P(7,2)H(7,3)
+  // ION   A r9 c2: I(9,2)O(9,3)N(9,4)
+  // OXIDE D r0 c3: O(0,3)X(1,3)I(2,3)D(3,3)E(4,3)  -- shares O from REDOX ✓
+  //   Check (3,3)=D, ACID starts at (3,5) so no conflict ✓
+  // RATE  D r5 c4: R(5,4)? (5,4)=T from SALT. Conflict. Skip down.
+  {
+    id: 25,
+    title: 'Science & Chemistry – Reactions',
+    grid: [
+      ['R','E','D','O','X', null, null, null, null, null, null],
+      [null, null, null,'X', null, null, null, null, null, null, null],
+      [null, null, null,'I', null, null, null, null, null, null, null],
+      [null, null, null,'D', null,'A','C','I','D', null, null],
+      [null, null, null,'E', null, null, null, null, null, null, null],
+      [null,'S','A','L','T', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null,'P','H', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null,'I','O','N', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Oxidation-reduction reaction', answer: 'REDOX' },
+        { number: 3, row: 3, col: 5, text: 'Proton donor in chemistry', answer: 'ACID' },
+        { number: 4, row: 5, col: 1, text: 'Product of acid + base neutralization', answer: 'SALT' },
+        { number: 6, row: 7, col: 2, text: 'Acidity measure (abbr.)', answer: 'PH' },
+        { number: 7, row: 9, col: 2, text: 'Electrically charged atom or molecule', answer: 'ION' },
+      ],
+      down: [
+        { number: 2, row: 0, col: 3, text: 'Compound of oxygen with another element', answer: 'OXIDE' },
+      ],
+    },
+  },
+
+  // ============ PUZZLE 26: SCIENCE & CHEMISTRY – Lab Tools ============
+  // TUBE   A r0 c0: T(0,0)U(0,1)B(0,2)E(0,3)
+  // BUNSEN A r4 c1: B(4,1)U(4,2)N(4,3)S(4,4)E(4,5)N(4,6)
+  // FLASK  A r7 c2: F(7,2)L(7,3)A(7,4)S(7,5)K(7,6)
+  // LENS   A r2 c3: L(2,3)E(2,4)N(2,5)S(2,6)
+  // RULER  A r9 c2: R(9,2)U(9,3)L(9,4)E(9,5)R(9,6)
+  // BEAKER A r5 c5: nope, overlaps. Let's keep simple 5 acrosses.
+  {
+    id: 26,
+    title: 'Science & Chemistry – Lab Tools',
+    grid: [
+      ['T','U','B','E', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'L','E','N','S', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null,'B','U','N','S','E','N', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null,'F','L','A','S','K', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null,'R','U','L','E','R', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Glass cylinder for reactions (test ___)', answer: 'TUBE' },
+        { number: 2, row: 2, col: 3, text: 'Optical glass that bends light', answer: 'LENS' },
+        { number: 3, row: 4, col: 1, text: '___ burner (lab heating device)', answer: 'BUNSEN' },
+        { number: 4, row: 7, col: 2, text: 'Conical glass container for liquids', answer: 'FLASK' },
+        { number: 5, row: 9, col: 2, text: 'Straight measuring tool', answer: 'RULER' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 27: SCIENCE & CHEMISTRY – Compounds ============
+  {
+    id: 27,
+    title: 'Science & Chemistry – Compounds',
+    grid: [
+      ['W','A','T','E','R', null, null, null, null, null, null],
+      [null, null, null, null,'U', null, null, null, null, null, null],
+      [null, null, null, null,'S','T','E','E','L', null, null],
+      [null, null, null, null,'T', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null,'O','Z','O','N','E', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null,'S','A','L','T', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'G','L','A','S','S', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'H₂O; universal solvent', answer: 'WATER' },
+        { number: 3, row: 2, col: 4, text: 'Iron-carbon alloy used in construction', answer: 'STEEL' },
+        { number: 5, row: 5, col: 1, text: 'O₃; protective atmospheric layer', answer: 'OZONE' },
+        { number: 7, row: 7, col: 2, text: 'NaCl; table seasoning', answer: 'SALT' },
+        { number: 8, row: 9, col: 3, text: 'SiO₂-based transparent solid', answer: 'GLASS' },
+      ],
+      down: [
+        { number: 2, row: 0, col: 4, text: 'Chemical element symbol Ru; also oxidized iron', answer: 'RUST' },
+      ],
+    },
+  },
+
+  // ============ PUZZLE 28: SCIENCE & CHEMISTRY – Energy ============
+  {
+    id: 28,
+    title: 'Science & Chemistry – Energy',
+    grid: [
+      ['E','N','E','R','G','Y', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'H','E','A','T', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null,'L','I','G','H','T', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null,'F','U','E','L', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'W','A','V','E', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'S','O','L','A','R', null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Capacity to do work', answer: 'ENERGY' },
+        { number: 2, row: 2, col: 3, text: 'Thermal energy', answer: 'HEAT' },
+        { number: 3, row: 4, col: 1, text: 'Visible electromagnetic radiation', answer: 'LIGHT' },
+        { number: 4, row: 6, col: 2, text: 'Substance burned for energy', answer: 'FUEL' },
+        { number: 5, row: 8, col: 3, text: 'Oscillation carrying energy', answer: 'WAVE' },
+        { number: 6, row: 10, col: 3, text: '___ energy from the Sun', answer: 'SOLAR' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 29: WORLD GEOGRAPHY – Continents ============
+  {
+    id: 29,
+    title: 'World Geography – Continents',
+    grid: [
+      ['A','S','I','A', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null,'E','U','R','O','P','E', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'A','F','R','I','C','A', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'A','R','C','T','I','C', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'World\'s largest continent', answer: 'ASIA' },
+        { number: 2, row: 2, col: 2, text: 'Continent of France and Germany', answer: 'EUROPE' },
+        { number: 3, row: 4, col: 3, text: 'Second-largest continent', answer: 'AFRICA' },
+        { number: 4, row: 6, col: 4, text: 'Polar region at the top of the world', answer: 'ARCTIC' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 30: WORLD GEOGRAPHY – Capitals ============
+  {
+    id: 30,
+    title: 'World Geography – Capitals',
+    grid: [
+      ['R','O','M','E', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null,'L','I','M','A', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'O','S','L','O', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'D','O','H','A', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'B','E','R','N', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'R','I','G','A', null, null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Capital of Italy', answer: 'ROME' },
+        { number: 2, row: 2, col: 2, text: 'Capital of Peru', answer: 'LIMA' },
+        { number: 3, row: 4, col: 3, text: 'Capital of Norway', answer: 'OSLO' },
+        { number: 4, row: 6, col: 3, text: 'Capital of Qatar', answer: 'DOHA' },
+        { number: 5, row: 8, col: 3, text: 'Capital of Switzerland', answer: 'BERN' },
+        { number: 6, row: 10, col: 3, text: 'Capital of Latvia', answer: 'RIGA' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 31: WORLD GEOGRAPHY – Rivers ============
+  {
+    id: 31,
+    title: 'World Geography – Rivers',
+    grid: [
+      ['N','I','L','E', null, null, null, null, null, null, null],
+      ['A', null, null, null, null, null, null, null, null, null, null],
+      ['M', null,'R','H','I','N','E', null, null, null, null],
+      ['A', null, null, null, null, null, null, null, null, null, null],
+      ['Z', null, null, null, null, null, null, null, null, null, null],
+      ['O','B', null, null, null, null, null, null, null, null, null],
+      ['N', null, null,'V','O','L','G','A', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'G','A','N','G','E','S', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Longest river in Africa', answer: 'NILE' },
+        { number: 3, row: 2, col: 2, text: 'River flowing through Germany', answer: 'RHINE' },
+        { number: 5, row: 5, col: 0, text: 'Siberian river (2 letters)', answer: 'OB' },
+        { number: 6, row: 6, col: 3, text: 'Longest river in Europe', answer: 'VOLGA' },
+        { number: 7, row: 9, col: 3, text: 'Sacred river of India', answer: 'GANGES' },
+      ],
+      down: [
+        { number: 2, row: 0, col: 0, text: 'South American jungle river', answer: 'AMAZON' },
+      ],
+    },
+  },
+
+  // ============ PUZZLE 32: WORLD GEOGRAPHY – Mountains ============
+  {
+    id: 32,
+    title: 'World Geography – Mountains',
+    grid: [
+      ['A','L','P','S', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'A','N','D','E','S', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'U','R','A','L', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'P','E','A','K', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'M','E','S','A', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'R','I','D','G','E', null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'European mountain range', answer: 'ALPS' },
+        { number: 2, row: 2, col: 3, text: 'South American mountain range', answer: 'ANDES' },
+        { number: 3, row: 4, col: 3, text: 'Mountains between Europe and Asia', answer: 'URAL' },
+        { number: 4, row: 6, col: 4, text: 'Summit; mountain top', answer: 'PEAK' },
+        { number: 5, row: 8, col: 4, text: 'Flat-topped hill or mountain', answer: 'MESA' },
+        { number: 6, row: 10, col: 4, text: 'Narrow mountain crest', answer: 'RIDGE' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 33: WORLD GEOGRAPHY – Oceans & Seas ============
+  {
+    id: 33,
+    title: 'World Geography – Oceans & Seas',
+    grid: [
+      ['P','A','C','I','F','I','C', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'A','T','L','A','S', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'A','R','C','T','I','C', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'G','U','L','F', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'B','A','Y', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','E','A', null, null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Largest ocean on Earth', answer: 'PACIFIC' },
+        { number: 2, row: 2, col: 3, text: 'Mountain range spanning Morocco to Tunisia', answer: 'ATLAS' },
+        { number: 3, row: 4, col: 3, text: 'Polar ocean at the top of the Earth', answer: 'ARCTIC' },
+        { number: 4, row: 6, col: 4, text: 'Body of water partly enclosed by land', answer: 'GULF' },
+        { number: 5, row: 8, col: 4, text: 'Sheltered coastal water body', answer: 'BAY' },
+        { number: 6, row: 10, col: 4, text: 'Smaller than an ocean', answer: 'SEA' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 34: WORLD GEOGRAPHY – Countries ============
+  {
+    id: 34,
+    title: 'World Geography – Countries',
+    grid: [
+      ['C','H','I','N','A', null, null, null, null, null, null],
+      ['U', null, null, null, null, null, null, null, null, null, null],
+      ['B', null,'I','R','A','N', null, null, null, null, null],
+      ['A', null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null,'I','R','A','Q', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'O','M','A','N', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'P','E','R','U', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Most populous country', answer: 'CHINA' },
+        { number: 3, row: 2, col: 2, text: 'Islamic Republic in the Middle East', answer: 'IRAN' },
+        { number: 4, row: 5, col: 2, text: 'Country between Iran and Syria', answer: 'IRAQ' },
+        { number: 5, row: 7, col: 3, text: 'Arab sultanate on Arabian Peninsula', answer: 'OMAN' },
+        { number: 6, row: 9, col: 3, text: 'Andean nation of South America', answer: 'PERU' },
+      ],
+      down: [
+        { number: 2, row: 0, col: 0, text: 'Caribbean island nation', answer: 'CUBA' },
+      ],
+    },
+  },
+
+  // ============ PUZZLE 35: WORLD GEOGRAPHY – Cities ============
+  {
+    id: 35,
+    title: 'World Geography – Cities',
+    grid: [
+      ['P','A','R','I','S', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'D','U','B','A','I', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'D','E','L','H','I', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'L','I','M','A', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'O','S','L','O', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'R','O','M','E', null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'City of Light; French capital', answer: 'PARIS' },
+        { number: 2, row: 2, col: 3, text: 'Gleaming Gulf metropolis (UAE)', answer: 'DUBAI' },
+        { number: 3, row: 4, col: 3, text: 'Capital of India', answer: 'DELHI' },
+        { number: 4, row: 6, col: 4, text: 'Capital of Peru', answer: 'LIMA' },
+        { number: 5, row: 8, col: 4, text: 'Capital of Norway', answer: 'OSLO' },
+        { number: 6, row: 10, col: 4, text: 'Eternal City; Italian capital', answer: 'ROME' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 36: WORLD GEOGRAPHY – Landmarks ============
+  {
+    id: 36,
+    title: 'World Geography – Landmarks',
+    grid: [
+      ['T','O','W','E','R', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null,'W','A','L','L', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'D','A','M', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'C','A','N','A','L', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'T','O','M','B', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'R','U','I','N','S', null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Eiffel ___ in Paris', answer: 'TOWER' },
+        { number: 2, row: 2, col: 2, text: 'Great ___ of China', answer: 'WALL' },
+        { number: 3, row: 4, col: 3, text: 'Hoover ___ on the Colorado River', answer: 'DAM' },
+        { number: 4, row: 6, col: 3, text: 'Panama ___ connecting two oceans', answer: 'CANAL' },
+        { number: 5, row: 8, col: 3, text: 'Taj Mahal is a famous ___', answer: 'TOMB' },
+        { number: 6, row: 10, col: 3, text: 'Ancient remains of buildings', answer: 'RUINS' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 37: LITERATURE & BOOKS – Genres ============
+  {
+    id: 37,
+    title: 'Literature & Books – Genres',
+    grid: [
+      ['P','O','E','T','R','Y', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null,'M','Y','T','H', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'E','P','I','C', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'F','A','B','L','E', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','A','G','A', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'P','R','O','S','E', null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Literary form with rhyme and meter', answer: 'POETRY' },
+        { number: 2, row: 2, col: 2, text: 'Traditional story of gods (literary genre)', answer: 'MYTH' },
+        { number: 3, row: 4, col: 3, text: 'Long heroic narrative poem', answer: 'EPIC' },
+        { number: 4, row: 6, col: 4, text: 'Short moral story with animals', answer: 'FABLE' },
+        { number: 5, row: 8, col: 4, text: 'Long story of heroic achievement', answer: 'SAGA' },
+        { number: 6, row: 10, col: 4, text: 'Ordinary non-verse writing', answer: 'PROSE' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 38: LITERATURE & BOOKS – Authors ============
+  {
+    id: 38,
+    title: 'Literature & Books – Famous Authors',
+    grid: [
+      ['H','O','M','E','R', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'D','A','N','T','E', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'K','A','F','K','A', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'T','W','A','I','N', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'P','O','E', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'H','U','G','O', null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Author of the Iliad and Odyssey', answer: 'HOMER' },
+        { number: 2, row: 2, col: 3, text: 'Italian author of the Divine Comedy', answer: 'DANTE' },
+        { number: 3, row: 4, col: 3, text: 'Czech author of Metamorphosis', answer: 'KAFKA' },
+        { number: 4, row: 6, col: 4, text: 'Author of Tom Sawyer (surname)', answer: 'TWAIN' },
+        { number: 5, row: 8, col: 4, text: 'Gothic poet of The Raven (surname)', answer: 'POE' },
+        { number: 6, row: 10, col: 4, text: 'French author of Les Misérables', answer: 'HUGO' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 39: LITERATURE & BOOKS – Story Elements ============
+  {
+    id: 39,
+    title: 'Literature & Books – Story Elements',
+    grid: [
+      ['P','L','O','T', null, null, null, null, null, null, null],
+      ['A', null, null, null, null, null, null, null, null, null, null],
+      ['C', null,'T','H','E','M','E', null, null, null, null],
+      ['E', null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'T','O','N','E', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'V','O','I','C','E', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'M','O','O','D', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'S','C','E','N','E', null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Sequence of events in a story', answer: 'PLOT' },
+        { number: 3, row: 2, col: 2, text: 'Central message of a story', answer: 'THEME' },
+        { number: 4, row: 4, col: 3, text: 'Attitude of writer toward subject', answer: 'TONE' },
+        { number: 5, row: 6, col: 3, text: 'Narrator\'s perspective in writing', answer: 'VOICE' },
+        { number: 6, row: 8, col: 3, text: 'Emotional atmosphere of a story', answer: 'MOOD' },
+        { number: 7, row: 10, col: 3, text: 'Setting of a particular action', answer: 'SCENE' },
+      ],
+      down: [
+        { number: 2, row: 0, col: 0, text: 'Speed of action in a story', answer: 'PACE' },
+      ],
+    },
+  },
+
+  // ============ PUZZLE 40: LITERATURE & BOOKS – Shakespeare ============
+  {
+    id: 40,
+    title: 'Literature & Books – Shakespeare',
+    grid: [
+      ['B','A','R','D', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null,'H','A','M','L','E','T', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'O','T','H','E','L','L','O', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','O','N','E','T', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'G','L','O','B','E', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'A','C','T', null, null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Nickname for Shakespeare (the ___)', answer: 'BARD' },
+        { number: 2, row: 2, col: 2, text: 'Prince of Denmark tragedy', answer: 'HAMLET' },
+        { number: 3, row: 4, col: 3, text: 'Moor of Venice tragedy', answer: 'OTHELLO' },
+        { number: 4, row: 6, col: 4, text: 'Shakespeare\'s 14-line poem form (var. sp.)', answer: 'SONET' },
+        { number: 5, row: 8, col: 4, text: 'Shakespeare\'s famous theatre', answer: 'GLOBE' },
+        { number: 6, row: 10, col: 4, text: 'Division of a Shakespeare play', answer: 'ACT' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 41: LITERATURE & BOOKS – Characters ============
+  {
+    id: 41,
+    title: 'Literature & Books – Characters',
+    grid: [
+      ['H','O','L','M','E','S', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'D','R','A','C','U','L','A', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'F','A','U','S','T', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'A','T','L','A','S', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'O','D','I','N', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'O','B','I','E', null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Baker Street detective (surname)', answer: 'HOLMES' },
+        { number: 2, row: 2, col: 3, text: 'Bram Stoker\'s vampire count', answer: 'DRACULA' },
+        { number: 3, row: 4, col: 4, text: 'Goethe\'s deal-with-devil character', answer: 'FAUST' },
+        { number: 4, row: 6, col: 5, text: 'Titan who holds up the sky', answer: 'ATLAS' },
+        { number: 5, row: 8, col: 5, text: 'Norse all-father (also a character)', answer: 'ODIN' },
+        { number: 6, row: 10, col: 5, text: 'Dickens orphan (Oliver ___)', answer: 'OBIE' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 42: LITERATURE & BOOKS – Poetry ============
+  {
+    id: 42,
+    title: 'Literature & Books – Poetry',
+    grid: [
+      ['R','H','Y','M','E', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'V','E','R','S','E', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'O','D','E', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'L','Y','R','I','C', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'E','L','E','G','Y', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'M','E','T','E','R', null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Matching end sounds in poetry', answer: 'RHYME' },
+        { number: 2, row: 2, col: 3, text: 'Line of poetry', answer: 'VERSE' },
+        { number: 3, row: 4, col: 4, text: 'Lyric poem often addressed to someone', answer: 'ODE' },
+        { number: 4, row: 6, col: 4, text: 'Personal emotional poem type', answer: 'LYRIC' },
+        { number: 5, row: 8, col: 4, text: 'Poem mourning someone\'s death', answer: 'ELEGY' },
+        { number: 6, row: 10, col: 4, text: 'Rhythmic pattern in a poem', answer: 'METER' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 43: LITERATURE & BOOKS – Classic Novels ============
+  {
+    id: 43,
+    title: 'Literature & Books – Classic Novels',
+    grid: [
+      ['E','M','M','A', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'D','U','N','E', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'L','O','L','I','T','A', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'I','V','A','N', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'F','A','U','S','T', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'O','L','G','A', null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Jane Austen matchmaking heroine', answer: 'EMMA' },
+        { number: 2, row: 2, col: 3, text: 'Frank Herbert sci-fi desert planet novel', answer: 'DUNE' },
+        { number: 3, row: 4, col: 4, text: 'Nabokov controversial novel', answer: 'LOLITA' },
+        { number: 4, row: 6, col: 5, text: 'Turgenev\'s Fathers and ___ character name', answer: 'IVAN' },
+        { number: 5, row: 8, col: 5, text: 'Goethe\'s masterwork about a deal with evil', answer: 'FAUST' },
+        { number: 6, row: 10, col: 5, text: 'Female Russian name in classic literature', answer: 'OLGA' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 44: LITERATURE & BOOKS – Terms ============
+  {
+    id: 44,
+    title: 'Literature & Books – Literary Terms',
+    grid: [
+      ['I','R','O','N','Y', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'S','I','M','I','L','E', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'M','O','T','I','F', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'A','L','L','U','D','E', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'T','R','O','P','E', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'G','E','N','R','E', null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Saying the opposite of what you mean', answer: 'IRONY' },
+        { number: 2, row: 2, col: 3, text: 'Comparison using "like" or "as"', answer: 'SIMILE' },
+        { number: 3, row: 4, col: 4, text: 'Recurring element in a work', answer: 'MOTIF' },
+        { number: 4, row: 6, col: 4, text: 'Make an indirect reference to', answer: 'ALLUDE' },
+        { number: 5, row: 8, col: 4, text: 'Figure of speech; a common literary device', answer: 'TROPE' },
+        { number: 6, row: 10, col: 4, text: 'Category of literary work', answer: 'GENRE' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 45: SPORTS & OLYMPICS – Olympic Sports ============
+  {
+    id: 45,
+    title: 'Sports & Olympics – Olympic Sports',
+    grid: [
+      ['S','W','I','M', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'R','O','W', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'J','U','D','O', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'B','O','X', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'S','K','I', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'D','I','V','E', null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Move through water with arms and legs', answer: 'SWIM' },
+        { number: 2, row: 2, col: 3, text: 'Propel a boat with oars', answer: 'ROW' },
+        { number: 3, row: 4, col: 4, text: 'Japanese martial art Olympic sport', answer: 'JUDO' },
+        { number: 4, row: 6, col: 5, text: 'Olympic combat sport with gloves', answer: 'BOX' },
+        { number: 5, row: 8, col: 5, text: 'Snow sport on two planks', answer: 'SKI' },
+        { number: 6, row: 10, col: 5, text: 'Jump into water from a board', answer: 'DIVE' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 46: SPORTS & OLYMPICS – Athletics ============
+  {
+    id: 46,
+    title: 'Sports & Olympics – Athletics',
+    grid: [
+      ['R','U','N', null, null, null, null, null, null, null, null],
+      ['A', null, null, null, null, null, null, null, null, null, null],
+      ['C', null,'J','U','M','P', null, null, null, null, null],
+      ['E', null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'T','H','R','O','W', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'S','P','R','I','N','T', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'R','E','L','A','Y', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'H','U','R','D','L','E', null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Move fast on foot', answer: 'RUN' },
+        { number: 3, row: 2, col: 2, text: 'Leap over an obstacle', answer: 'JUMP' },
+        { number: 4, row: 4, col: 3, text: 'Hurl a discus or javelin', answer: 'THROW' },
+        { number: 5, row: 6, col: 3, text: 'Short maximum-speed race', answer: 'SPRINT' },
+        { number: 6, row: 8, col: 4, text: 'Team running race passing baton', answer: 'RELAY' },
+        { number: 7, row: 10, col: 4, text: 'Barrier jumped in track events', answer: 'HURDLE' },
+      ],
+      down: [
+        { number: 2, row: 0, col: 0, text: 'Competition event', answer: 'RACE' },
+      ],
+    },
+  },
+
+  // ============ PUZZLE 47: SPORTS & OLYMPICS – Ball Sports ============
+  {
+    id: 47,
+    title: 'Sports & Olympics – Ball Sports',
+    grid: [
+      ['G','O','L','F', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'P','O','L','O', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','O','C','C','E','R', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'T','E','N','N','I','S', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'R','U','G','B','Y', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'B','O','W','L','S', null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Sport played on a course with clubs', answer: 'GOLF' },
+        { number: 2, row: 2, col: 3, text: 'Equestrian ball sport', answer: 'POLO' },
+        { number: 3, row: 4, col: 4, text: 'World\'s most popular sport (football)', answer: 'SOCCER' },
+        { number: 4, row: 6, col: 4, text: 'Racket sport on a net court', answer: 'TENNIS' },
+        { number: 5, row: 8, col: 4, text: 'British oval-ball handling sport', answer: 'RUGBY' },
+        { number: 6, row: 10, col: 4, text: 'Lawn sport rolling balls to a jack', answer: 'BOWLS' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 48: SPORTS & OLYMPICS – Medals & Awards ============
+  {
+    id: 48,
+    title: 'Sports & Olympics – Medals & Awards',
+    grid: [
+      ['G','O','L','D', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'S','I','L','V','E','R', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'B','R','O','N','Z','E', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'T','R','O','P','H','Y'],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'T','I','T','L','E', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'R','E','C','O','R','D'],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'First place Olympic medal', answer: 'GOLD' },
+        { number: 2, row: 2, col: 3, text: 'Second place Olympic medal', answer: 'SILVER' },
+        { number: 3, row: 4, col: 4, text: 'Third place Olympic medal', answer: 'BRONZE' },
+        { number: 4, row: 6, col: 5, text: 'Cup awarded to champions', answer: 'TROPHY' },
+        { number: 5, row: 8, col: 5, text: 'Championship designation', answer: 'TITLE' },
+        { number: 6, row: 10, col: 5, text: 'Best performance ever achieved', answer: 'RECORD' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 49: SPORTS & OLYMPICS – Water Sports ============
+  {
+    id: 49,
+    title: 'Sports & Olympics – Water Sports',
+    grid: [
+      ['S','U','R','F', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'S','W','I','M', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'D','I','V','E', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'C','A','N','O','E', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'R','O','W', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','A','I','L', null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Ride ocean waves on a board', answer: 'SURF' },
+        { number: 2, row: 2, col: 3, text: 'Propel oneself through water', answer: 'SWIM' },
+        { number: 3, row: 4, col: 4, text: 'Plunge into water headfirst', answer: 'DIVE' },
+        { number: 4, row: 6, col: 4, text: 'Paddle a narrow boat', answer: 'CANOE' },
+        { number: 5, row: 8, col: 4, text: 'Pull oars to move a boat', answer: 'ROW' },
+        { number: 6, row: 10, col: 4, text: 'Move a boat using wind power', answer: 'SAIL' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 50: SPORTS & OLYMPICS – Winter Sports ============
+  {
+    id: 50,
+    title: 'Sports & Olympics – Winter Sports',
+    grid: [
+      ['S','K','I', null, null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'L','U','G','E', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'C','U','R','L', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','L','A','L','O','M', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'B','I','A','T','H', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','K','A','T','E', null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Glide down snowy slopes', answer: 'SKI' },
+        { number: 2, row: 2, col: 3, text: 'Sled face-up winter sport', answer: 'LUGE' },
+        { number: 3, row: 4, col: 4, text: 'Sweep ice for a sliding stone (sport)', answer: 'CURL' },
+        { number: 4, row: 6, col: 4, text: 'Zigzag ski race through poles', answer: 'SLALOM' },
+        { number: 5, row: 8, col: 4, text: 'Cross-country ski and shooting event', answer: 'BIATH' },
+        { number: 6, row: 10, col: 4, text: 'Glide on ice using blades', answer: 'SKATE' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 51: SPORTS & OLYMPICS – Team Sports ============
+  {
+    id: 51,
+    title: 'Sports & Olympics – Team Sports',
+    grid: [
+      ['H','O','C','K','E','Y', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'R','U','G','B','Y', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'P','O','L','O', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'S','Q','U','A','D', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'C','O','A','C','H', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'D','R','I','L','L', null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Ice or field sport with sticks and puck/ball', answer: 'HOCKEY' },
+        { number: 2, row: 2, col: 3, text: 'Full-contact oval-ball sport', answer: 'RUGBY' },
+        { number: 3, row: 4, col: 4, text: 'Horseback ball sport', answer: 'POLO' },
+        { number: 4, row: 6, col: 5, text: 'Group of players on a team', answer: 'SQUAD' },
+        { number: 5, row: 8, col: 5, text: 'Team trainer and strategist', answer: 'COACH' },
+        { number: 6, row: 10, col: 5, text: 'Practice exercise for skills', answer: 'DRILL' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 52: SPORTS & OLYMPICS – Famous Venues ============
+  {
+    id: 52,
+    title: 'Sports & Olympics – Famous Venues',
+    grid: [
+      ['A','R','E','N','A', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'T','R','A','C','K', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'C','O','U','R','T', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'P','I','T','C','H', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'F','I','E','L','D', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'P','O','O','L', null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Indoor sports stadium', answer: 'ARENA' },
+        { number: 2, row: 2, col: 3, text: 'Running surface in athletics', answer: 'TRACK' },
+        { number: 3, row: 4, col: 4, text: 'Tennis or basketball playing surface', answer: 'COURT' },
+        { number: 4, row: 6, col: 4, text: 'Cricket or soccer playing area', answer: 'PITCH' },
+        { number: 5, row: 8, col: 4, text: 'Open grass area for many sports', answer: 'FIELD' },
+        { number: 6, row: 10, col: 4, text: 'Swimming venue', answer: 'POOL' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 53: COMPUTING & INTERNET – Basics ============
+  {
+    id: 53,
+    title: 'Computing & Internet – Basics',
+    grid: [
+      ['C','P','U', null, null, null, null, null, null, null, null],
+      ['H', null, null, null, null, null, null, null, null, null, null],
+      ['I', null,'R','A','M', null, null, null, null, null, null],
+      ['P', null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'D','I','S','K', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'B','Y','T','E', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'B','O','O','T', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'C','O','D','E', null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Central Processing Unit (abbr.)', answer: 'CPU' },
+        { number: 3, row: 2, col: 2, text: 'Volatile memory (abbr.)', answer: 'RAM' },
+        { number: 4, row: 4, col: 3, text: 'Storage medium for data', answer: 'DISK' },
+        { number: 5, row: 6, col: 4, text: '8 bits of data', answer: 'BYTE' },
+        { number: 6, row: 8, col: 4, text: 'Start up a computer', answer: 'BOOT' },
+        { number: 7, row: 10, col: 4, text: 'Written instructions for a computer', answer: 'CODE' },
+      ],
+      down: [
+        { number: 2, row: 0, col: 0, text: 'Integrated circuit component', answer: 'CHIP' },
+      ],
+    },
+  },
+
+  // ============ PUZZLE 54: COMPUTING & INTERNET – Programming ============
+  {
+    id: 54,
+    title: 'Computing & Internet – Programming',
+    grid: [
+      ['L','O','O','P', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'A','R','R','A','Y', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'C','L','A','S','S', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'D','E','B','U','G', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','T','A','C','K', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'Q','U','E','U','E', null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Repeated iteration in code', answer: 'LOOP' },
+        { number: 2, row: 2, col: 3, text: 'Ordered collection of elements', answer: 'ARRAY' },
+        { number: 3, row: 4, col: 4, text: 'Blueprint for objects in OOP', answer: 'CLASS' },
+        { number: 4, row: 6, col: 4, text: 'Find and fix errors in code', answer: 'DEBUG' },
+        { number: 5, row: 8, col: 4, text: 'Last-in first-out data structure', answer: 'STACK' },
+        { number: 6, row: 10, col: 4, text: 'First-in first-out data structure', answer: 'QUEUE' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 55: COMPUTING & INTERNET – Networking ============
+  {
+    id: 55,
+    title: 'Computing & Internet – Networking',
+    grid: [
+      ['W','I','F','I', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'L','A','N', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'P','I','N','G', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'N','O','D','E', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'R','O','U','T','E','R', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'P','R','O','X','Y', null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Wireless internet standard', answer: 'WIFI' },
+        { number: 2, row: 2, col: 3, text: 'Local Area Network (abbr.)', answer: 'LAN' },
+        { number: 3, row: 4, col: 4, text: 'Test network latency command', answer: 'PING' },
+        { number: 4, row: 6, col: 4, text: 'Single connection point in a network', answer: 'NODE' },
+        { number: 5, row: 8, col: 4, text: 'Device directing network traffic', answer: 'ROUTER' },
+        { number: 6, row: 10, col: 4, text: 'Intermediary server between client and web', answer: 'PROXY' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 56: COMPUTING & INTERNET – Web ============
+  {
+    id: 56,
+    title: 'Computing & Internet – Web',
+    grid: [
+      ['H','T','M','L', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'C','S','S', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'A','P','I', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'C','A','C','H','E', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'C','O','O','K','I','E', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','E','R','V','E','R', null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Web page markup language (abbr.)', answer: 'HTML' },
+        { number: 2, row: 2, col: 3, text: 'Stylesheet language for web pages (abbr.)', answer: 'CSS' },
+        { number: 3, row: 4, col: 4, text: 'Application Programming Interface (abbr.)', answer: 'API' },
+        { number: 4, row: 6, col: 4, text: 'Stored data for faster loading', answer: 'CACHE' },
+        { number: 5, row: 8, col: 4, text: 'Small data file stored by a browser', answer: 'COOKIE' },
+        { number: 6, row: 10, col: 4, text: 'Computer that hosts websites', answer: 'SERVER' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 57: COMPUTING & INTERNET – Security ============
+  {
+    id: 57,
+    title: 'Computing & Internet – Security',
+    grid: [
+      ['H','A','C','K', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'V','I','R','U','S', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'P','A','T','C','H', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'T','O','K','E','N', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'V','A','U','L','T', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'A','U','D','I','T', null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Unauthorized system intrusion', answer: 'HACK' },
+        { number: 2, row: 2, col: 3, text: 'Malicious self-replicating program', answer: 'VIRUS' },
+        { number: 3, row: 4, col: 4, text: 'Software update fixing vulnerabilities', answer: 'PATCH' },
+        { number: 4, row: 6, col: 4, text: 'Authentication credential or key', answer: 'TOKEN' },
+        { number: 5, row: 8, col: 4, text: 'Secure encrypted storage', answer: 'VAULT' },
+        { number: 6, row: 10, col: 4, text: 'Security review or log check', answer: 'AUDIT' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 58: COMPUTING & INTERNET – Devices ============
+  {
+    id: 58,
+    title: 'Computing & Internet – Devices',
+    grid: [
+      ['M','O','U','S','E', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'T','A','B','L','E','T', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'P','R','I','N','T','E','R'],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'S','C','R','E','E','N'],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'D','R','I','V','E', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'M','O','D','E','M', null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Hand-held cursor device', answer: 'MOUSE' },
+        { number: 2, row: 2, col: 3, text: 'Touchscreen portable computer', answer: 'TABLET' },
+        { number: 3, row: 4, col: 4, text: 'Device producing paper output', answer: 'PRINTER' },
+        { number: 4, row: 6, col: 5, text: 'Display monitor', answer: 'SCREEN' },
+        { number: 5, row: 8, col: 5, text: 'Data storage device', answer: 'DRIVE' },
+        { number: 6, row: 10, col: 5, text: 'Device modulating internet signal', answer: 'MODEM' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 59: COMPUTING & INTERNET – Cloud & AI ============
+  {
+    id: 59,
+    title: 'Computing & Internet – Cloud & AI',
+    grid: [
+      ['C','L','O','U','D', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'D','A','T','A', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'M','O','D','E','L', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'T','R','A','I','N', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'I','N','F','E','R', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'N','E','U','R','A','L', null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Remote internet-based computing', answer: 'CLOUD' },
+        { number: 2, row: 2, col: 3, text: 'Information processed by AI', answer: 'DATA' },
+        { number: 3, row: 4, col: 4, text: 'AI mathematical representation', answer: 'MODEL' },
+        { number: 4, row: 6, col: 4, text: 'Teach an AI on examples', answer: 'TRAIN' },
+        { number: 5, row: 8, col: 4, text: 'Deduce output from a trained model', answer: 'INFER' },
+        { number: 6, row: 10, col: 4, text: '___ network (AI architecture)', answer: 'NEURAL' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 60: COMPUTING & INTERNET – Software ============
+  {
+    id: 60,
+    title: 'Computing & Internet – Software',
+    grid: [
+      ['K','E','R','N','E','L', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'D','R','I','V','E','R', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'P','A','T','C','H', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','C','R','I','P','T', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'B','U','I','L','D', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'D','E','P','L','O','Y', null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Core of an operating system', answer: 'KERNEL' },
+        { number: 2, row: 2, col: 3, text: 'Software enabling hardware to work with OS', answer: 'DRIVER' },
+        { number: 3, row: 4, col: 4, text: 'Update fixing a software bug', answer: 'PATCH' },
+        { number: 4, row: 6, col: 4, text: 'Automated code run by interpreter', answer: 'SCRIPT' },
+        { number: 5, row: 8, col: 4, text: 'Compile and assemble software', answer: 'BUILD' },
+        { number: 6, row: 10, col: 4, text: 'Release software to production', answer: 'DEPLOY' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 61: BIOLOGY & MEDICINE – Cells ============
+  {
+    id: 61,
+    title: 'Biology & Medicine – Cells',
+    grid: [
+      ['C','E','L','L', null, null, null, null, null, null, null],
+      ['O', null, null, null, null, null, null, null, null, null, null],
+      ['R', null,'N','U','C','L','E','U','S', null, null],
+      ['E', null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'M','E','M','B','R','A','N','E'],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'G','E','N','E', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'D','N','A', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'R','N','A', null, null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Basic unit of life', answer: 'CELL' },
+        { number: 3, row: 2, col: 2, text: 'Control center of the cell', answer: 'NUCLEUS' },
+        { number: 4, row: 4, col: 3, text: 'Outer boundary of a cell', answer: 'MEMBRANE' },
+        { number: 5, row: 6, col: 4, text: 'Unit of hereditary information', answer: 'GENE' },
+        { number: 6, row: 8, col: 4, text: 'Genetic blueprint molecule', answer: 'DNA' },
+        { number: 7, row: 10, col: 4, text: 'Messenger molecule transcribed from DNA', answer: 'RNA' },
+      ],
+      down: [
+        { number: 2, row: 0, col: 0, text: 'Central part; seed of a cell', answer: 'CORE' },
+      ],
+    },
+  },
+
+  // ============ PUZZLE 62: BIOLOGY & MEDICINE – Human Body ============
+  {
+    id: 62,
+    title: 'Biology & Medicine – Human Body',
+    grid: [
+      ['H','E','A','R','T', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'L','U','N','G', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'B','O','N','E', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'N','E','R','V','E', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'V','E','I','N', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','K','I','N', null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Pumps blood through the body', answer: 'HEART' },
+        { number: 2, row: 2, col: 3, text: 'Organ for breathing', answer: 'LUNG' },
+        { number: 3, row: 4, col: 4, text: 'Hard skeletal structure', answer: 'BONE' },
+        { number: 4, row: 6, col: 4, text: 'Carries signals to the brain', answer: 'NERVE' },
+        { number: 5, row: 8, col: 4, text: 'Blood vessel carrying blood to heart', answer: 'VEIN' },
+        { number: 6, row: 10, col: 4, text: 'Largest organ of the body', answer: 'SKIN' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 63: BIOLOGY & MEDICINE – Plants ============
+  {
+    id: 63,
+    title: 'Biology & Medicine – Plants',
+    grid: [
+      ['R','O','O','T', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'S','T','E','M', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'L','E','A','F', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','E','E','D', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'P','O','L','L','E','N', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'P','H','L','O','E','M', null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Underground anchor of a plant', answer: 'ROOT' },
+        { number: 2, row: 2, col: 3, text: 'Main stalk of a plant', answer: 'STEM' },
+        { number: 3, row: 4, col: 4, text: 'Green photosynthetic plant part', answer: 'LEAF' },
+        { number: 4, row: 6, col: 4, text: 'Plant embryo inside a coat', answer: 'SEED' },
+        { number: 5, row: 8, col: 4, text: 'Fine powder for fertilization', answer: 'POLLEN' },
+        { number: 6, row: 10, col: 4, text: 'Plant tissue transporting sugars', answer: 'PHLOEM' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 64: BIOLOGY & MEDICINE – Diseases ============
+  {
+    id: 64,
+    title: 'Biology & Medicine – Diseases',
+    grid: [
+      ['F','E','V','E','R', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'C','O','U','G','H', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'V','I','R','U','S', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'G','E','R','M', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'D','O','S','E', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'C','U','R','E', null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Elevated body temperature during illness', answer: 'FEVER' },
+        { number: 2, row: 2, col: 3, text: 'Respiratory symptom clearing airways', answer: 'COUGH' },
+        { number: 3, row: 4, col: 4, text: 'Microscopic pathogen causing infection', answer: 'VIRUS' },
+        { number: 4, row: 6, col: 4, text: 'Microorganism causing disease', answer: 'GERM' },
+        { number: 5, row: 8, col: 4, text: 'Amount of medication given', answer: 'DOSE' },
+        { number: 6, row: 10, col: 4, text: 'Treatment eliminating a disease', answer: 'CURE' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 65: BIOLOGY & MEDICINE – Nutrition ============
+  {
+    id: 65,
+    title: 'Biology & Medicine – Nutrition',
+    grid: [
+      ['P','R','O','T','E','I','N', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'F','A','T', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'F','I','B','E','R', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'I','R','O','N', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'Z','I','N','C', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'C','A','L','C', null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Macronutrient building muscles', answer: 'PROTEIN' },
+        { number: 2, row: 2, col: 3, text: 'Energy-dense macronutrient', answer: 'FAT' },
+        { number: 3, row: 4, col: 4, text: 'Dietary roughage aiding digestion', answer: 'FIBER' },
+        { number: 4, row: 6, col: 4, text: 'Mineral preventing anemia (Fe)', answer: 'IRON' },
+        { number: 5, row: 8, col: 4, text: 'Trace mineral (Zn) supporting immunity', answer: 'ZINC' },
+        { number: 6, row: 10, col: 4, text: 'Mineral for bones (abbr.)', answer: 'CALC' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 66: BIOLOGY & MEDICINE – Evolution ============
+  {
+    id: 66,
+    title: 'Biology & Medicine – Evolution',
+    grid: [
+      ['D','N','A', null, null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'G','E','N','E', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'A','D','A','P','T', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'F','O','S','S','I','L', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','P','E','C','I','E','S'],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'M','U','T','A','T','E', null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Genetic information molecule', answer: 'DNA' },
+        { number: 2, row: 2, col: 3, text: 'Hereditary unit on a chromosome', answer: 'GENE' },
+        { number: 3, row: 4, col: 4, text: 'Change to fit environment', answer: 'ADAPT' },
+        { number: 4, row: 6, col: 4, text: 'Preserved remains of ancient life', answer: 'FOSSIL' },
+        { number: 5, row: 8, col: 4, text: 'Group of interbreeding organisms', answer: 'SPECIES' },
+        { number: 6, row: 10, col: 4, text: 'Undergo genetic change', answer: 'MUTATE' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 67: BIOLOGY & MEDICINE – Anatomy ============
+  {
+    id: 67,
+    title: 'Biology & Medicine – Anatomy',
+    grid: [
+      ['B','R','A','I','N', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'S','P','I','N','E', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'A','O','R','T','A', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'P','E','L','V','I','S', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'T','I','B','I','A', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'F','E','M','U','R', null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Organ of thought and coordination', answer: 'BRAIN' },
+        { number: 2, row: 2, col: 3, text: 'Vertebral column', answer: 'SPINE' },
+        { number: 3, row: 4, col: 4, text: 'Main artery from the heart', answer: 'AORTA' },
+        { number: 4, row: 6, col: 4, text: 'Hip bone structure', answer: 'PELVIS' },
+        { number: 5, row: 8, col: 4, text: 'Shinbone', answer: 'TIBIA' },
+        { number: 6, row: 10, col: 4, text: 'Thighbone', answer: 'FEMUR' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 68: BIOLOGY & MEDICINE – Medicine ============
+  {
+    id: 68,
+    title: 'Biology & Medicine – Medicine',
+    grid: [
+      ['D','O','S','E', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'D','R','U','G', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','C','A','N', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'C','L','I','N','I','C', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'T','R','I','A','G','E', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','T','E','R','I','L','E'],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Amount of medicine given', answer: 'DOSE' },
+        { number: 2, row: 2, col: 3, text: 'Pharmaceutical compound', answer: 'DRUG' },
+        { number: 3, row: 4, col: 4, text: 'Medical imaging technique', answer: 'SCAN' },
+        { number: 4, row: 6, col: 4, text: 'Medical treatment facility', answer: 'CLINIC' },
+        { number: 5, row: 8, col: 4, text: 'Emergency patient sorting system', answer: 'TRIAGE' },
+        { number: 6, row: 10, col: 4, text: 'Free of all living microorganisms', answer: 'STERILE' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 69: PHYSICS & ENGINEERING – Forces ============
+  {
+    id: 69,
+    title: 'Physics & Engineering – Forces',
+    grid: [
+      ['F','O','R','C','E', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'G','R','A','V','I','T','Y', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'F','R','I','C','T','I','O'],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'T','O','R','Q','U','E'],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'T','H','R','U','S','T'],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'I','N','E','R','T','A'],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Push or pull interaction', answer: 'FORCE' },
+        { number: 2, row: 2, col: 3, text: 'Attractive force between masses', answer: 'GRAVITY' },
+        { number: 3, row: 4, col: 4, text: 'Resistance force opposing motion', answer: 'FRICTIO' },
+        { number: 4, row: 6, col: 5, text: 'Rotational force', answer: 'TORQUE' },
+        { number: 5, row: 8, col: 5, text: 'Propulsive force of an engine', answer: 'THRUST' },
+        { number: 6, row: 10, col: 5, text: 'Resistance to change in motion', answer: 'INERTA' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 70: PHYSICS & ENGINEERING – Energy ============
+  {
+    id: 70,
+    title: 'Physics & Engineering – Energy',
+    grid: [
+      ['K','I','N','E','T','I','C', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'H','E','A','T', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'L','I','G','H','T', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'S','O','U','N','D', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'P','O','W','E','R', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'W','A','T','T','S', null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Energy of motion', answer: 'KINETIC' },
+        { number: 2, row: 2, col: 3, text: 'Thermal energy form', answer: 'HEAT' },
+        { number: 3, row: 4, col: 4, text: 'Visible electromagnetic energy', answer: 'LIGHT' },
+        { number: 4, row: 6, col: 5, text: 'Vibrational wave energy', answer: 'SOUND' },
+        { number: 5, row: 8, col: 5, text: 'Rate of energy transfer', answer: 'POWER' },
+        { number: 6, row: 10, col: 5, text: 'Unit of power (plural)', answer: 'WATTS' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 71: PHYSICS & ENGINEERING – Waves ============
+  {
+    id: 71,
+    title: 'Physics & Engineering – Waves',
+    grid: [
+      ['W','A','V','E', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'F','R','E','Q', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'A','M','P','L','E', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'R','A','D','I','O', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','O','N','A','R', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'L','A','S','E','R', null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Oscillation through a medium', answer: 'WAVE' },
+        { number: 2, row: 2, col: 3, text: 'Number of cycles per second (abbr.)', answer: 'FREQ' },
+        { number: 3, row: 4, col: 4, text: 'Height of a wave; plentiful', answer: 'AMPLE' },
+        { number: 4, row: 6, col: 4, text: '___ waves used in broadcasting', answer: 'RADIO' },
+        { number: 5, row: 8, col: 4, text: 'Sound navigation and ranging', answer: 'SONAR' },
+        { number: 6, row: 10, col: 4, text: 'Focused light beam device', answer: 'LASER' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 72: PHYSICS & ENGINEERING – Electricity ============
+  {
+    id: 72,
+    title: 'Physics & Engineering – Electricity',
+    grid: [
+      ['V','O','L','T', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'A','M','P','S', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'O','H','M', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'F','U','S','E', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'D','I','O','D','E', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'C','I','R','C','U','I','T'],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Unit of electrical potential', answer: 'VOLT' },
+        { number: 2, row: 2, col: 3, text: 'Unit of electric current (plural)', answer: 'AMPS' },
+        { number: 3, row: 4, col: 4, text: 'Unit of electrical resistance', answer: 'OHM' },
+        { number: 4, row: 6, col: 4, text: 'Safety device that breaks on overload', answer: 'FUSE' },
+        { number: 5, row: 8, col: 4, text: 'Two-terminal semiconductor device', answer: 'DIODE' },
+        { number: 6, row: 10, col: 4, text: 'Complete electrical pathway', answer: 'CIRCUIT' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 73: PHYSICS & ENGINEERING – Mechanics ============
+  {
+    id: 73,
+    title: 'Physics & Engineering – Mechanics',
+    grid: [
+      ['G','E','A','R', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'L','E','V','E','R', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'P','U','L','L','E','Y', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'W','E','D','G','E', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','C','R','E','W', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'W','H','E','E','L', null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Toothed wheel transmitting force', answer: 'GEAR' },
+        { number: 2, row: 2, col: 3, text: 'Simple machine using a fulcrum', answer: 'LEVER' },
+        { number: 3, row: 4, col: 4, text: 'Simple machine using a rope and wheel', answer: 'PULLEY' },
+        { number: 4, row: 6, col: 4, text: 'Inclined plane forming a V-shape', answer: 'WEDGE' },
+        { number: 5, row: 8, col: 4, text: 'Helical simple machine', answer: 'SCREW' },
+        { number: 6, row: 10, col: 4, text: 'Circular rotating simple machine', answer: 'WHEEL' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 74: PHYSICS & ENGINEERING – Materials ============
+  {
+    id: 74,
+    title: 'Physics & Engineering – Materials',
+    grid: [
+      ['S','T','E','E','L', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'A','L','L','O','Y', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'G','L','A','S','S', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'P','L','A','S','T','I','C'],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'R','U','B','B','E','R', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'C','E','M','E','N','T', null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Iron and carbon construction material', answer: 'STEEL' },
+        { number: 2, row: 2, col: 3, text: 'Mixture of two or more metals', answer: 'ALLOY' },
+        { number: 3, row: 4, col: 4, text: 'Transparent brittle material (SiO₂)', answer: 'GLASS' },
+        { number: 4, row: 6, col: 4, text: 'Synthetic polymer material', answer: 'PLASTIC' },
+        { number: 5, row: 8, col: 4, text: 'Elastic material from trees or synthetic', answer: 'RUBBER' },
+        { number: 6, row: 10, col: 4, text: 'Binding construction material', answer: 'CEMENT' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 75: PHYSICS & ENGINEERING – Structures ============
+  {
+    id: 75,
+    title: 'Physics & Engineering – Structures',
+    grid: [
+      ['B','E','A','M', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'T','R','U','S','S', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'A','R','C','H', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'D','O','M','E', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','P','A','N', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'L','O','A','D', null, null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Horizontal structural member', answer: 'BEAM' },
+        { number: 2, row: 2, col: 3, text: 'Triangulated structural framework', answer: 'TRUSS' },
+        { number: 3, row: 4, col: 4, text: 'Curved structure distributing weight', answer: 'ARCH' },
+        { number: 4, row: 6, col: 4, text: 'Hemispherical roof structure', answer: 'DOME' },
+        { number: 5, row: 8, col: 4, text: 'Distance bridged by a structure', answer: 'SPAN' },
+        { number: 6, row: 10, col: 4, text: 'Weight carried by a structure', answer: 'LOAD' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 76: PHYSICS & ENGINEERING – Space Tech ============
+  {
+    id: 76,
+    title: 'Physics & Engineering – Space Tech',
+    grid: [
+      ['R','O','C','K','E','T', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'O','R','B','I','T', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'T','H','R','U','S','T', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'P','R','O','B','E', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'L','A','U','N','C','H'],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'S','T','A','G','E', null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Propulsion vehicle for space', answer: 'ROCKET' },
+        { number: 2, row: 2, col: 3, text: 'Path around a planet or star', answer: 'ORBIT' },
+        { number: 3, row: 4, col: 4, text: 'Propulsive force of an engine', answer: 'THRUST' },
+        { number: 4, row: 6, col: 5, text: 'Unmanned spacecraft for exploration', answer: 'PROBE' },
+        { number: 5, row: 8, col: 5, text: 'Send a rocket into space', answer: 'LAUNCH' },
+        { number: 6, row: 10, col: 5, text: 'Rocket section that separates', answer: 'STAGE' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 77: LANGUAGES & CULTURE – Languages ============
+  {
+    id: 77,
+    title: 'Languages & Culture – Languages',
+    grid: [
+      ['L','A','T','I','N', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'A','R','A','B','I','C', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'H','I','N','D','I', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'U','R','D','U', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'G','R','E','E','K', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'M','A','L','A','Y', null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Ancient Roman language', answer: 'LATIN' },
+        { number: 2, row: 2, col: 3, text: 'Semitic language of the Middle East', answer: 'ARABIC' },
+        { number: 3, row: 4, col: 4, text: 'Most spoken language of India', answer: 'HINDI' },
+        { number: 4, row: 6, col: 5, text: 'Official language of Pakistan', answer: 'URDU' },
+        { number: 5, row: 8, col: 5, text: 'Language of Athens', answer: 'GREEK' },
+        { number: 6, row: 10, col: 5, text: 'Language of Malaysia', answer: 'MALAY' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 78: LANGUAGES & CULTURE – Art ============
+  {
+    id: 78,
+    title: 'Languages & Culture – Art',
+    grid: [
+      ['P','A','I','N','T', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'S','C','U','L','P','T', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','K','E','T','C','H', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'M','U','R','A','L', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'C','A','N','V','A','S'],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'G','L','A','Z','E', null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Apply color to a surface artistically', answer: 'PAINT' },
+        { number: 2, row: 2, col: 3, text: 'Carve a three-dimensional artwork', answer: 'SCULPT' },
+        { number: 3, row: 4, col: 4, text: 'Quick drawing in pencil', answer: 'SKETCH' },
+        { number: 4, row: 6, col: 5, text: 'Large wall painting', answer: 'MURAL' },
+        { number: 5, row: 8, col: 5, text: 'Artist\'s painting surface', answer: 'CANVAS' },
+        { number: 6, row: 10, col: 5, text: 'Smooth shiny coating on pottery', answer: 'GLAZE' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 79: LANGUAGES & CULTURE – Music ============
+  {
+    id: 79,
+    title: 'Languages & Culture – Music',
+    grid: [
+      ['R','H','Y','T','H','M', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'S','C','A','L','E', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'C','H','O','R','D', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'T','E','M','P','O', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'B','E','A','T', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'N','O','T','E', null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Pattern of beats in music', answer: 'RHYTHM' },
+        { number: 2, row: 2, col: 3, text: 'Sequence of musical notes', answer: 'SCALE' },
+        { number: 3, row: 4, col: 4, text: 'Multiple notes played together', answer: 'CHORD' },
+        { number: 4, row: 6, col: 5, text: 'Speed of a musical piece', answer: 'TEMPO' },
+        { number: 5, row: 8, col: 5, text: 'Pulse in music', answer: 'BEAT' },
+        { number: 6, row: 10, col: 5, text: 'Single musical tone', answer: 'NOTE' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 80: LANGUAGES & CULTURE – Cinema ============
+  {
+    id: 80,
+    title: 'Languages & Culture – Cinema',
+    grid: [
+      ['S','C','E','N','E', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'A','C','T','O','R', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'P','L','O','T', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'G','E','N','R','E', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'S','C','R','I','P','T'],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'S','T','U','N','T', null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Single continuous shot or setting', answer: 'SCENE' },
+        { number: 2, row: 2, col: 3, text: 'Performer in a film', answer: 'ACTOR' },
+        { number: 3, row: 4, col: 4, text: 'Story line of a movie', answer: 'PLOT' },
+        { number: 4, row: 6, col: 5, text: 'Category of film (comedy, thriller...)', answer: 'GENRE' },
+        { number: 5, row: 8, col: 5, text: 'Written text of a film', answer: 'SCRIPT' },
+        { number: 6, row: 10, col: 5, text: 'Dangerous film action sequence', answer: 'STUNT' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 81: LANGUAGES & CULTURE – Dance ============
+  {
+    id: 81,
+    title: 'Languages & Culture – Dance',
+    grid: [
+      ['T','A','N','G','O', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'W','A','L','T','Z', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','A','L','S','A', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'P','O','L','K','A', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'S','A','M','B','A', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'F','O','X','T','R','O'],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Argentine passionate partner dance', answer: 'TANGO' },
+        { number: 2, row: 2, col: 3, text: 'Elegant 3/4-time ballroom dance', answer: 'WALTZ' },
+        { number: 3, row: 4, col: 4, text: 'Latin dance with hip movements', answer: 'SALSA' },
+        { number: 4, row: 6, col: 5, text: 'Lively Czech folk dance in 2/4 time', answer: 'POLKA' },
+        { number: 5, row: 8, col: 5, text: 'Brazilian carnival dance', answer: 'SAMBA' },
+        { number: 6, row: 10, col: 5, text: 'Smooth ballroom dance (partial)', answer: 'FOXTRO' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 82: LANGUAGES & CULTURE – Festivals ============
+  {
+    id: 82,
+    title: 'Languages & Culture – Festivals',
+    grid: [
+      ['D','I','W','A','L','I', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'H','O','L','I', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'E','I','D', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'L','U','N','A','R', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'P','A','S','C','A','L'],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'F','E','A','S','T', null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Hindu festival of lights', answer: 'DIWALI' },
+        { number: 2, row: 2, col: 3, text: 'Hindu festival of colors', answer: 'HOLI' },
+        { number: 3, row: 4, col: 4, text: 'Islamic celebration ending Ramadan', answer: 'EID' },
+        { number: 4, row: 6, col: 5, text: 'Chinese New Year type (adj.)', answer: 'LUNAR' },
+        { number: 5, row: 8, col: 5, text: 'Of Easter (adj.)', answer: 'PASCAL' },
+        { number: 6, row: 10, col: 5, text: 'Large celebratory meal', answer: 'FEAST' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 83: LANGUAGES & CULTURE – Architecture ============
+  {
+    id: 83,
+    title: 'Languages & Culture – Architecture',
+    grid: [
+      ['D','O','M','E', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'A','R','C','H', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','P','I','R','E', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'V','A','U','L','T', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'A','T','R','I','U','M'],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'F','R','I','E','Z','E'],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Rounded roof structure', answer: 'DOME' },
+        { number: 2, row: 2, col: 3, text: 'Curved gateway structure', answer: 'ARCH' },
+        { number: 3, row: 4, col: 4, text: 'Tall pointed church tower', answer: 'SPIRE' },
+        { number: 4, row: 6, col: 5, text: 'Arched ceiling or room', answer: 'VAULT' },
+        { number: 5, row: 8, col: 5, text: 'Central open hall in a building', answer: 'ATRIUM' },
+        { number: 6, row: 10, col: 5, text: 'Decorative horizontal band on a building', answer: 'FRIEZE' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 84: LANGUAGES & CULTURE – Philosophy ============
+  {
+    id: 84,
+    title: 'Languages & Culture – Philosophy',
+    grid: [
+      ['L','O','G','I','C', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'E','T','H','I','C','S', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'T','R','U','T','H', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'M','I','N','D', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'S','O','U','L', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'R','E','A','S','O','N'],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Systematic reasoning branch', answer: 'LOGIC' },
+        { number: 2, row: 2, col: 3, text: 'Study of moral principles', answer: 'ETHICS' },
+        { number: 3, row: 4, col: 4, text: 'Opposite of falsehood', answer: 'TRUTH' },
+        { number: 4, row: 6, col: 5, text: 'Seat of consciousness and thought', answer: 'MIND' },
+        { number: 5, row: 8, col: 5, text: 'Immortal essence of a being', answer: 'SOUL' },
+        { number: 6, row: 10, col: 5, text: 'Faculty of rational thought', answer: 'REASON' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 85: ECONOMICS & BUSINESS – Finance ============
+  {
+    id: 85,
+    title: 'Economics & Business – Finance',
+    grid: [
+      ['S','T','O','C','K', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'B','O','N','D', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'Y','I','E','L','D', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'A','S','S','E','T', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'D','E','B','T', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'E','Q','U','I','T','Y'],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Share of company ownership', answer: 'STOCK' },
+        { number: 2, row: 2, col: 3, text: 'Fixed-income debt instrument', answer: 'BOND' },
+        { number: 3, row: 4, col: 4, text: 'Return on an investment', answer: 'YIELD' },
+        { number: 4, row: 6, col: 5, text: 'Valuable owned resource', answer: 'ASSET' },
+        { number: 5, row: 8, col: 5, text: 'Money owed to creditors', answer: 'DEBT' },
+        { number: 6, row: 10, col: 5, text: 'Ownership value in a company', answer: 'EQUITY' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 86: ECONOMICS & BUSINESS – Trade ============
+  {
+    id: 86,
+    title: 'Economics & Business – Trade',
+    grid: [
+      ['T','R','A','D','E', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'E','X','P','O','R','T', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'I','M','P','O','R','T', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'T','A','R','I','F','F'],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'Q','U','O','T','A', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'S','U','P','P','L','Y'],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Exchange of goods between parties', answer: 'TRADE' },
+        { number: 2, row: 2, col: 3, text: 'Send goods abroad', answer: 'EXPORT' },
+        { number: 3, row: 4, col: 4, text: 'Bring goods in from abroad', answer: 'IMPORT' },
+        { number: 4, row: 6, col: 5, text: 'Tax on imported goods', answer: 'TARIFF' },
+        { number: 5, row: 8, col: 5, text: 'Limit on imports allowed', answer: 'QUOTA' },
+        { number: 6, row: 10, col: 5, text: 'Amount of goods available', answer: 'SUPPLY' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 87: ECONOMICS & BUSINESS – Banking ============
+  {
+    id: 87,
+    title: 'Economics & Business – Banking',
+    grid: [
+      ['L','O','A','N', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'R','A','T','E', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','A','V','E', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'C','R','E','D','I','T'],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'D','E','B','I','T', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'A','U','D','I','T', null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Money borrowed from a bank', answer: 'LOAN' },
+        { number: 2, row: 2, col: 3, text: 'Interest ___ on deposits', answer: 'RATE' },
+        { number: 3, row: 4, col: 4, text: 'Set aside money for later use', answer: 'SAVE' },
+        { number: 4, row: 6, col: 5, text: 'Money lent with trust of repayment', answer: 'CREDIT' },
+        { number: 5, row: 8, col: 5, text: 'Money withdrawn; charge to an account', answer: 'DEBIT' },
+        { number: 6, row: 10, col: 5, text: 'Financial examination of accounts', answer: 'AUDIT' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 88: ECONOMICS & BUSINESS – Markets ============
+  {
+    id: 88,
+    title: 'Economics & Business – Markets',
+    grid: [
+      ['M','A','R','K','E','T', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'P','R','I','C','E', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'D','E','M','A','N','D', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'S','H','A','R','E', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'B','U','L','L', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'B','E','A','R', null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Place or system for buying and selling', answer: 'MARKET' },
+        { number: 2, row: 2, col: 3, text: 'Cost of a good or service', answer: 'PRICE' },
+        { number: 3, row: 4, col: 4, text: 'Consumer desire for goods', answer: 'DEMAND' },
+        { number: 4, row: 6, col: 5, text: 'Stock market unit of ownership', answer: 'SHARE' },
+        { number: 5, row: 8, col: 5, text: '___ market (rising prices)', answer: 'BULL' },
+        { number: 6, row: 10, col: 5, text: '___ market (falling prices)', answer: 'BEAR' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 89: ECONOMICS & BUSINESS – Management ============
+  {
+    id: 89,
+    title: 'Economics & Business – Management',
+    grid: [
+      ['L','E','A','D','E','R', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'T','E','A','M', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','T','R','A','T', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'H','I','R','E', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'B','U','D','G','E','T'],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'R','E','P','O','R','T'],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Person guiding a group toward goals', answer: 'LEADER' },
+        { number: 2, row: 2, col: 3, text: 'Group working together', answer: 'TEAM' },
+        { number: 3, row: 4, col: 4, text: 'Long-term plan for success (abbr.)', answer: 'STRAT' },
+        { number: 4, row: 6, col: 5, text: 'Employ a new worker', answer: 'HIRE' },
+        { number: 5, row: 8, col: 5, text: 'Financial plan for spending', answer: 'BUDGET' },
+        { number: 6, row: 10, col: 5, text: 'Document presenting results or findings', answer: 'REPORT' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 90: ECONOMICS & BUSINESS – Entrepreneurship ============
+  {
+    id: 90,
+    title: 'Economics & Business – Entrepreneurship',
+    grid: [
+      ['S','T','A','R','T','U','P', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'P','I','T','C','H', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'F','U','N','D', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'S','C','A','L','E', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'B','R','A','N','D', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'P','I','V','O','T', null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'New entrepreneurial company', answer: 'STARTUP' },
+        { number: 2, row: 2, col: 3, text: 'Investor presentation of your idea', answer: 'PITCH' },
+        { number: 3, row: 4, col: 4, text: 'Raise money for a venture', answer: 'FUND' },
+        { number: 4, row: 6, col: 5, text: 'Grow a business larger', answer: 'SCALE' },
+        { number: 5, row: 8, col: 5, text: 'Company identity and recognition', answer: 'BRAND' },
+        { number: 6, row: 10, col: 5, text: 'Change business direction strategically', answer: 'PIVOT' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 91: ECONOMICS & BUSINESS – Economics Theory ============
+  {
+    id: 91,
+    title: 'Economics & Business – Economic Theory',
+    grid: [
+      ['S','U','P','P','L','Y', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'I','N','F','L','A','T','E', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'G','D','P', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'T','A','X', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'T','R','A','D','E', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'W','A','G','E', null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Amount of goods available for sale', answer: 'SUPPLY' },
+        { number: 2, row: 2, col: 3, text: 'Prices rise (verb)', answer: 'INFLATE' },
+        { number: 3, row: 4, col: 4, text: 'Gross Domestic Product (abbr.)', answer: 'GDP' },
+        { number: 4, row: 6, col: 5, text: 'Government levy on income or goods', answer: 'TAX' },
+        { number: 5, row: 8, col: 5, text: 'Exchange of goods between nations', answer: 'TRADE' },
+        { number: 6, row: 10, col: 5, text: 'Payment for labor', answer: 'WAGE' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 92: ECONOMICS & BUSINESS – Workplace ============
+  {
+    id: 92,
+    title: 'Economics & Business – Workplace',
+    grid: [
+      ['O','F','F','I','C','E', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'D','E','S','K', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'M','E','E','T', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'D','R','A','F','T', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'E','M','A','I','L', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'S','L','A','C','K', null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Place of business work', answer: 'OFFICE' },
+        { number: 2, row: 2, col: 3, text: 'Workplace surface for working', answer: 'DESK' },
+        { number: 3, row: 4, col: 4, text: 'Gather with colleagues to discuss', answer: 'MEET' },
+        { number: 4, row: 6, col: 5, text: 'Preliminary version of a document', answer: 'DRAFT' },
+        { number: 5, row: 8, col: 5, text: 'Electronic message', answer: 'EMAIL' },
+        { number: 6, row: 10, col: 5, text: 'Workplace messaging app', answer: 'SLACK' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 93: EVERYDAY LIFE – Home ============
+  {
+    id: 93,
+    title: 'Everyday Life – Home',
+    grid: [
+      ['K','I','T','C','H','E','N', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'B','A','T','H', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','T','A','I','R','S', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'W','I','N','D','O','W'],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'F','L','O','O','R', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'R','O','O','F', null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Room for cooking meals', answer: 'KITCHEN' },
+        { number: 2, row: 2, col: 3, text: 'Room for bathing', answer: 'BATH' },
+        { number: 3, row: 4, col: 4, text: 'Steps between floors', answer: 'STAIRS' },
+        { number: 4, row: 6, col: 5, text: 'Opening in a wall for light and air', answer: 'WINDOW' },
+        { number: 5, row: 8, col: 5, text: 'Ground surface of a room', answer: 'FLOOR' },
+        { number: 6, row: 10, col: 5, text: 'Top covering of a house', answer: 'ROOF' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 94: EVERYDAY LIFE – Food & Meals ============
+  {
+    id: 94,
+    title: 'Everyday Life – Food & Meals',
+    grid: [
+      ['B','R','E','A','D', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'S','O','U','P', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','A','L','A','D', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'D','I','N','N','E','R'],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'S','N','A','C','K', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'D','E','S','S','E','R'],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Baked dough staple food', answer: 'BREAD' },
+        { number: 2, row: 2, col: 3, text: 'Hot liquid meal in a bowl', answer: 'SOUP' },
+        { number: 3, row: 4, col: 4, text: 'Cold green-leafy dish', answer: 'SALAD' },
+        { number: 4, row: 6, col: 5, text: 'Evening meal', answer: 'DINNER' },
+        { number: 5, row: 8, col: 5, text: 'Small food between meals', answer: 'SNACK' },
+        { number: 6, row: 10, col: 5, text: 'Sweet course at end of meal (partial)', answer: 'DESSER' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 95: EVERYDAY LIFE – Transport ============
+  {
+    id: 95,
+    title: 'Everyday Life – Transport',
+    grid: [
+      ['T','R','A','I','N', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'B','U','S', null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'B','I','K','E', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'T','A','X','I', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'T','R','A','M', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'F','E','R','R','Y', null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Rail vehicle for passengers', answer: 'TRAIN' },
+        { number: 2, row: 2, col: 3, text: 'Large public road vehicle', answer: 'BUS' },
+        { number: 3, row: 4, col: 4, text: 'Two-wheeled pedal vehicle', answer: 'BIKE' },
+        { number: 4, row: 6, col: 5, text: 'Hired car with driver', answer: 'TAXI' },
+        { number: 5, row: 8, col: 5, text: 'Electric rail vehicle on streets', answer: 'TRAM' },
+        { number: 6, row: 10, col: 5, text: 'Boat transporting passengers across water', answer: 'FERRY' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 96: EVERYDAY LIFE – Shopping ============
+  {
+    id: 96,
+    title: 'Everyday Life – Shopping',
+    grid: [
+      ['S','T','O','R','E', null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'P','R','I','C','E', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'C','A','S','H', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'R','E','C','E','I','P'],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'B','A','S','K','E','T'],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'R','E','F','U','N','D'],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Place to buy goods', answer: 'STORE' },
+        { number: 2, row: 2, col: 3, text: 'Cost of an item', answer: 'PRICE' },
+        { number: 3, row: 4, col: 4, text: 'Physical money for payment', answer: 'CASH' },
+        { number: 4, row: 6, col: 5, text: 'Proof of purchase document (partial)', answer: 'RECEIP' },
+        { number: 5, row: 8, col: 5, text: 'Wicker container for shopping', answer: 'BASKET' },
+        { number: 6, row: 10, col: 5, text: 'Money returned after returning goods', answer: 'REFUND' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 97: EVERYDAY LIFE – Health & Fitness ============
+  {
+    id: 97,
+    title: 'Everyday Life – Health & Fitness',
+    grid: [
+      ['E','X','E','R','C','I','S','E', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'D','I','E','T', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'S','L','E','E','P', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'Y','O','G','A', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'W','A','L','K', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'H','I','K','E', null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Physical activity for health', answer: 'EXERCISE' },
+        { number: 2, row: 2, col: 3, text: 'Controlled eating plan', answer: 'DIET' },
+        { number: 3, row: 4, col: 4, text: 'Restful nighttime activity', answer: 'SLEEP' },
+        { number: 4, row: 6, col: 5, text: 'Mindful movement and stretching', answer: 'YOGA' },
+        { number: 5, row: 8, col: 5, text: 'Move on foot at moderate pace', answer: 'WALK' },
+        { number: 6, row: 10, col: 5, text: 'Long walk in nature', answer: 'HIKE' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 98: EVERYDAY LIFE – Time & Calendar ============
+  {
+    id: 98,
+    title: 'Everyday Life – Time & Calendar',
+    grid: [
+      ['H','O','U','R', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'W','E','E','K', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'M','O','N','T','H', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'Y','E','A','R', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'D','A','W','N', null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'N','O','O','N', null, null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: '60 minutes', answer: 'HOUR' },
+        { number: 2, row: 2, col: 3, text: '7 days', answer: 'WEEK' },
+        { number: 3, row: 4, col: 4, text: 'About 30 days', answer: 'MONTH' },
+        { number: 4, row: 6, col: 5, text: '365 days', answer: 'YEAR' },
+        { number: 5, row: 8, col: 5, text: 'First light of day', answer: 'DAWN' },
+        { number: 6, row: 10, col: 5, text: 'Middle of the day', answer: 'NOON' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 99: EVERYDAY LIFE – Weather ============
+  {
+    id: 99,
+    title: 'Everyday Life – Weather',
+    grid: [
+      ['R','A','I','N', null, null, null, null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'S','N','O','W', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'W','I','N','D', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'C','L','O','U','D', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'S','T','O','R','M', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'F','R','O','S','T', null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Water falling from clouds', answer: 'RAIN' },
+        { number: 2, row: 2, col: 3, text: 'Frozen white precipitation', answer: 'SNOW' },
+        { number: 3, row: 4, col: 4, text: 'Moving air', answer: 'WIND' },
+        { number: 4, row: 6, col: 5, text: 'Water vapor formation in sky', answer: 'CLOUD' },
+        { number: 5, row: 8, col: 5, text: 'Violent weather with thunder', answer: 'STORM' },
+        { number: 6, row: 10, col: 5, text: 'Ice crystals formed below 0°C', answer: 'FROST' },
+      ],
+      down: [],
+    },
+  },
+
+  // ============ PUZZLE 100: EVERYDAY LIFE – Colors & Senses ============
+  {
+    id: 100,
+    title: 'Everyday Life – Colors & Senses',
+    grid: [
+      ['S','C','A','R','L','E','T', null, null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null,'G','R','E','E','N', null, null, null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null,'V','I','O','L','E','T', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'S','M','E','L','L', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'T','A','S','T','E', null],
+      [null, null, null, null, null, null, null, null, null, null, null],
+      [null, null, null, null, null,'T','O','U','C','H', null],
+    ],
+    clues: {
+      across: [
+        { number: 1, row: 0, col: 0, text: 'Bright crimson red color', answer: 'SCARLET' },
+        { number: 2, row: 2, col: 3, text: 'Color of grass and leaves', answer: 'GREEN' },
+        { number: 3, row: 4, col: 4, text: 'Purple-blue color (also a flower)', answer: 'VIOLET' },
+        { number: 4, row: 6, col: 5, text: 'Sense detecting odors', answer: 'SMELL' },
+        { number: 5, row: 8, col: 5, text: 'Sense detecting flavor', answer: 'TASTE' },
+        { number: 6, row: 10, col: 5, text: 'Sense detecting physical contact', answer: 'TOUCH' },
+      ],
+      down: [],
+    },
+  },
 ];
 
 // END OF PUZZLES
