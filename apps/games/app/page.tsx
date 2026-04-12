@@ -36,7 +36,7 @@ export default function GameHubPage() {
   return (
     <main className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
       <header className="mb-12">
-        <a href="https://inksuite.xyz" className="mb-4 inline-flex items-center gap-1 text-sm text-ink-600 hover:text-ink-500">
+        <a href="https://inksuite.xyz" className="mb-6 inline-flex items-center gap-2 rounded-lg bg-purple-100 px-4 py-2 text-sm font-semibold text-ink-700 ring-1 ring-inset ring-purple-200 shadow-sm transition hover:bg-purple-200 hover:text-ink-900">
           ← inksuite.xyz
         </a>
         <h1 className="text-3xl font-semibold tracking-tight text-ink-900 sm:text-5xl">Game Hub</h1>
@@ -88,7 +88,7 @@ export default function GameHubPage() {
 function GameWrapper({ title, onBack, children }: { title: string; onBack: () => void; children: React.ReactNode }) {
   return (
     <main className="mx-auto max-w-4xl px-6 py-10">
-      <button onClick={onBack} className="mb-6 inline-flex items-center gap-1 text-sm text-ink-600 hover:text-ink-500">
+      <button onClick={onBack} className="mb-6 inline-flex items-center gap-2 rounded-lg bg-purple-100 px-4 py-2 text-sm font-semibold text-ink-700 ring-1 ring-inset ring-purple-200 shadow-sm transition hover:bg-purple-200 hover:text-ink-900">
         ← Back to Game Hub
       </button>
       <h1 className="mb-6 text-2xl font-semibold text-ink-900">{title}</h1>

@@ -31,7 +31,7 @@ export default function WalletDashboardPage() {
       <header className="mb-10">
         <a
           href="https://inksuite.xyz"
-          className="mb-4 inline-flex items-center gap-1 text-sm text-ink-600 hover:text-ink-500"
+          className="mb-6 inline-flex items-center gap-2 rounded-lg bg-purple-100 px-4 py-2 text-sm font-semibold text-ink-700 ring-1 ring-inset ring-purple-200 shadow-sm transition hover:bg-purple-200 hover:text-ink-900"
         >
           ← inksuite.xyz
         </a>
