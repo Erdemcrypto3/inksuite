@@ -67,6 +67,12 @@ const apps: AppCard[] = [
     status: 'planned',
   },
   {
+    title: 'Fantasy PL',
+    description: 'Build your dream Premier League squad with a £100M budget. Live FPL data.',
+    subdomain: 'fantasy',
+    status: 'live',
+  },
+  {
     title: 'Game Hub',
     description: 'Classic browser games — Hangman, Minesweeper, Snake. Track your high scores.',
     subdomain: 'games',
