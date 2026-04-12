@@ -55,6 +55,12 @@ const apps: AppCard[] = [
     status: 'live',
   },
   {
+    title: 'InkMint',
+    description: 'AI-powered NFT generator. Describe your art, AI creates it, mint as NFT on Ink. 0.000777 ETH.',
+    subdomain: 'mint',
+    status: 'live',
+  },
+  {
     title: 'InkPress',
     description: 'Decentralized blog on Ink. Read and collect articles as ERC-1155 NFTs. Apply to write.',
     subdomain: 'inkpress',
