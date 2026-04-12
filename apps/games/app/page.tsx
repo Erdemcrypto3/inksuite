@@ -4,8 +4,11 @@ import { useState } from 'react';
 import { Hangman } from './components/hangman';
 import { Minesweeper } from './components/minesweeper';
 import { Snake } from './components/snake';
+import { Tetris } from './components/tetris';
+import { SoloTest } from './components/solo-test';
+import { Crossword } from './components/crossword';
 
-type GameId = 'hangman' | 'minesweeper' | 'snake' | null;
+type GameId = 'hangman' | 'minesweeper' | 'snake' | 'tetris' | 'solotest' | 'crossword' | null;
 
 type GameInfo = {
   id: GameId & string;
@@ -18,6 +21,9 @@ const games: GameInfo[] = [
   { id: 'hangman', title: 'Hangman', description: 'Guess the word before the man hangs. 6 wrong guesses allowed.', status: 'live' },
   { id: 'minesweeper', title: 'Minesweeper', description: 'Clear the board without hitting a mine. Classic logic puzzle.', status: 'live' },
   { id: 'snake', title: 'Snake', description: 'Eat food, grow longer, don\'t hit the walls or yourself.', status: 'live' },
+  { id: 'tetris', title: 'Tetris', description: 'Stack tetrominoes, clear lines, chase the high score. Classic arcade.', status: 'live' },
+  { id: 'solotest', title: 'Solo Test', description: 'Jump pegs to remove them. Can you leave just one? English board peg solitaire.', status: 'live' },
+  { id: 'crossword', title: 'Crossword', description: '5×5 mini crossword puzzles. Across and down clues. 20 themed puzzles to solve.', status: 'live' },
 ];
 
 function getHighScore(gameId: string): number | null {
@@ -32,6 +38,9 @@ export default function GameHubPage() {
   if (activeGame === 'hangman') return <GameWrapper title="Hangman" onBack={() => setActiveGame(null)}><Hangman /></GameWrapper>;
   if (activeGame === 'minesweeper') return <GameWrapper title="Minesweeper" onBack={() => setActiveGame(null)}><Minesweeper /></GameWrapper>;
   if (activeGame === 'snake') return <GameWrapper title="Snake" onBack={() => setActiveGame(null)}><Snake /></GameWrapper>;
+  if (activeGame === 'tetris') return <GameWrapper title="Tetris" onBack={() => setActiveGame(null)}><Tetris /></GameWrapper>;
+  if (activeGame === 'solotest') return <GameWrapper title="Solo Test" onBack={() => setActiveGame(null)}><SoloTest /></GameWrapper>;
+  if (activeGame === 'crossword') return <GameWrapper title="Crossword" onBack={() => setActiveGame(null)}><Crossword /></GameWrapper>;
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
