@@ -112,7 +112,7 @@ export function SquadView({ squad, teams, onRemove }: Props) {
 
       {squad.length === 15 && remaining >= 0 && (
         <div className="mt-4 rounded-lg bg-emerald-50 p-3 text-center text-sm font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-300">
-          Squad complete! Ready to save.
+          Squad complete! Auto-saved locally.
         </div>
       )}
       {remaining < 0 && (
