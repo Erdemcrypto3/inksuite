@@ -56,7 +56,7 @@ const apps: AppCard[] = [
   },
   {
     title: 'InkPress',
-    description: 'Decentralized blog on Ink. Publish articles as ERC-1155 NFTs, stored on Walrus.',
+    description: 'Decentralized blog on Ink. Read and collect articles as ERC-1155 NFTs. Apply to write.',
     subdomain: 'inkpress',
     status: 'live',
   },

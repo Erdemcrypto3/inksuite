@@ -367,8 +367,8 @@ function BlogFeed() {
       <div className="rounded-xl bg-gradient-to-br from-ink-500 to-ink-700 p-8 text-white shadow-lg">
         <h2 className="text-2xl font-bold sm:text-3xl">Decentralized Blog on Ink</h2>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/80">
-          Publish articles as ERC-1155 NFTs. Content stored on Walrus (decentralized storage).
-          Readers can collect articles they love. Authors earn from every mint.
+          Read articles and collect them as ERC-1155 NFTs on Ink chain. Content stored on
+          Walrus (decentralized storage). Want to write? Apply to become an approved writer.
         </p>
         <div className="mt-4 flex flex-wrap gap-2 text-xs">
           <span className="rounded-full bg-white/20 px-3 py-1">ERC-1155 NFTs</span>
@@ -424,8 +424,8 @@ function BlogFeed() {
       ) : (
         <div className="rounded-xl bg-white p-8 text-center ring-1 ring-inset ring-purple-100 shadow-sm">
           <div className="text-3xl mb-3">No articles yet</div>
-          <p className="text-sm text-ink-500">Be the first to publish on InkPress!</p>
-          {!isConnected && <p className="mt-2 text-xs text-ink-400">Connect your wallet to get started.</p>}
+          <p className="text-sm text-ink-500">Articles will appear here once writers start publishing.</p>
+          {!isConnected && <p className="mt-2 text-xs text-ink-400">Connect your wallet to collect articles or apply to write.</p>}
         </div>
       )}
 
@@ -435,18 +435,18 @@ function BlogFeed() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="rounded-xl bg-white p-5 ring-1 ring-inset ring-purple-100 shadow-sm">
             <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-ink-500 text-sm font-bold text-white">1</div>
-            <h3 className="text-sm font-semibold text-ink-900">Apply & Get Approved</h3>
-            <p className="mt-1 text-xs text-ink-600">Connect wallet, submit a writer application. Once approved, you can publish.</p>
+            <h3 className="text-sm font-semibold text-ink-900">Read Articles</h3>
+            <p className="mt-1 text-xs text-ink-600">Browse articles published by approved writers. All content stored on decentralized Walrus.</p>
           </div>
           <div className="rounded-xl bg-white p-5 ring-1 ring-inset ring-purple-100 shadow-sm">
             <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-ink-500 text-sm font-bold text-white">2</div>
-            <h3 className="text-sm font-semibold text-ink-900">Write & Publish</h3>
-            <p className="mt-1 text-xs text-ink-600">Write your article. Content goes to Walrus, metadata on-chain as ERC-1155.</p>
+            <h3 className="text-sm font-semibold text-ink-900">Collect as NFT</h3>
+            <p className="mt-1 text-xs text-ink-600">Like an article? Collect it as an ERC-1155 NFT (0.0005 ETH). Authors earn from every collect.</p>
           </div>
           <div className="rounded-xl bg-white p-5 ring-1 ring-inset ring-purple-100 shadow-sm">
             <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-ink-500 text-sm font-bold text-white">3</div>
-            <h3 className="text-sm font-semibold text-ink-900">Collect & Earn</h3>
-            <p className="mt-1 text-xs text-ink-600">Readers mint articles as NFTs (0.0005 ETH). Authors earn from every collect.</p>
+            <h3 className="text-sm font-semibold text-ink-900">Want to Write?</h3>
+            <p className="mt-1 text-xs text-ink-600">Apply to become a writer. Once approved, you can publish articles on InkPress.</p>
           </div>
         </div>
       </div>
@@ -479,7 +479,7 @@ export default function InkPressPage() {
             ← inksuite.xyz
           </a>
           <h1 className="text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">InkPress</h1>
-          <p className="mt-2 text-sm text-ink-600">Decentralized blog on Ink chain. Publish &amp; collect articles as NFTs.</p>
+          <p className="mt-2 text-sm text-ink-600">Decentralized blog on Ink chain. Read articles, collect them as NFTs.</p>
         </header>
 
         <BlogFeed />
