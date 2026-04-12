@@ -103,10 +103,17 @@ export const INKPRESS_ABI = [
     outputs: [{ name: '', type: 'bool' }],
   },
   {
-    name: 'isApprovedAuthor',
+    name: 'approvedAuthors',
     type: 'function',
     stateMutability: 'view',
-    inputs: [{ name: 'author', type: 'address' }],
+    inputs: [{ name: '', type: 'address' }],
     outputs: [{ name: '', type: 'bool' }],
+  },
+  {
+    name: 'owner',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
   },
 ] as const;

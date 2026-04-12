@@ -286,17 +286,23 @@ function BlogFeed() {
     args: [0n, 50n],
   });
 
-  // Check if connected user is approved author
-  const { data: isAuthor } = useReadContract(
+  // Check if connected user is approved author or owner
+  const { data: isApproved } = useReadContract(
     address
       ? {
           address: CONTRACT_ADDRESS,
           abi: INKPRESS_ABI,
-          functionName: 'isApprovedAuthor',
+          functionName: 'approvedAuthors',
           args: [address],
         }
       : undefined,
   );
+  const { data: contractOwner } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: INKPRESS_ABI,
+    functionName: 'owner',
+  });
+  const isAuthor = isApproved === true || (contractOwner && address && contractOwner.toString().toLowerCase() === address.toLowerCase());
 
   // Total articles
   const { data: totalArticlesRaw } = useReadContract({
