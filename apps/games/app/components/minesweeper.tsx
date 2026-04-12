@@ -63,7 +63,7 @@ function saveHighScore(score: number) {
   if (score > prev) localStorage.setItem(key, String(score));
 }
 
-const ADJ_COLORS = ['', 'text-blue-400', 'text-green-400', 'text-red-400', 'text-purple-400', 'text-amber-400', 'text-cyan-400', 'text-pink-400', 'text-gray-400'];
+const ADJ_COLORS = ['', 'text-blue-700', 'text-green-700', 'text-red-600', 'text-purple-700', 'text-amber-700', 'text-cyan-700', 'text-pink-700', 'text-gray-600'];
 
 export function Minesweeper() {
   const [board, setBoard] = useState<Board | null>(null);
@@ -142,7 +142,7 @@ export function Minesweeper() {
       </div>
 
       <div
-        className="inline-grid gap-0.5 rounded-lg bg-white/5 p-2 ring-1 ring-inset ring-white/10"
+        className="inline-grid gap-0.5 rounded-lg bg-slate-200 p-2 ring-1 ring-inset ring-slate-300 shadow-lg"
         style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}
         onContextMenu={(e) => e.preventDefault()}
       >
@@ -162,11 +162,11 @@ export function Minesweeper() {
                 className={`h-8 w-8 text-xs font-bold transition-colors ${
                   revealed
                     ? mine
-                      ? 'bg-red-500/40 text-red-200'
-                      : 'bg-ink-900/80 text-ink-100'
+                      ? 'bg-red-400 text-white'
+                      : 'bg-white text-gray-800'
                     : flagged
-                    ? 'bg-amber-500/20 text-amber-300'
-                    : 'bg-ink-700/50 hover:bg-ink-500/30 cursor-pointer'
+                    ? 'bg-amber-300 text-amber-800'
+                    : 'bg-slate-400 hover:bg-slate-300 cursor-pointer shadow-sm'
                 } rounded-sm`}
               >
                 {revealed

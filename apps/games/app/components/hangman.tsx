@@ -78,7 +78,7 @@ export function Hangman() {
       <div className="flex gap-2 text-3xl font-mono tracking-widest">
         {word.split('').map((letter, i) => (
           <span key={i} className={`inline-block w-8 border-b-2 text-center ${
-            guessed.has(letter) ? 'text-ink-50 border-ink-500' : 'text-transparent border-ink-100/30'
+            guessed.has(letter) ? 'text-white border-emerald-400' : gameOver ? 'text-red-300 border-red-400' : 'text-transparent border-slate-500'
           }`}>
             {guessed.has(letter) || gameOver ? letter : '_'}
           </span>

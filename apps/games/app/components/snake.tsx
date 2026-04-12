@@ -47,10 +47,10 @@ export function Snake() {
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx) return;
     const size = GRID * CELL;
-    ctx.fillStyle = '#0a0f2e';
+    ctx.fillStyle = '#1e293b';
     ctx.fillRect(0, 0, size, size);
 
-    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
     for (let i = 0; i <= GRID; i++) {
       ctx.beginPath(); ctx.moveTo(i * CELL, 0); ctx.lineTo(i * CELL, size); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(0, i * CELL); ctx.lineTo(size, i * CELL); ctx.stroke();
@@ -58,12 +58,12 @@ export function Snake() {
 
     const snake = snakeRef.current;
     snake.forEach((s, i) => {
-      ctx.fillStyle = i === 0 ? '#4b5bff' : '#2d3bcc';
+      ctx.fillStyle = i === 0 ? '#22c55e' : '#16a34a';
       ctx.fillRect(s.x * CELL + 1, s.y * CELL + 1, CELL - 2, CELL - 2);
     });
 
     const food = foodRef.current;
-    ctx.fillStyle = '#f87171';
+    ctx.fillStyle = '#ef4444';
     ctx.beginPath();
     ctx.arc(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, CELL / 2 - 2, 0, Math.PI * 2);
     ctx.fill();
