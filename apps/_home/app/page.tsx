@@ -7,12 +7,6 @@ type AppCard = {
 
 const apps: AppCard[] = [
   {
-    title: 'Portfolio Tracker',
-    description: 'See balances, positions, and NFTs across any Ink wallet.',
-    subdomain: 'portfolio',
-    status: 'planned',
-  },
-  {
     title: 'Tydro Watch',
     description: 'Supply / borrow APRs and health factor monitor for Tydro.',
     subdomain: 'tydro',
