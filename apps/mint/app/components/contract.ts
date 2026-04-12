@@ -3,7 +3,7 @@ export const INKMINT_ADDRESS = '0x964bf77C2cF0901F0acFaC277601816d2dbEACEe' as c
 export const WALRUS_AGGREGATOR = 'https://walrus-mainnet.chainode.tech:9002';
 
 // Worker URL — will proxy Stability AI requests
-export const AI_WORKER_URL = 'https://inkmint-api.erdemcrypto3.workers.dev';
+export const AI_WORKER_URL = 'https://inkmint-api.erdemerdem1797.workers.dev';
 
 export const INKMINT_ABI = [
   {
