@@ -132,10 +132,10 @@ function HangmanSvg({ wrongCount }: { wrongCount: number }) {
   return (
     <svg viewBox="0 0 120 140" className="h-36 w-28">
       {/* gallows */}
-      <line x1="10" y1="135" x2="70" y2="135" stroke="#4b5bff" strokeWidth="3" />
-      <line x1="30" y1="135" x2="30" y2="10" stroke="#4b5bff" strokeWidth="3" />
-      <line x1="30" y1="10" x2="80" y2="10" stroke="#4b5bff" strokeWidth="3" />
-      <line x1="80" y1="10" x2="80" y2="30" stroke="#4b5bff" strokeWidth="3" />
+      <line x1="10" y1="135" x2="70" y2="135" stroke="#7538F5" strokeWidth="3" />
+      <line x1="30" y1="135" x2="30" y2="10" stroke="#7538F5" strokeWidth="3" />
+      <line x1="30" y1="10" x2="80" y2="10" stroke="#7538F5" strokeWidth="3" />
+      <line x1="80" y1="10" x2="80" y2="30" stroke="#7538F5" strokeWidth="3" />
       {/* head */}
       {wrongCount >= 1 && <circle cx="80" cy="42" r="12" fill="none" stroke="#f0f4ff" strokeWidth="2" />}
       {/* body */}
