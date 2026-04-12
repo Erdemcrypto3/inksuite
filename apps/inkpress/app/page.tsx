@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { formatEther, parseEther } from 'viem';
 import { CONTRACT_ADDRESS, INKPRESS_ABI, WALRUS_AGGREGATOR, BLOG_TAGS } from './components/contract';
 
-const IS_DEPLOYED = CONTRACT_ADDRESS !== '0x0000000000000000000000000000000000000000';
+const IS_DEPLOYED = (CONTRACT_ADDRESS as string) !== '0x0000000000000000000000000000000000000000';
 
 type Article = {
   id: bigint;
