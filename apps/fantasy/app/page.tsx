@@ -5,10 +5,18 @@ import type { FplPlayer, FplTeam, Position } from './components/types';
 import { POSITION_MAP, SQUAD_STRUCTURE, BUDGET, MAX_PER_TEAM } from './components/types';
 import { PlayerPicker } from './components/player-picker';
 import { SquadView } from './components/squad-view';
+import { PointsView } from './components/points-view';
+
+type MainTab = 'squad' | 'points';
 
 type FplData = {
   elements: FplPlayer[];
   teams: FplTeam[];
+  current_gw: number;
+  completed_gws: number[];
+  recent_gws: number[];
+  live: Record<string, Record<string, any>>;
+  fixtures: any[];
   fetched_at: string;
 };
 
@@ -26,11 +34,23 @@ function saveSquad(squad: FplPlayer[]) {
   localStorage.setItem('inksuite-fantasy-squad', JSON.stringify(squad));
 }
 
+function loadCaptain(): number | null {
+  if (typeof window === 'undefined') return null;
+  const val = localStorage.getItem('inksuite-fantasy-captain');
+  return val ? Number(val) : null;
+}
+
+function saveCaptain(id: number) {
+  localStorage.setItem('inksuite-fantasy-captain', String(id));
+}
+
 export default function FantasyPage() {
   const [data, setData] = useState<FplData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [squad, setSquad] = useState<FplPlayer[]>([]);
+  const [captainId, setCaptainId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<MainTab>('squad');
 
   useEffect(() => {
     setLoading(true);
@@ -46,6 +66,7 @@ export default function FantasyPage() {
             .filter((p: FplPlayer | undefined): p is FplPlayer => p !== undefined);
           setSquad(restored);
         }
+        setCaptainId(loadCaptain());
       })
       .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load player data'))
       .finally(() => setLoading(false));
@@ -82,9 +103,15 @@ export default function FantasyPage() {
       const newSquad = squad.filter((p) => p.id !== playerId);
       setSquad(newSquad);
       saveSquad(newSquad);
+      if (captainId === playerId) setCaptainId(null);
     },
-    [squad],
+    [squad, captainId],
   );
+
+  const handleSetCaptain = useCallback((id: number) => {
+    setCaptainId(id);
+    saveCaptain(id);
+  }, []);
 
   if (loading) {
     return (
@@ -117,29 +144,63 @@ export default function FantasyPage() {
           Fantasy Premier League
         </h1>
         <p className="mt-3 max-w-2xl text-base leading-relaxed text-ink-700">
-          Build your dream 15-player squad with a £100M budget. Max 3 players from one club.
-          {' '}{data.elements.length} players available. Data updated at build time.
+          Build your dream squad, pick a captain, track gameweek points.
+          {' '}{data.elements.length} players · GW{data.current_gw} · Data from FPL API.
         </p>
         <p className="mt-1 text-xs text-ink-400">
-          Last data fetch: {new Date(data.fetched_at).toLocaleString()}
+          Last update: {new Date(data.fetched_at).toLocaleString()}
         </p>
       </header>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-        <div className="lg:col-span-2">
-          <SquadView squad={squad} teams={data.teams} onRemove={removePlayer} />
-        </div>
-        <div className="lg:col-span-3">
-          <PlayerPicker
-            players={data.elements}
-            teams={data.teams}
-            squad={squad}
-            budget={budget}
-            filterPosition={null}
-            onAdd={addPlayer}
-          />
-        </div>
+      {/* Tab bar */}
+      <div className="mb-8 flex gap-1 rounded-lg bg-purple-50/50 p-1 ring-1 ring-inset ring-purple-100">
+        {(['squad', 'points'] as MainTab[]).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex-1 rounded-md px-4 py-2.5 text-sm font-semibold transition ${
+              activeTab === tab
+                ? 'bg-ink-500 text-white shadow-sm'
+                : 'text-ink-600 hover:bg-purple-50 hover:text-ink-800'
+            }`}
+          >
+            {tab === 'squad' ? `Squad (${squad.length}/15)` : `Points — GW${data.current_gw}`}
+          </button>
+        ))}
       </div>
+
+      {/* Squad tab */}
+      {activeTab === 'squad' && (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+          <div className="lg:col-span-2">
+            <SquadView squad={squad} teams={data.teams} onRemove={removePlayer} />
+          </div>
+          <div className="lg:col-span-3">
+            <PlayerPicker
+              players={data.elements}
+              teams={data.teams}
+              squad={squad}
+              budget={budget}
+              filterPosition={null}
+              onAdd={addPlayer}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Points tab */}
+      {activeTab === 'points' && (
+        <PointsView
+          squad={squad}
+          teams={data.teams}
+          liveData={data.live || {}}
+          fixtures={data.fixtures || []}
+          currentGW={data.current_gw}
+          recentGWs={data.recent_gws || []}
+          captainId={captainId}
+          onSetCaptain={handleSetCaptain}
+        />
+      )}
 
       <footer className="mt-16 border-t border-purple-200 pt-8 text-sm text-ink-500">
         <div className="flex flex-wrap items-center justify-between gap-4">
