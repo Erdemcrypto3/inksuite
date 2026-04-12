@@ -74,7 +74,7 @@ const apps: AppCard[] = [
   },
   {
     title: 'Game Hub',
-    description: 'Classic browser games — Hangman, Minesweeper, Snake. Track your high scores.',
+    description: '7 games — Hangman, Minesweeper, Snake, Tetris, Solo Test, Crossword, Checkers.',
     subdomain: 'games',
     status: 'live',
   },
