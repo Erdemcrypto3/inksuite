@@ -6,6 +6,7 @@ import { POSITION_MAP, SQUAD_STRUCTURE, BUDGET, MAX_PER_TEAM } from './component
 import { PlayerPicker } from './components/player-picker';
 import { SquadView } from './components/squad-view';
 import { PointsView } from './components/points-view';
+import { InkWalletProvider, ConnectButton } from '@inksuite/wallet';
 
 type MainTab = 'squad' | 'points';
 
@@ -44,7 +45,7 @@ function saveCaptain(id: number) {
   localStorage.setItem('inksuite-fantasy-captain', String(id));
 }
 
-export default function FantasyPage() {
+function FantasyContent() {
   const [data, setData] = useState<FplData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -134,12 +135,15 @@ export default function FantasyPage() {
   return (
     <main className="mx-auto max-w-7xl px-6 py-10">
       <header className="mb-8">
-        <a
-          href="https://inksuite.xyz"
-          className="mb-6 inline-flex items-center gap-2 rounded-lg bg-purple-100 px-4 py-2 text-sm font-semibold text-ink-700 ring-1 ring-inset ring-purple-200 shadow-sm transition hover:bg-purple-200 hover:text-ink-900"
-        >
-          ← inksuite.xyz
-        </a>
+        <div className="mb-6 flex items-center justify-between">
+          <a
+            href="https://inksuite.xyz"
+            className="inline-flex items-center gap-2 rounded-lg bg-purple-100 px-4 py-2 text-sm font-semibold text-ink-700 ring-1 ring-inset ring-purple-200 shadow-sm transition hover:bg-purple-200 hover:text-ink-900"
+          >
+            ← inksuite.xyz
+          </a>
+          <ConnectButton showBalance={false} />
+        </div>
         <h1 className="text-3xl font-semibold tracking-tight text-ink-900 sm:text-5xl">
           Fantasy Premier League
         </h1>
@@ -216,5 +220,13 @@ export default function FantasyPage() {
         </div>
       </footer>
     </main>
+  );
+}
+
+export default function FantasyPage() {
+  return (
+    <InkWalletProvider>
+      <FantasyContent />
+    </InkWalletProvider>
   );
 }

@@ -7,39 +7,9 @@ type AppCard = {
 
 const apps: AppCard[] = [
   {
-    title: 'Tydro Watch',
-    description: 'Supply / borrow APRs and health factor monitor for Tydro.',
-    subdomain: 'tydro',
-    status: 'planned',
-  },
-  {
-    title: 'Nado Funding',
-    description: 'Perpetual funding rates and cross-venue arb signals.',
-    subdomain: 'nado',
-    status: 'planned',
-  },
-  {
-    title: 'Pool Explorer',
-    description: 'Sortable Velodrome pool list with APR, TVL, and volume.',
-    subdomain: 'pools',
-    status: 'planned',
-  },
-  {
-    title: '.ink Domain Sniper',
-    description: 'Bulk availability check and expiry watcher for ZNS .ink names.',
-    subdomain: 'names',
-    status: 'planned',
-  },
-  {
     title: 'Wallet Health',
     description: 'Review approvals granted and revoke risky contracts.',
     subdomain: 'health',
-    status: 'planned',
-  },
-  {
-    title: 'Airdrop Checker',
-    description: 'Check which Ink airdrop criteria a wallet has already hit.',
-    subdomain: 'airdrop',
     status: 'planned',
   },
   {
@@ -58,12 +28,6 @@ const apps: AppCard[] = [
     title: 'Whale Watcher',
     description: 'Feed of large on-chain movements across Ink.',
     subdomain: 'whales',
-    status: 'planned',
-  },
-  {
-    title: 'Ecosystem Directory',
-    description: 'Curated index of every Ink dApp, tool, and infra service.',
-    subdomain: 'directory',
     status: 'planned',
   },
   {
@@ -86,9 +50,15 @@ const apps: AppCard[] = [
   },
   {
     title: 'GM Widget',
-    description: 'Daily on-chain gm with streak tracking.',
+    description: 'Daily on-chain gm with streak tracking. Connect wallet, say gm, build your streak.',
     subdomain: 'gm',
-    status: 'planned',
+    status: 'live',
+  },
+  {
+    title: 'InkPress',
+    description: 'Decentralized blog on Ink. Publish articles as ERC-1155 NFTs, stored on Walrus.',
+    subdomain: 'inkpress',
+    status: 'live',
   },
 ];
 
@@ -121,8 +91,8 @@ export default function Home() {
           Ink Suite
         </h1>
         <p className="mt-6 max-w-2xl text-lg leading-relaxed text-ink-700">
-          A portfolio of small, focused utilities for anyone using or building on Ink.
-          Track portfolios, monitor DeFi rates, check airdrop eligibility, and more — all
+          A portfolio of small, focused apps for anyone using or building on Ink.
+          Track wallets, play games, say gm on-chain, publish articles as NFTs, and more — all
           under one roof, all open source.
         </p>
         <div className="mt-8 flex flex-wrap gap-4">

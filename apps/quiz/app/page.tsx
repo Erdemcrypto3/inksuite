@@ -5,6 +5,7 @@ import type { Category, CategoryProgress, Question } from './components/types';
 import { CATEGORIES, ACHIEVEMENTS, MAX_POINTS_PER_CATEGORY } from './components/types';
 import { QuizSession } from './components/quiz-session';
 import { AchievementTimeline } from './components/achievement-timeline';
+import { InkWalletProvider, ConnectButton } from '@inksuite/wallet';
 
 function loadProgress(): Record<Category, CategoryProgress> {
   if (typeof window === 'undefined') return getDefaultProgress();
@@ -39,7 +40,7 @@ function getAchievementLevel(points: number, quizzesTaken: number): number {
   return 0;
 }
 
-export default function QuizPage() {
+function QuizContent() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState<Record<Category, CategoryProgress>>(getDefaultProgress());
@@ -124,12 +125,15 @@ export default function QuizPage() {
   return (
     <main className="mx-auto max-w-4xl px-6 py-16 sm:py-20">
       <header className="mb-10">
-        <a
-          href="https://inksuite.xyz"
-          className="mb-6 inline-flex items-center gap-2 rounded-lg bg-purple-100 px-4 py-2 text-sm font-semibold text-ink-700 ring-1 ring-inset ring-purple-200 shadow-sm transition hover:bg-purple-200 hover:text-ink-900"
-        >
-          ← inksuite.xyz
-        </a>
+        <div className="mb-6 flex items-center justify-between">
+          <a
+            href="https://inksuite.xyz"
+            className="inline-flex items-center gap-2 rounded-lg bg-purple-100 px-4 py-2 text-sm font-semibold text-ink-700 ring-1 ring-inset ring-purple-200 shadow-sm transition hover:bg-purple-200 hover:text-ink-900"
+          >
+            ← inksuite.xyz
+          </a>
+          <ConnectButton showBalance={false} />
+        </div>
         <h1 className="text-3xl font-semibold tracking-tight text-ink-900 sm:text-5xl">
           Test Yourself
         </h1>
@@ -233,5 +237,13 @@ export default function QuizPage() {
         </div>
       </footer>
     </main>
+  );
+}
+
+export default function QuizPage() {
+  return (
+    <InkWalletProvider>
+      <QuizContent />
+    </InkWalletProvider>
   );
 }

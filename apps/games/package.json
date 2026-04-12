@@ -10,6 +10,9 @@
     "clean": "rm -rf .next .turbo out"
   },
   "dependencies": {
+    "@inksuite/chain": "workspace:*",
+    "@inksuite/wallet": "workspace:*",
+    "viem": "^2.21.44",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

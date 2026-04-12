@@ -1,0 +1,7 @@
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://rpc-gel.inkonchain.com https://rpc-qnd.inkonchain.com https://explorer.inkonchain.com wss://rpc-gel.inkonchain.com wss://rpc-qnd.inkonchain.com https://*.walletconnect.com https://*.walletconnect.org https://walrus-mainnet.chainode.tech:9002 https://fonts.gstatic.com; img-src 'self' data: blob: https://*.walletconnect.com; font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; frame-ancestors 'none'
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()

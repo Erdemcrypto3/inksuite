@@ -1,9 +1,9 @@
 {
-  "name": "@inksuite/wallet-dashboard",
+  "name": "@inksuite/gm",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3101",
+    "dev": "next dev -p 3106",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -11,10 +11,11 @@
   },
   "dependencies": {
     "@inksuite/chain": "workspace:*",
+    "@inksuite/wallet": "workspace:*",
+    "viem": "^2.21.44",
     "next": "^15.1.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "viem": "^2.21.44"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
