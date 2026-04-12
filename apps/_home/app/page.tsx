@@ -67,6 +67,12 @@ const apps: AppCard[] = [
     status: 'planned',
   },
   {
+    title: 'Test Yourself',
+    description: 'Science & math quiz — Geometry, Math, Physics, Biology, Chemistry. 100 questions, achievements.',
+    subdomain: 'quiz',
+    status: 'live',
+  },
+  {
     title: 'Fantasy PL',
     description: 'Build your dream Premier League squad with a £100M budget. Live FPL data.',
     subdomain: 'fantasy',
