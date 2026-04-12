@@ -69,16 +69,16 @@ export function Hangman() {
       <div className="flex items-center gap-8">
         <HangmanSvg wrongCount={wrongCount} />
         <div className="text-right">
-          <div className="text-xs uppercase tracking-wider text-ink-100/40">Score</div>
-          <div className="font-mono text-3xl font-semibold text-ink-50">{score}</div>
-          <div className="mt-2 text-xs text-ink-100/40">Wrong: {wrongCount}/{MAX_WRONG}</div>
+          <div className="text-xs uppercase tracking-wider text-ink-500">Score</div>
+          <div className="font-mono text-3xl font-semibold text-ink-900">{score}</div>
+          <div className="mt-2 text-xs text-ink-500">Wrong: {wrongCount}/{MAX_WRONG}</div>
         </div>
       </div>
 
       <div className="flex gap-2 text-3xl font-mono tracking-widest">
         {word.split('').map((letter, i) => (
           <span key={i} className={`inline-block w-8 border-b-2 text-center ${
-            guessed.has(letter) ? 'text-white border-emerald-400' : gameOver ? 'text-red-300 border-red-400' : 'text-transparent border-slate-500'
+            guessed.has(letter) ? 'text-ink-900 border-emerald-400' : gameOver ? 'text-red-500 border-red-400' : 'text-transparent border-purple-300'
           }`}>
             {guessed.has(letter) || gameOver ? letter : '_'}
           </span>
@@ -106,8 +106,8 @@ export function Hangman() {
               className={`h-10 w-10 rounded-lg text-sm font-semibold transition ${
                 isCorrect ? 'bg-emerald-500/30 text-emerald-300 ring-1 ring-emerald-500/50' :
                 isWrong ? 'bg-red-500/20 text-red-300/50 ring-1 ring-red-500/30' :
-                isGuessed || gameOver ? 'bg-white/5 text-ink-100/20 cursor-not-allowed' :
-                'bg-white/5 text-ink-50 ring-1 ring-white/10 hover:bg-ink-500/20 hover:ring-ink-500/50'
+                isGuessed || gameOver ? 'bg-purple-50/50 text-ink-300 cursor-not-allowed' :
+                'bg-white text-ink-900 ring-1 ring-purple-200 hover:bg-purple-100 hover:ring-ink-500'
               }`}
             >
               {letter}
@@ -137,17 +137,17 @@ function HangmanSvg({ wrongCount }: { wrongCount: number }) {
       <line x1="30" y1="10" x2="80" y2="10" stroke="#7538F5" strokeWidth="3" />
       <line x1="80" y1="10" x2="80" y2="30" stroke="#7538F5" strokeWidth="3" />
       {/* head */}
-      {wrongCount >= 1 && <circle cx="80" cy="42" r="12" fill="none" stroke="#f0f4ff" strokeWidth="2" />}
+      {wrongCount >= 1 && <circle cx="80" cy="42" r="12" fill="none" stroke="#3b1d6e" strokeWidth="2" />}
       {/* body */}
-      {wrongCount >= 2 && <line x1="80" y1="54" x2="80" y2="90" stroke="#f0f4ff" strokeWidth="2" />}
+      {wrongCount >= 2 && <line x1="80" y1="54" x2="80" y2="90" stroke="#3b1d6e" strokeWidth="2" />}
       {/* left arm */}
-      {wrongCount >= 3 && <line x1="80" y1="65" x2="60" y2="80" stroke="#f0f4ff" strokeWidth="2" />}
+      {wrongCount >= 3 && <line x1="80" y1="65" x2="60" y2="80" stroke="#3b1d6e" strokeWidth="2" />}
       {/* right arm */}
-      {wrongCount >= 4 && <line x1="80" y1="65" x2="100" y2="80" stroke="#f0f4ff" strokeWidth="2" />}
+      {wrongCount >= 4 && <line x1="80" y1="65" x2="100" y2="80" stroke="#3b1d6e" strokeWidth="2" />}
       {/* left leg */}
-      {wrongCount >= 5 && <line x1="80" y1="90" x2="60" y2="115" stroke="#f0f4ff" strokeWidth="2" />}
+      {wrongCount >= 5 && <line x1="80" y1="90" x2="60" y2="115" stroke="#3b1d6e" strokeWidth="2" />}
       {/* right leg */}
-      {wrongCount >= 6 && <line x1="80" y1="90" x2="100" y2="115" stroke="#f0f4ff" strokeWidth="2" />}
+      {wrongCount >= 6 && <line x1="80" y1="90" x2="100" y2="115" stroke="#3b1d6e" strokeWidth="2" />}
     </svg>
   );
 }

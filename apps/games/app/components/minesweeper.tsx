@@ -134,15 +134,15 @@ export function Minesweeper() {
 
   return (
     <div className="flex flex-col items-center gap-6">
-      <div className="flex items-center gap-6 text-sm text-ink-100/60">
-        <span>Mines: <span className="font-mono text-ink-50">{MINES - flagCount}</span></span>
+      <div className="flex items-center gap-6 text-sm text-ink-700">
+        <span>Mines: <span className="font-mono text-ink-900">{MINES - flagCount}</span></span>
         <span>Grid: {ROWS}×{COLS}</span>
         {status === 'won' && <span className="text-emerald-300 font-semibold">Won! Score: {score}</span>}
         {status === 'lost' && <span className="text-red-300 font-semibold">Mine hit!</span>}
       </div>
 
       <div
-        className="inline-grid gap-0.5 rounded-lg bg-slate-200 p-2 ring-1 ring-inset ring-slate-300 shadow-lg"
+        className="inline-grid gap-0.5 rounded-lg bg-purple-100 p-2 ring-1 ring-inset ring-purple-200 shadow-lg"
         style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}
         onContextMenu={(e) => e.preventDefault()}
       >
@@ -166,7 +166,7 @@ export function Minesweeper() {
                       : 'bg-white text-gray-800'
                     : flagged
                     ? 'bg-amber-300 text-amber-800'
-                    : 'bg-slate-400 hover:bg-slate-300 cursor-pointer shadow-sm'
+                    : 'bg-purple-300 hover:bg-purple-200 cursor-pointer shadow-sm'
                 } rounded-sm`}
               >
                 {revealed
@@ -185,7 +185,7 @@ export function Minesweeper() {
       </div>
 
       {!board && (
-        <p className="text-sm text-ink-100/40">Click any cell to start. Right-click to flag.</p>
+        <p className="text-sm text-ink-500">Click any cell to start. Right-click to flag.</p>
       )}
 
       {(status === 'won' || status === 'lost') && (

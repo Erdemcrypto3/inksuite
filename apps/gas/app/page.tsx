@@ -83,43 +83,43 @@ export default function GasTrackerPage() {
       <header className="mb-12">
         <a
           href="https://inksuite.xyz"
-          className="mb-4 inline-flex items-center gap-1 text-sm text-ink-100/50 hover:text-ink-500"
+          className="mb-4 inline-flex items-center gap-1 text-sm text-ink-600 hover:text-ink-500"
         >
           ← inksuite.xyz
         </a>
-        <h1 className="text-3xl font-semibold tracking-tight text-ink-50 sm:text-5xl">
+        <h1 className="text-3xl font-semibold tracking-tight text-ink-900 sm:text-5xl">
           Ink Gas Tracker
         </h1>
-        <p className="mt-4 max-w-2xl text-base leading-relaxed text-ink-100/60">
+        <p className="mt-4 max-w-2xl text-base leading-relaxed text-ink-700">
           Live gas price, base fee, and the most recent {HISTORY_LIMIT} samples for Ink mainnet.
           Polls every {POLL_MS / 1000}s directly from the chain — no backend, nothing cached.
         </p>
       </header>
 
       <section className="mb-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl bg-white/5 p-6 ring-1 ring-inset ring-white/10">
-          <div className="text-xs font-semibold uppercase tracking-wider text-ink-100/40">
+        <div className="rounded-xl bg-white p-6 ring-1 ring-inset ring-purple-100 shadow-sm">
+          <div className="text-xs font-semibold uppercase tracking-wider text-ink-500">
             Gas price
           </div>
-          <div className="mt-3 font-mono text-3xl font-semibold text-ink-50">
+          <div className="mt-3 font-mono text-3xl font-semibold text-ink-900">
             {latest ? formatGweiShort(latest.gasPriceWei) : '—'}
-            <span className="ml-2 text-sm font-normal text-ink-100/40">gwei</span>
+            <span className="ml-2 text-sm font-normal text-ink-500">gwei</span>
           </div>
         </div>
-        <div className="rounded-xl bg-white/5 p-6 ring-1 ring-inset ring-white/10">
-          <div className="text-xs font-semibold uppercase tracking-wider text-ink-100/40">
+        <div className="rounded-xl bg-white p-6 ring-1 ring-inset ring-purple-100 shadow-sm">
+          <div className="text-xs font-semibold uppercase tracking-wider text-ink-500">
             Base fee
           </div>
-          <div className="mt-3 font-mono text-3xl font-semibold text-ink-50">
+          <div className="mt-3 font-mono text-3xl font-semibold text-ink-900">
             {latest ? formatGweiShort(latest.baseFeeWei) : '—'}
-            <span className="ml-2 text-sm font-normal text-ink-100/40">gwei</span>
+            <span className="ml-2 text-sm font-normal text-ink-500">gwei</span>
           </div>
         </div>
-        <div className="rounded-xl bg-white/5 p-6 ring-1 ring-inset ring-white/10">
-          <div className="text-xs font-semibold uppercase tracking-wider text-ink-100/40">
+        <div className="rounded-xl bg-white p-6 ring-1 ring-inset ring-purple-100 shadow-sm">
+          <div className="text-xs font-semibold uppercase tracking-wider text-ink-500">
             Latest block
           </div>
-          <div className="mt-3 font-mono text-3xl font-semibold text-ink-50">
+          <div className="mt-3 font-mono text-3xl font-semibold text-ink-900">
             {latest ? `#${latest.blockNumber.toString()}` : '—'}
           </div>
           {latest && (
@@ -127,7 +127,7 @@ export default function GasTrackerPage() {
               href={`${EXPLORER_URL}/block/${latest.blockNumber.toString()}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 inline-block text-xs text-ink-100/40 hover:text-ink-500"
+              className="mt-2 inline-block text-xs text-ink-500 hover:text-ink-500"
             >
               view on explorer →
             </a>
@@ -136,18 +136,18 @@ export default function GasTrackerPage() {
       </section>
 
       {error && (
-        <div className="mb-8 rounded-lg bg-red-500/10 p-4 text-sm text-red-300 ring-1 ring-inset ring-red-500/30">
+        <div className="mb-8 rounded-lg bg-red-500/10 p-4 text-sm text-red-600 ring-1 ring-inset ring-red-500/30">
           <strong>RPC error:</strong> {error}
         </div>
       )}
 
       <section>
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-ink-100/50">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-ink-600">
           Recent samples
         </h2>
-        <div className="overflow-hidden rounded-xl bg-white/5 ring-1 ring-inset ring-white/10">
+        <div className="overflow-hidden rounded-xl bg-white ring-1 ring-inset ring-purple-100 shadow-sm">
           <table className="w-full text-sm">
-            <thead className="border-b border-white/10 text-xs uppercase tracking-wider text-ink-100/40">
+            <thead className="border-b border-purple-200 text-xs uppercase tracking-wider text-ink-500">
               <tr>
                 <th className="px-4 py-3 text-left font-medium">When</th>
                 <th className="px-4 py-3 text-left font-medium">Block</th>
@@ -155,22 +155,22 @@ export default function GasTrackerPage() {
                 <th className="px-4 py-3 text-right font-medium">Base fee (gwei)</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 font-mono">
+            <tbody className="divide-y divide-purple-100 font-mono">
               {reversed.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-ink-100/40">
+                  <td colSpan={4} className="px-4 py-8 text-center text-ink-500">
                     Fetching first sample…
                   </td>
                 </tr>
               ) : (
                 reversed.map((s, i) => (
-                  <tr key={`${s.blockNumber}-${i}`} className="hover:bg-white/5">
-                    <td className="px-4 py-3 text-ink-100/70">{relativeTime(s.at, now)}</td>
-                    <td className="px-4 py-3 text-ink-100/70">#{s.blockNumber.toString()}</td>
-                    <td className="px-4 py-3 text-right text-ink-50">
+                  <tr key={`${s.blockNumber}-${i}`} className="hover:bg-purple-50">
+                    <td className="px-4 py-3 text-ink-700">{relativeTime(s.at, now)}</td>
+                    <td className="px-4 py-3 text-ink-700">#{s.blockNumber.toString()}</td>
+                    <td className="px-4 py-3 text-right text-ink-900">
                       {formatGweiShort(s.gasPriceWei)}
                     </td>
-                    <td className="px-4 py-3 text-right text-ink-100/60">
+                    <td className="px-4 py-3 text-right text-ink-700">
                       {formatGweiShort(s.baseFeeWei)}
                     </td>
                   </tr>
@@ -181,7 +181,7 @@ export default function GasTrackerPage() {
         </div>
       </section>
 
-      <footer className="mt-16 border-t border-white/10 pt-8 text-sm text-ink-100/40">
+      <footer className="mt-16 border-t border-purple-200 pt-8 text-sm text-ink-500">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <span>Part of Ink Suite · MIT license</span>
           <a

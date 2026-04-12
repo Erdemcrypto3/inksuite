@@ -31,14 +31,14 @@ export default function WalletDashboardPage() {
       <header className="mb-10">
         <a
           href="https://inksuite.xyz"
-          className="mb-4 inline-flex items-center gap-1 text-sm text-ink-100/50 hover:text-ink-500"
+          className="mb-4 inline-flex items-center gap-1 text-sm text-ink-600 hover:text-ink-500"
         >
           ← inksuite.xyz
         </a>
-        <h1 className="text-3xl font-semibold tracking-tight text-ink-50 sm:text-5xl">
+        <h1 className="text-3xl font-semibold tracking-tight text-ink-900 sm:text-5xl">
           Wallet Dashboard
         </h1>
-        <p className="mt-4 max-w-2xl text-base leading-relaxed text-ink-100/60">
+        <p className="mt-4 max-w-2xl text-base leading-relaxed text-ink-700">
           Enter any Ink wallet address to see activity, gas usage, token balances, and NFT
           holdings. All data pulled live from Ink mainnet — no tracking, no backend.
         </p>
@@ -52,7 +52,7 @@ export default function WalletDashboardPage() {
           placeholder="0x…"
           spellCheck={false}
           autoComplete="off"
-          className="flex-1 rounded-lg bg-white/5 px-4 py-3 font-mono text-sm text-ink-50 ring-1 ring-inset ring-white/10 placeholder:text-ink-100/30 focus:outline-none focus:ring-2 focus:ring-ink-500"
+          className="flex-1 rounded-lg bg-white px-4 py-3 font-mono text-sm text-ink-900 ring-1 ring-inset ring-purple-200 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-ink-500 shadow-sm"
         />
         <button
           type="submit"
@@ -63,16 +63,16 @@ export default function WalletDashboardPage() {
       </form>
 
       {error && (
-        <div className="mb-8 rounded-lg bg-red-500/10 p-4 text-sm text-red-300 ring-1 ring-inset ring-red-500/30">
+        <div className="mb-8 rounded-lg bg-red-500/10 p-4 text-sm text-red-600 ring-1 ring-inset ring-red-500/30">
           <strong>Error:</strong> {error}
         </div>
       )}
 
       {address && (
         <>
-          <div className="mb-6 flex flex-wrap items-center gap-2 text-sm text-ink-100/60">
+          <div className="mb-6 flex flex-wrap items-center gap-2 text-sm text-ink-700">
             <span>Analyzing</span>
-            <code className="rounded bg-white/5 px-2 py-1 font-mono text-ink-50 ring-1 ring-inset ring-white/10">
+            <code className="rounded bg-white px-2 py-1 font-mono text-ink-900 ring-1 ring-inset ring-purple-200 shadow-sm">
               {address}
             </code>
             <a
@@ -85,7 +85,7 @@ export default function WalletDashboardPage() {
             </a>
           </div>
 
-          <div className="mb-8 flex gap-1 rounded-lg bg-white/5 p-1 ring-1 ring-inset ring-white/10">
+          <div className="mb-8 flex gap-1 rounded-lg bg-purple-50/50 p-1 ring-1 ring-inset ring-purple-100">
             {(['activity', 'portfolio'] as MainTab[]).map((tab) => (
               <button
                 key={tab}
@@ -93,7 +93,7 @@ export default function WalletDashboardPage() {
                 className={`flex-1 rounded-md px-4 py-2.5 text-sm font-semibold transition ${
                   activeTab === tab
                     ? 'bg-ink-500 text-white shadow-sm'
-                    : 'text-ink-100/50 hover:bg-white/5 hover:text-ink-100'
+                    : 'text-ink-600 hover:bg-purple-50 hover:text-ink-800'
                 }`}
               >
                 {tab === 'activity' ? 'Activity' : 'Portfolio'}
@@ -106,7 +106,7 @@ export default function WalletDashboardPage() {
         </>
       )}
 
-      <footer className="mt-16 border-t border-white/10 pt-8 text-sm text-ink-100/40">
+      <footer className="mt-16 border-t border-purple-200 pt-8 text-sm text-ink-500">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <span>Part of Ink Suite · MIT license</span>
           <a

@@ -85,9 +85,9 @@ export function PortfolioTab({ address }: { address: Address }) {
     return () => { cancelled = true; };
   }, [address]);
 
-  if (loading) return <div className="py-12 text-center text-ink-100/50">Loading portfolio…</div>;
+  if (loading) return <div className="py-12 text-center text-ink-600">Loading portfolio…</div>;
   if (error) return (
-    <div className="rounded-lg bg-red-500/10 p-4 text-sm text-red-300 ring-1 ring-inset ring-red-500/30">
+    <div className="rounded-lg bg-red-500/10 p-4 text-sm text-red-600 ring-1 ring-inset ring-red-500/30">
       <strong>Error:</strong> {error}
     </div>
   );
@@ -95,7 +95,7 @@ export function PortfolioTab({ address }: { address: Address }) {
 
   return (
     <>
-      <div className="mb-6 flex gap-1 rounded-lg bg-white/5 p-1 ring-1 ring-inset ring-white/10">
+      <div className="mb-6 flex gap-1 rounded-lg bg-purple-50/50 p-1 ring-1 ring-inset ring-purple-100">
         {(['overview', 'tokens', 'nfts'] as SubTab[]).map((tab) => (
           <button
             key={tab}
@@ -103,7 +103,7 @@ export function PortfolioTab({ address }: { address: Address }) {
             className={`flex-1 rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-wider transition ${
               subTab === tab
                 ? 'bg-ink-500 text-white shadow-sm'
-                : 'text-ink-100/50 hover:bg-white/5 hover:text-ink-100'
+                : 'text-ink-600 hover:bg-purple-50 hover:text-ink-800'
             }`}
           >
             {tab === 'overview' ? 'Overview' : tab === 'tokens' ? `Tokens (${data.erc20Tokens.length})` : `NFTs (${data.nftTokens.length})`}
@@ -122,23 +122,23 @@ export function PortfolioTab({ address }: { address: Address }) {
 
           {data.erc20Tokens.length > 0 && (
             <section className="mb-6">
-              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-ink-100/50">Top tokens</h3>
-              <div className="overflow-hidden rounded-xl bg-white/5 ring-1 ring-inset ring-white/10">
+              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-ink-600">Top tokens</h3>
+              <div className="overflow-hidden rounded-xl bg-white ring-1 ring-inset ring-purple-100 shadow-sm">
                 <table className="w-full text-sm">
-                  <thead className="border-b border-white/10 text-xs uppercase tracking-wider text-ink-100/40">
+                  <thead className="border-b border-purple-200 text-xs uppercase tracking-wider text-ink-500">
                     <tr>
                       <th className="px-4 py-3 text-left font-medium">Token</th>
                       <th className="px-4 py-3 text-right font-medium">Balance</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5">
+                  <tbody className="divide-y divide-purple-100">
                     {data.erc20Tokens.slice(0, 5).map((t) => (
-                      <tr key={t.contractAddress} className="hover:bg-white/5">
+                      <tr key={t.contractAddress} className="hover:bg-purple-50">
                         <td className="px-4 py-3">
-                          <span className="font-semibold text-ink-50">{t.symbol || '?'}</span>
-                          <span className="ml-2 text-ink-100/40">{t.name || 'Unknown'}</span>
+                          <span className="font-semibold text-ink-900">{t.symbol || '?'}</span>
+                          <span className="ml-2 text-ink-500">{t.name || 'Unknown'}</span>
                         </td>
-                        <td className="px-4 py-3 text-right font-mono text-ink-50">
+                        <td className="px-4 py-3 text-right font-mono text-ink-900">
                           {formatBalance(t.balance, t.decimals)}
                         </td>
                       </tr>
@@ -153,21 +153,21 @@ export function PortfolioTab({ address }: { address: Address }) {
 
       {subTab === 'tokens' && (
         <section>
-          <div className="mb-4 rounded-xl bg-white/5 p-5 ring-1 ring-inset ring-white/10">
+          <div className="mb-4 rounded-xl bg-white p-5 ring-1 ring-inset ring-purple-100 shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-ink-100/60">Native ETH</span>
-              <span className="font-mono text-lg font-semibold text-ink-50">
-                {formatEthBalance(data.ethBalanceWei)} <span className="text-sm font-normal text-ink-100/40">ETH</span>
+              <span className="text-sm text-ink-700">Native ETH</span>
+              <span className="font-mono text-lg font-semibold text-ink-900">
+                {formatEthBalance(data.ethBalanceWei)} <span className="text-sm font-normal text-ink-500">ETH</span>
               </span>
             </div>
           </div>
 
           {data.erc20Tokens.length === 0 ? (
-            <div className="py-12 text-center text-ink-100/40">No ERC-20 tokens found for this address.</div>
+            <div className="py-12 text-center text-ink-500">No ERC-20 tokens found for this address.</div>
           ) : (
-            <div className="overflow-hidden rounded-xl bg-white/5 ring-1 ring-inset ring-white/10">
+            <div className="overflow-hidden rounded-xl bg-white ring-1 ring-inset ring-purple-100 shadow-sm">
               <table className="w-full text-sm">
-                <thead className="border-b border-white/10 text-xs uppercase tracking-wider text-ink-100/40">
+                <thead className="border-b border-purple-200 text-xs uppercase tracking-wider text-ink-500">
                   <tr>
                     <th className="px-4 py-3 text-left font-medium">Token</th>
                     <th className="px-4 py-3 text-left font-medium">Contract</th>
@@ -175,15 +175,15 @@ export function PortfolioTab({ address }: { address: Address }) {
                     <th className="px-4 py-3 text-right font-medium">Explorer</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-purple-100">
                   {data.erc20Tokens.map((t) => (
-                    <tr key={t.contractAddress} className="hover:bg-white/5">
+                    <tr key={t.contractAddress} className="hover:bg-purple-50">
                       <td className="px-4 py-3">
-                        <span className="font-semibold text-ink-50">{t.symbol || '?'}</span>
-                        <span className="ml-2 text-ink-100/40">{t.name || 'Unknown'}</span>
+                        <span className="font-semibold text-ink-900">{t.symbol || '?'}</span>
+                        <span className="ml-2 text-ink-500">{t.name || 'Unknown'}</span>
                       </td>
-                      <td className="px-4 py-3 font-mono text-xs text-ink-100/50">{shortAddress(t.contractAddress)}</td>
-                      <td className="px-4 py-3 text-right font-mono text-ink-50">{formatBalance(t.balance, t.decimals)}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-ink-600">{shortAddress(t.contractAddress)}</td>
+                      <td className="px-4 py-3 text-right font-mono text-ink-900">{formatBalance(t.balance, t.decimals)}</td>
                       <td className="px-4 py-3 text-right">
                         <a href={`${EXPLORER_URL}/token/${t.contractAddress}`} target="_blank" rel="noopener noreferrer" className="text-ink-500 hover:underline">open →</a>
                       </td>
@@ -199,25 +199,25 @@ export function PortfolioTab({ address }: { address: Address }) {
       {subTab === 'nfts' && (
         <section>
           {data.nftTokens.length === 0 ? (
-            <div className="py-12 text-center text-ink-100/40">No NFTs found for this address.</div>
+            <div className="py-12 text-center text-ink-500">No NFTs found for this address.</div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {data.nftTokens.map((t) => (
                 <div
                   key={`${t.contractAddress}-${t.balance}`}
-                  className="rounded-xl bg-white/5 p-5 ring-1 ring-inset ring-white/10"
+                  className="rounded-xl bg-white p-5 ring-1 ring-inset ring-purple-100 shadow-sm"
                 >
                   <div className="mb-2 flex items-start justify-between gap-2">
                     <div>
-                      <div className="font-semibold text-ink-50">{t.name || 'Unknown NFT'}</div>
-                      <div className="text-xs text-ink-100/40">{t.symbol || '—'} · {t.type}</div>
+                      <div className="font-semibold text-ink-900">{t.name || 'Unknown NFT'}</div>
+                      <div className="text-xs text-ink-500">{t.symbol || '—'} · {t.type}</div>
                     </div>
-                    <span className="inline-flex items-center rounded-full bg-ink-500/10 px-2 py-0.5 text-xs font-medium text-ink-100 ring-1 ring-inset ring-ink-500/30">
+                    <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-ink-700 ring-1 ring-inset ring-purple-300">
                       ×{t.balance || '1'}
                     </span>
                   </div>
                   <div className="mt-3 flex items-center justify-between">
-                    <span className="font-mono text-xs text-ink-100/40">{shortAddress(t.contractAddress)}</span>
+                    <span className="font-mono text-xs text-ink-500">{shortAddress(t.contractAddress)}</span>
                     <a href={`${EXPLORER_URL}/token/${t.contractAddress}`} target="_blank" rel="noopener noreferrer" className="text-xs text-ink-500 hover:underline">view →</a>
                   </div>
                 </div>

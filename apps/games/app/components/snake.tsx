@@ -47,10 +47,10 @@ export function Snake() {
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx) return;
     const size = GRID * CELL;
-    ctx.fillStyle = '#1e293b';
+    ctx.fillStyle = '#e8e0ff';
     ctx.fillRect(0, 0, size, size);
 
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.strokeStyle = 'rgba(100,50,150,0.1)';
     for (let i = 0; i <= GRID; i++) {
       ctx.beginPath(); ctx.moveTo(i * CELL, 0); ctx.lineTo(i * CELL, size); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(0, i * CELL); ctx.lineTo(size, i * CELL); ctx.stroke();
@@ -140,8 +140,8 @@ export function Snake() {
   return (
     <div className="flex flex-col items-center gap-6">
       <div className="flex items-center gap-6 text-sm">
-        <span className="text-ink-100/60">Score: <span className="font-mono text-ink-50">{score}</span></span>
-        <span className="text-ink-100/60">Best: <span className="font-mono text-ink-500">{highScore}</span></span>
+        <span className="text-ink-700">Score: <span className="font-mono text-ink-900">{score}</span></span>
+        <span className="text-ink-700">Best: <span className="font-mono text-ink-500">{highScore}</span></span>
       </div>
 
       <div className="relative">
@@ -149,19 +149,19 @@ export function Snake() {
           ref={canvasRef}
           width={size}
           height={size}
-          className="rounded-lg ring-1 ring-inset ring-white/10"
+          className="rounded-lg ring-1 ring-inset ring-purple-200"
         />
         {gameState === 'idle' && (
-          <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-ink-900/80">
+          <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-white/90">
             <button onClick={startGame} className="rounded-lg bg-ink-500 px-8 py-3 text-sm font-semibold text-white hover:bg-ink-700">
               Start Game
             </button>
           </div>
         )}
         {gameState === 'over' && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-lg bg-ink-900/80">
-            <div className="text-lg font-semibold text-red-300">Game Over</div>
-            <div className="font-mono text-2xl text-ink-50">{score} pts</div>
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-lg bg-white/90">
+            <div className="text-lg font-semibold text-red-500">Game Over</div>
+            <div className="font-mono text-2xl text-ink-900">{score} pts</div>
             <button onClick={startGame} className="rounded-lg bg-ink-500 px-8 py-3 text-sm font-semibold text-white hover:bg-ink-700">
               Play Again
             </button>
@@ -169,7 +169,7 @@ export function Snake() {
         )}
       </div>
 
-      <p className="text-xs text-ink-100/40">Arrow keys or WASD to move.</p>
+      <p className="text-xs text-ink-500">Arrow keys or WASD to move.</p>
     </div>
   );
 }

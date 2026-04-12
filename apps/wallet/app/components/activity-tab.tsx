@@ -164,9 +164,9 @@ export function ActivityTab({ address }: { address: Address }) {
     return () => { cancelled = true; };
   }, [address]);
 
-  if (loading) return <div className="py-12 text-center text-ink-100/50">Loading activity…</div>;
+  if (loading) return <div className="py-12 text-center text-ink-600">Loading activity…</div>;
   if (error) return (
-    <div className="rounded-lg bg-red-500/10 p-4 text-sm text-red-300 ring-1 ring-inset ring-red-500/30">
+    <div className="rounded-lg bg-red-500/10 p-4 text-sm text-red-600 ring-1 ring-inset ring-red-500/30">
       <strong>Error:</strong> {error}
     </div>
   );
@@ -190,21 +190,21 @@ export function ActivityTab({ address }: { address: Address }) {
 
       {metrics.topContracts.length > 0 && (
         <section>
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-ink-100/50">Top contracts</h2>
-          <div className="overflow-hidden rounded-xl bg-white/5 ring-1 ring-inset ring-white/10">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-ink-600">Top contracts</h2>
+          <div className="overflow-hidden rounded-xl bg-white ring-1 ring-inset ring-purple-100 shadow-sm">
             <table className="w-full text-sm">
-              <thead className="border-b border-white/10 text-xs uppercase tracking-wider text-ink-100/40">
+              <thead className="border-b border-purple-200 text-xs uppercase tracking-wider text-ink-500">
                 <tr>
                   <th className="px-4 py-3 text-left font-medium">Contract</th>
                   <th className="px-4 py-3 text-right font-medium">Interactions</th>
                   <th className="px-4 py-3 text-right font-medium">Explorer</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5 font-mono">
+              <tbody className="divide-y divide-purple-100 font-mono">
                 {metrics.topContracts.map((c) => (
-                  <tr key={c.address} className="hover:bg-white/5">
-                    <td className="px-4 py-3 text-ink-50">{shortAddress(c.address)}</td>
-                    <td className="px-4 py-3 text-right text-ink-100/70">{c.txCount}</td>
+                  <tr key={c.address} className="hover:bg-purple-50">
+                    <td className="px-4 py-3 text-ink-900">{shortAddress(c.address)}</td>
+                    <td className="px-4 py-3 text-right text-ink-700">{c.txCount}</td>
                     <td className="px-4 py-3 text-right">
                       <a href={`https://explorer.inkonchain.com/address/${c.address}`} target="_blank" rel="noopener noreferrer" className="text-ink-500 hover:underline">open →</a>
                     </td>
