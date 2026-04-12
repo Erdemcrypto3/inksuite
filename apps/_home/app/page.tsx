@@ -67,6 +67,12 @@ const apps: AppCard[] = [
     status: 'planned',
   },
   {
+    title: 'Game Hub',
+    description: 'Classic browser games — Hangman, Minesweeper, Snake. Track your high scores.',
+    subdomain: 'games',
+    status: 'live',
+  },
+  {
     title: 'GM Widget',
     description: 'Daily on-chain gm with streak tracking.',
     subdomain: 'gm',
