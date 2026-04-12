@@ -55,8 +55,8 @@ const apps: AppCard[] = [
     status: 'live',
   },
   {
-    title: 'Wallet Activity',
-    description: 'Transactions, gas spent, and contracts touched for any Ink wallet.',
+    title: 'Wallet Dashboard',
+    description: 'Activity, gas spent, token balances, and NFTs for any Ink wallet.',
     subdomain: 'wallet',
     status: 'live',
   },
