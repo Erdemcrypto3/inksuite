@@ -8,9 +8,9 @@ type AppCard = {
 const apps: AppCard[] = [
   {
     title: 'Wallet Health',
-    description: 'Review approvals granted and revoke risky contracts.',
+    description: 'Check token approvals for any Ink wallet. Spot risky unlimited approvals, revoke via Revoke.cash.',
     subdomain: 'health',
-    status: 'planned',
+    status: 'live',
   },
   {
     title: 'Gas Tracker',
