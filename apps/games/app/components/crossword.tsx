@@ -45,9 +45,11 @@ function getWordCells(
   dir: Direction,
 ): [number, number][] {
   const cells: [number, number][] = [];
+  const rows = grid.length;
+  const cols = grid[0]?.length ?? 0;
   let r = row;
   let c = col;
-  while (r < 5 && c < 5 && grid[r][c] !== null) {
+  while (r < rows && c < cols && grid[r][c] !== null) {
     cells.push([r, c]);
     if (dir === 'across') c++;
     else r++;
@@ -94,9 +96,13 @@ function findClueForCell(
 
 export function Crossword() {
   const [puzzle, setPuzzle] = useState<CrosswordPuzzle>(() => pickPuzzle());
-  const [userGrid, setUserGrid] = useState<string[][]>(() => Array.from({ length: 5 }, () => Array(5).fill('')));
+  const rows = puzzle.grid.length;
+  const cols = puzzle.grid[0]?.length ?? 0;
+  // Smaller cells for larger grids
+  const cellSize = cols <= 5 ? 3 : cols <= 8 ? 2.5 : 2;
+  const [userGrid, setUserGrid] = useState<string[][]>(() => Array.from({ length: rows }, () => Array(cols).fill('')));
   const [cellStates, setCellStates] = useState<CellState[][]>(() =>
-    Array.from({ length: 5 }, () => Array(5).fill('idle' as CellState)),
+    Array.from({ length: rows }, () => Array(cols).fill('idle' as CellState)),
   );
   const [activeClue, setActiveClue] = useState<ActiveClue | null>(null);
   const [activeCell, setActiveCell] = useState<[number, number] | null>(null);
@@ -107,7 +113,7 @@ export function Crossword() {
 
   const clueCells = buildClueCells(puzzle);
   const inputRefs = useRef<(HTMLInputElement | null)[][]>(
-    Array.from({ length: 5 }, () => Array(5).fill(null)),
+    Array.from({ length: rows }, () => Array(cols).fill(null)),
   );
 
   // Load high score on mount
@@ -235,7 +241,7 @@ export function Crossword() {
       if (e.key === 'ArrowRight') {
         e.preventDefault();
         selectClue('across', activeClue?.number ?? puzzle.clues.across[0]?.number ?? 1, false);
-        if (col < 4 && puzzle.grid[row][col + 1] !== null) {
+        if (col < cols - 1 && puzzle.grid[row][col + 1] !== null) {
           setActiveCell([row, col + 1]);
           focusCell(row, col + 1);
         }
@@ -251,7 +257,7 @@ export function Crossword() {
       }
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        if (row < 4 && puzzle.grid[row + 1][col] !== null) {
+        if (row < rows - 1 && puzzle.grid[row + 1]?.[col] !== null) {
           setActiveCell([row + 1, col]);
           focusCell(row + 1, col);
         }
@@ -259,7 +265,7 @@ export function Crossword() {
       }
       if (e.key === 'ArrowUp') {
         e.preventDefault();
-        if (row > 0 && puzzle.grid[row - 1][col] !== null) {
+        if (row > 0 && puzzle.grid[row - 1]?.[col] !== null) {
           setActiveCell([row - 1, col]);
           focusCell(row - 1, col);
         }
@@ -273,10 +279,10 @@ export function Crossword() {
   const handleCheck = useCallback(() => {
     setChecked(true);
     let allCorrect = true;
-    const nextStates: CellState[][] = Array.from({ length: 5 }, () => Array(5).fill('idle' as CellState));
+    const nextStates: CellState[][] = Array.from({ length: rows }, () => Array(cols).fill('idle' as CellState));
 
-    for (let r = 0; r < 5; r++) {
-      for (let c = 0; c < 5; c++) {
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
         if (puzzle.grid[r][c] === null) continue;
         const entered = userGrid[r][c];
         if (!entered) {
@@ -299,7 +305,7 @@ export function Crossword() {
       setHighScore(next);
       setHighScoreState(getHighScore());
     }
-  }, [puzzle, userGrid, completed]);
+  }, [puzzle, userGrid, completed, rows, cols]);
 
   // Reveal all answers
   const handleReveal = useCallback(() => {
@@ -316,9 +322,11 @@ export function Crossword() {
   // Load a new puzzle
   const handleNewPuzzle = useCallback(() => {
     const next = pickPuzzle(puzzle.id);
+    const newRows = next.grid.length;
+    const newCols = next.grid[0]?.length ?? 0;
     setPuzzle(next);
-    setUserGrid(Array.from({ length: 5 }, () => Array(5).fill('')));
-    setCellStates(Array.from({ length: 5 }, () => Array(5).fill('idle' as CellState)));
+    setUserGrid(Array.from({ length: newRows }, () => Array(newCols).fill('')));
+    setCellStates(Array.from({ length: newRows }, () => Array(newCols).fill('idle' as CellState)));
     setActiveClue(null);
     setActiveCell(null);
     setRevealed(false);
@@ -371,6 +379,10 @@ export function Crossword() {
           <div className="text-xs uppercase tracking-wider text-ink-500">Puzzles Solved</div>
           <div className="font-mono text-2xl font-semibold text-ink-900">{completed}</div>
         </div>
+        <div className="text-center">
+          <div className="text-sm font-semibold text-ink-700">{puzzle.title}</div>
+          <div className="text-xs text-ink-400">#{puzzle.id}</div>
+        </div>
         <div className="text-right">
           <div className="text-xs uppercase tracking-wider text-ink-500">Best</div>
           <div className="font-mono text-2xl font-semibold text-ink-900">{highScore}</div>
@@ -380,13 +392,16 @@ export function Crossword() {
       {/* Main layout: grid + clues */}
       <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
         {/* Grid */}
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 overflow-x-auto">
           <div
             className="inline-grid gap-0.5"
-            style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', width: 'calc(5 * 3rem + 4 * 2px)' }}
+            style={{
+              gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+              width: `calc(${cols} * ${cellSize}rem + ${cols - 1} * 2px)`,
+            }}
           >
-            {Array.from({ length: 5 }, (_, row) =>
-              Array.from({ length: 5 }, (_, col) => {
+            {Array.from({ length: rows }, (_, row) =>
+              Array.from({ length: cols }, (_, col) => {
                 const isBlack = puzzle.grid[row][col] === null;
                 const num = cellNumber(row, col);
                 const highlight = isCellHighlighted(row, col);
@@ -396,7 +411,8 @@ export function Crossword() {
                   return (
                     <div
                       key={`${row}-${col}`}
-                      className="h-12 w-12 bg-ink-900 rounded-sm"
+                      className="bg-ink-900 rounded-sm"
+                      style={{ height: `${cellSize}rem`, width: `${cellSize}rem` }}
                     />
                   );
                 }
@@ -404,17 +420,18 @@ export function Crossword() {
                 return (
                   <div
                     key={`${row}-${col}`}
-                    className={`relative h-12 w-12 rounded-sm ring-1 ${
+                    className={`relative rounded-sm ring-1 ${
                       active
                         ? 'ring-2 ring-ink-500'
                         : highlight
                         ? 'ring-purple-300'
                         : 'ring-purple-200'
                     } ${cellBg(row, col)} cursor-pointer transition-colors`}
+                    style={{ height: `${cellSize}rem`, width: `${cellSize}rem` }}
                     onClick={() => handleCellClick(row, col)}
                   >
                     {num !== null && (
-                      <span className="absolute left-0.5 top-0.5 text-[8px] font-semibold leading-none text-ink-500 select-none">
+                      <span className="absolute left-0.5 top-0.5 text-[7px] font-semibold leading-none text-ink-500 select-none">
                         {num}
                       </span>
                     )}
@@ -425,12 +442,14 @@ export function Crossword() {
                       }}
                       type="text"
                       maxLength={1}
-                      value={userGrid[row][col]}
+                      value={userGrid[row]?.[col] ?? ''}
                       readOnly={revealed}
-                      className={`h-full w-full bg-transparent text-center text-base font-semibold uppercase caret-transparent outline-none select-none ${
-                        cellStates[row][col] === 'correct'
+                      className={`h-full w-full bg-transparent text-center font-semibold uppercase caret-transparent outline-none select-none ${
+                        cols > 8 ? 'text-xs' : 'text-base'
+                      } ${
+                        cellStates[row]?.[col] === 'correct'
                           ? 'text-emerald-700'
-                          : cellStates[row][col] === 'incorrect'
+                          : cellStates[row]?.[col] === 'incorrect'
                           ? 'text-red-600'
                           : 'text-ink-900'
                       } ${num !== null ? 'pt-2' : ''}`}
@@ -483,31 +502,30 @@ export function Crossword() {
           </div>
 
           {/* Feedback banner */}
-          {checked && !revealed && (
-            <div
-              className={`mt-3 rounded-lg px-4 py-2 text-sm font-semibold ${
-                cellStates.flat().filter((_, i) => {
-                  const r = Math.floor(i / 5);
-                  const c = i % 5;
-                  return puzzle.grid[r][c] !== null;
-                }).every((s) => s === 'correct')
-                  ? 'bg-emerald-500/20 text-emerald-700'
-                  : 'bg-red-500/10 text-red-600'
-              }`}
-            >
-              {cellStates.flat().filter((_, i) => {
-                const r = Math.floor(i / 5);
-                const c = i % 5;
-                return puzzle.grid[r][c] !== null;
-              }).every((s) => s === 'correct')
-                ? `Puzzle solved! Total solved: ${completed}`
-                : 'Some answers are incorrect — highlighted in red.'}
-            </div>
-          )}
+          {checked && !revealed && (() => {
+            const allCorrect = cellStates.flat().filter((_, i) => {
+              const r = Math.floor(i / cols);
+              const c = i % cols;
+              return puzzle.grid[r]?.[c] !== null;
+            }).every((s) => s === 'correct');
+            return (
+              <div
+                className={`mt-3 rounded-lg px-4 py-2 text-sm font-semibold ${
+                  allCorrect
+                    ? 'bg-emerald-500/20 text-emerald-700'
+                    : 'bg-red-500/10 text-red-600'
+                }`}
+              >
+                {allCorrect
+                  ? `Puzzle solved! Total solved: ${completed}`
+                  : 'Some answers are incorrect — highlighted in red.'}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Clues panel */}
-        <div className="flex-1 space-y-4 min-w-0">
+        <div className="flex-1 space-y-4 min-w-0 sm:max-h-[30rem] sm:overflow-y-auto sm:pr-2">
           {/* Across clues */}
           <div>
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-500">Across</h3>
@@ -535,6 +553,7 @@ export function Crossword() {
           </div>
 
           {/* Down clues */}
+          {puzzle.clues.down.length > 0 && (
           <div>
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-500">Down</h3>
             <ul className="space-y-1">
@@ -559,6 +578,7 @@ export function Crossword() {
               })}
             </ul>
           </div>
+          )}
 
           {/* Active clue highlight */}
           {activeClue && (
