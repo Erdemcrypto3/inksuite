@@ -1,12 +1,16 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import type { FplPlayer, FplTeam, FplData, Position } from './components/types';
+import type { FplPlayer, FplTeam, Position } from './components/types';
 import { POSITION_MAP, SQUAD_STRUCTURE, BUDGET, MAX_PER_TEAM } from './components/types';
 import { PlayerPicker } from './components/player-picker';
 import { SquadView } from './components/squad-view';
 
-const FPL_API = 'https://fantasy.premierleague.com/api/bootstrap-static/';
+type FplData = {
+  elements: FplPlayer[];
+  teams: FplTeam[];
+  fetched_at: string;
+};
 
 function loadSquad(): FplPlayer[] {
   if (typeof window === 'undefined') return [];
@@ -27,28 +31,23 @@ export default function FantasyPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [squad, setSquad] = useState<FplPlayer[]>([]);
-  const [filterPosition, setFilterPosition] = useState<Position | null>(null);
 
   useEffect(() => {
     setLoading(true);
-    fetch(FPL_API)
-      .then((r) => {
-        if (!r.ok) throw new Error(`FPL API HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((d: FplData) => {
+    import('./data/fpl.json')
+      .then((mod) => {
+        const d = mod.default as FplData;
         setData(d);
-        // Restore saved squad using fresh API data
         const saved = loadSquad();
         if (saved.length > 0) {
-          const idMap = new Map(d.elements.map((p) => [p.id, p]));
+          const idMap = new Map(d.elements.map((p: FplPlayer) => [p.id, p]));
           const restored = saved
-            .map((s) => idMap.get(s.id))
-            .filter((p): p is FplPlayer => p !== undefined);
+            .map((s: FplPlayer) => idMap.get(s.id))
+            .filter((p: FplPlayer | undefined): p is FplPlayer => p !== undefined);
           setSquad(restored);
         }
       })
-      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load FPL data'))
+      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load player data'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -100,9 +99,6 @@ export default function FantasyPage() {
       <main className="mx-auto max-w-7xl px-6 py-16">
         <div className="rounded-lg bg-red-50 p-6 text-center text-red-700 ring-1 ring-inset ring-red-300">
           <strong>Error:</strong> {error || 'No data available'}
-          <p className="mt-2 text-sm text-red-500">
-            The FPL API may be unavailable. Try refreshing in a moment.
-          </p>
         </div>
       </main>
     );
@@ -122,7 +118,10 @@ export default function FantasyPage() {
         </h1>
         <p className="mt-3 max-w-2xl text-base leading-relaxed text-ink-700">
           Build your dream 15-player squad with a £100M budget. Max 3 players from one club.
-          {data.elements.length} players from {data.teams.length} teams available. Data live from FPL API.
+          {' '}{data.elements.length} players available. Data updated at build time.
+        </p>
+        <p className="mt-1 text-xs text-ink-400">
+          Last data fetch: {new Date(data.fetched_at).toLocaleString()}
         </p>
       </header>
 
@@ -136,7 +135,7 @@ export default function FantasyPage() {
             teams={data.teams}
             squad={squad}
             budget={budget}
-            filterPosition={filterPosition}
+            filterPosition={null}
             onAdd={addPlayer}
           />
         </div>

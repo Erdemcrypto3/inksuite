@@ -13,3 +13,4 @@ out/
 .vercel
 .wrangler/
 coverage/
+apps/fantasy/app/data/
