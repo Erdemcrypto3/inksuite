@@ -31,6 +31,12 @@ const apps: AppCard[] = [
     status: 'live',
   },
   {
+    title: 'InkAudit',
+    description: 'Web security scanner. Check any site for security headers, HTTPS, best practices. Free scan, paid on-chain proof.',
+    subdomain: 'audit',
+    status: 'live',
+  },
+  {
     title: 'InkPoll',
     description: 'On-chain polls. Create questions, vote with your wallet. Every vote is a verifiable transaction.',
     subdomain: 'poll',
