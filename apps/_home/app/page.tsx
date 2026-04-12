@@ -25,10 +25,16 @@ const apps: AppCard[] = [
     status: 'live',
   },
   {
-    title: 'Whale Watcher',
-    description: 'Feed of large on-chain movements across Ink.',
-    subdomain: 'whales',
-    status: 'planned',
+    title: 'InkFlow',
+    description: 'Bridge monitor + DEX tracker. Inflows, outflows, unique wallets, trading volume on Ink.',
+    subdomain: 'flow',
+    status: 'live',
+  },
+  {
+    title: 'InkPoll',
+    description: 'On-chain polls. Create questions, vote with your wallet. Every vote is a verifiable transaction.',
+    subdomain: 'poll',
+    status: 'live',
   },
   {
     title: 'Test Yourself',
