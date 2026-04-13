@@ -668,6 +668,7 @@ function InkPollApp() {
       <header className="bg-white/80 backdrop-blur-sm border-b border-purple-100 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <a href="https://inksuite.xyz" className="inline-flex items-center gap-1 rounded-lg bg-purple-100 px-3 py-1.5 text-xs font-semibold text-ink-700 ring-1 ring-inset ring-purple-200 hover:bg-purple-200 hover:text-ink-900">← inksuite.xyz</a>
             <h1 className="text-lg font-bold text-ink-700">InkSight</h1>
             {user?.registered && (
               <span className="text-xs bg-ink-100 text-ink-600 px-2 py-0.5 rounded-full font-medium">
