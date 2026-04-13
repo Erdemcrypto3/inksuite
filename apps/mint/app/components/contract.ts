@@ -1,6 +1,7 @@
 export const INKMINT_ADDRESS = '0x964bf77C2cF0901F0acFaC277601816d2dbEACEe' as const;
 
-export const WALRUS_AGGREGATOR = 'https://walrus-mainnet.chainode.tech:9002';
+export const WALRUS_AGGREGATOR = 'https://aggregator.walrus-mainnet.walrus.space';
+export const WALRUS_PUBLISHER = 'https://publisher.walrus-mainnet.walrus.space';
 
 // Worker URL — will proxy Stability AI requests
 export const AI_WORKER_URL = 'https://api.inksuite.xyz';

@@ -3,7 +3,7 @@
 import { InkWalletProvider, ConnectButton, useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from '@inksuite/wallet';
 import { useState, useCallback } from 'react';
 import { parseEther } from 'viem';
-import { INKMINT_ADDRESS, INKMINT_ABI, WALRUS_AGGREGATOR, AI_WORKER_URL } from './components/contract';
+import { INKMINT_ADDRESS, INKMINT_ABI, WALRUS_AGGREGATOR, WALRUS_PUBLISHER, AI_WORKER_URL } from './components/contract';
 
 const MINT_PRICE = parseEther('0.000777');
 
@@ -71,7 +71,7 @@ function MintApp() {
       const imgRes = await fetch(imageUrl);
       const imgBlob = await imgRes.blob();
 
-      const walrusRes = await fetch(`${WALRUS_AGGREGATOR}/v1/blobs`, {
+      const walrusRes = await fetch(`${WALRUS_PUBLISHER}/v1/blobs`, {
         method: 'PUT',
         headers: { 'Content-Type': 'image/png' },
         body: imgBlob,
@@ -95,7 +95,7 @@ function MintApp() {
       };
 
       // Upload metadata to Walrus
-      const metaRes = await fetch(`${WALRUS_AGGREGATOR}/v1/blobs`, {
+      const metaRes = await fetch(`${WALRUS_PUBLISHER}/v1/blobs`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(metadata),
