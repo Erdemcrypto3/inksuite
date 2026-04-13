@@ -3,7 +3,7 @@
 import { InkWalletProvider, ConnectButton, useAccount, useReadContract, useWriteContract, useSendTransaction, useWaitForTransactionReceipt } from '@inksuite/wallet';
 import { useState, useEffect, useCallback } from 'react';
 import { formatEther, parseEther, toHex } from 'viem';
-import { CONTRACT_ADDRESS, INKPRESS_ABI, WALRUS_AGGREGATOR, WALRUS_PUBLISHER, BLOG_TAGS } from './components/contract';
+import { CONTRACT_ADDRESS, INKPRESS_ABI, WALRUS_AGGREGATOR, WALRUS_UPLOAD_PROXY, BLOG_TAGS } from './components/contract';
 
 type Article = {
   id: bigint;
@@ -110,9 +110,9 @@ function WriteArticle({ onBack, onPublished }: { onBack: () => void; onPublished
     setStep('uploading');
 
     try {
-      // Upload content to Walrus (publisher for writes)
-      const res = await fetch(`${WALRUS_PUBLISHER}/v1/blobs`, {
-        method: 'PUT',
+      // Upload content via Worker proxy (Walrus PUT needs server-side, CORS blocks browser PUT)
+      const res = await fetch(WALRUS_UPLOAD_PROXY, {
+        method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: body,
       });
