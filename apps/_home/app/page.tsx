@@ -73,6 +73,12 @@ const apps: AppCard[] = [
     status: 'live',
   },
   {
+    title: 'InkSight',
+    description: 'Community insight platform. Projects pay to ask, you earn points for answering.',
+    subdomain: 'inksight',
+    status: 'live',
+  },
+  {
     title: 'InkPress',
     description: 'Decentralized blog on Ink. Read and collect articles as ERC-1155 NFTs. Apply to write.',
     subdomain: 'inkpress',
