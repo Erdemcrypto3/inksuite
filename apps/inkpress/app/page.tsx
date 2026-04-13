@@ -2,61 +2,63 @@
 
 import { InkWalletProvider, ConnectButton, useAccount, useReadContract, useWriteContract, useSendTransaction, useWaitForTransactionReceipt } from '@inksuite/wallet';
 import { useState, useEffect, useCallback } from 'react';
-import { formatEther, parseEther, toHex } from 'viem';
+import { toHex } from 'viem';
 import { CONTRACT_ADDRESS, INKPRESS_ABI, WALRUS_AGGREGATOR, WALRUS_UPLOAD_PROXY, BLOG_TAGS } from './components/contract';
 
 type Article = {
-  id: bigint;
-  author: string;
+  walrusBlobId: string;
   title: string;
-  contentBlobId: string;
-  tag: string;
-  timestamp: bigint;
-  mintPrice: bigint;
+  description: string;
+  coverImageBlobId: string;
+  author: string;
   totalMinted: bigint;
-  isActive: boolean;
+  publishedAt: bigint;
+  active: boolean;
+  tags: string[];
 };
 
 type View = 'feed' | 'read' | 'write' | 'apply';
 
 /* ── Article Card ── */
-function ArticleCard({ article, onRead }: { article: Article; onRead: (a: Article) => void }) {
-  const date = new Date(Number(article.timestamp) * 1000);
+function ArticleCard({ article, index, onRead }: { article: Article; index: number; onRead: (a: Article, i: number) => void }) {
+  const date = new Date(Number(article.publishedAt) * 1000);
   return (
     <button
-      onClick={() => onRead(article)}
+      onClick={() => onRead(article, index)}
       className="group w-full rounded-xl bg-white p-6 text-left ring-1 ring-inset ring-purple-100 shadow-sm transition hover:bg-purple-50 hover:ring-ink-500"
     >
       <div className="mb-2 flex items-start justify-between gap-2">
         <h3 className="text-lg font-semibold text-ink-900 group-hover:text-ink-600">{article.title}</h3>
-        <span className="shrink-0 rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-ink-600 ring-1 ring-inset ring-purple-200">
-          {article.tag}
-        </span>
+        {article.tags.length > 0 && (
+          <span className="shrink-0 rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-ink-600 ring-1 ring-inset ring-purple-200">
+            {article.tags[0]}
+          </span>
+        )}
       </div>
+      {article.description && <p className="mb-2 text-sm text-ink-600 line-clamp-2">{article.description}</p>}
       <div className="flex items-center gap-3 text-xs text-ink-500">
         <span className="font-mono">{article.author.slice(0, 6)}...{article.author.slice(-4)}</span>
         <span>{date.toLocaleDateString()}</span>
         <span>{Number(article.totalMinted)} collected</span>
-        {article.mintPrice > 0n && <span>{formatEther(article.mintPrice)} ETH</span>}
       </div>
     </button>
   );
 }
 
 /* ── Article Reader ── */
-function ArticleReader({ article, onBack }: { article: Article; onBack: () => void }) {
+function ArticleReader({ article, articleId, onBack }: { article: Article; articleId: number; onBack: () => void }) {
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
   const { address } = useAccount();
   const { writeContract, isPending: isMinting } = useWriteContract();
 
   useEffect(() => {
-    if (!article.contentBlobId) { setContent('Content not available.'); setLoading(false); return; }
-    fetch(`${WALRUS_AGGREGATOR}/v1/${article.contentBlobId}`)
+    if (!article.walrusBlobId) { setContent('Content not available.'); setLoading(false); return; }
+    fetch(`${WALRUS_AGGREGATOR}/v1/${article.walrusBlobId}`)
       .then((r) => r.text()).then(setContent)
       .catch(() => setContent('Failed to load content from Walrus.'))
       .finally(() => setLoading(false));
-  }, [article.contentBlobId]);
+  }, [article.walrusBlobId]);
 
   return (
     <div className="space-y-6">
@@ -67,8 +69,8 @@ function ArticleReader({ article, onBack }: { article: Article; onBack: () => vo
         <h1 className="mb-4 text-3xl font-bold text-ink-900">{article.title}</h1>
         <div className="mb-6 flex items-center gap-3 text-sm text-ink-500">
           <span className="font-mono">{article.author.slice(0, 6)}...{article.author.slice(-4)}</span>
-          <span>{new Date(Number(article.timestamp) * 1000).toLocaleDateString()}</span>
-          <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-ink-600">{article.tag}</span>
+          <span>{new Date(Number(article.publishedAt) * 1000).toLocaleDateString()}</span>
+          {article.tags.length > 0 && <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-ink-600">{article.tags[0]}</span>}
         </div>
         {loading ? (
           <div className="py-12 text-center text-ink-400">Loading content from Walrus...</div>
@@ -80,12 +82,12 @@ function ArticleReader({ article, onBack }: { article: Article; onBack: () => vo
             <button
               onClick={() => writeContract({
                 address: CONTRACT_ADDRESS, abi: INKPRESS_ABI,
-                functionName: 'mintArticle', args: [article.id], value: article.mintPrice,
+                functionName: 'mintArticle', args: [BigInt(articleId)],
               })}
               disabled={isMinting}
               className="rounded-lg bg-ink-500 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-ink-600 disabled:opacity-50"
             >
-              {isMinting ? 'Minting...' : `Collect as NFT ${article.mintPrice > 0n ? `(${formatEther(article.mintPrice)} ETH)` : '(Free)'}`}
+              {isMinting ? 'Minting...' : 'Collect as NFT'}
             </button>
             <span className="text-xs text-ink-400">{Number(article.totalMinted)} already collected</span>
           </div>
@@ -126,7 +128,7 @@ function WriteArticle({ onBack, onPublished }: { onBack: () => void; onPublished
         address: CONTRACT_ADDRESS,
         abi: INKPRESS_ABI,
         functionName: 'publishArticle',
-        args: [title, blobId, tag, parseEther('0.0005')],
+        args: [blobId, title, '', '', [tag]],
       }, {
         onSuccess: () => { setStep('done'); setTimeout(onPublished, 2000); },
         onError: (e) => { setError(e.message); setStep('write'); },
@@ -277,6 +279,7 @@ function BlogFeed() {
   const { address, isConnected } = useAccount();
   const [view, setView] = useState<View>('feed');
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+  const [selectedArticleId, setSelectedArticleId] = useState<number | null>(null);
 
   // Read articles from contract
   const { data: articlesRaw, refetch } = useReadContract({
@@ -304,22 +307,17 @@ function BlogFeed() {
   });
   const isAuthor = isApproved === true || (contractOwner && address && contractOwner.toString().toLowerCase() === address.toLowerCase());
 
-  // Total articles
-  const { data: totalArticlesRaw } = useReadContract({
-    address: CONTRACT_ADDRESS,
-    abi: INKPRESS_ABI,
-    functionName: 'totalArticles',
-  });
-
-  const articles = (articlesRaw as Article[] | undefined) ?? [];
-  const activeArticles = articles.filter((a) => a.isActive);
-  const totalArticles = Number(totalArticlesRaw ?? 0);
+  // getArticles returns [Article[], total]
+  const articlesData = articlesRaw as [Article[], bigint] | undefined;
+  const articles = articlesData?.[0] ?? [];
+  const activeArticles = articles.filter((a) => a.active);
+  const totalArticles = Number(articlesData?.[1] ?? 0);
   const totalMints = articles.reduce((s, a) => s + Number(a.totalMinted), 0);
   const uniqueAuthors = new Set(articles.map((a) => a.author)).size;
 
   // Article reader view
-  if (view === 'read' && selectedArticle) {
-    return <ArticleReader article={selectedArticle} onBack={() => { setView('feed'); setSelectedArticle(null); }} />;
+  if (view === 'read' && selectedArticle !== null && selectedArticleId !== null) {
+    return <ArticleReader article={selectedArticle} articleId={selectedArticleId} onBack={() => { setView('feed'); setSelectedArticle(null); setSelectedArticleId(null); }} />;
   }
 
   // Write article view
@@ -422,8 +420,8 @@ function BlogFeed() {
         <div>
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-ink-600">Latest Articles</h2>
           <div className="space-y-3">
-            {activeArticles.map((article) => (
-              <ArticleCard key={String(article.id)} article={article} onRead={(a) => { setSelectedArticle(a); setView('read'); }} />
+            {activeArticles.map((article, i) => (
+              <ArticleCard key={i} index={i} article={article} onRead={(a, idx) => { setSelectedArticle(a); setSelectedArticleId(idx); setView('read'); }} />
             ))}
           </div>
         </div>
