@@ -1,5 +1,8 @@
-const STABILITY_API = 'https://api.stability.ai/v2beta/stable-image/generate/sd3';
+const STABILITY_API = 'https://api.stability.ai/v2beta/stable-image/generate/core';
 const WALRUS_PUBLISHER = 'https://walrus-mainnet-publisher-1.staketab.org';
+const BLOCKSCOUT_API = 'https://explorer.inkonchain.com/api';
+const GENERATION_FEE = 0.0002; // ETH
+const FEE_RECIPIENT = '0x9E84D77264d94C646dF91A70dbae99C20330eAD0';
 
 function corsHeaders(origin, allowedOrigin) {
   const allowed = origin === allowedOrigin || origin?.includes('.inksuite.xyz') || origin?.startsWith('http://localhost');
@@ -8,6 +11,33 @@ function corsHeaders(origin, allowedOrigin) {
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   };
+}
+
+// Verify that a tx is a valid generation fee payment
+async function verifyPayment(txHash) {
+  try {
+    const res = await fetch(`${BLOCKSCOUT_API}?module=transaction&action=gettxinfo&txhash=${txHash}`);
+    const data = await res.json();
+    if (data.status !== '1' || !data.result) return { valid: false, reason: 'Transaction not found' };
+
+    const tx = data.result;
+    // Check recipient
+    if (tx.to?.toLowerCase() !== FEE_RECIPIENT.toLowerCase()) {
+      return { valid: false, reason: 'Wrong recipient' };
+    }
+    // Check value (allow small tolerance for gas fluctuation)
+    const valueEth = Number(tx.value) / 1e18;
+    if (valueEth < GENERATION_FEE * 0.95) {
+      return { valid: false, reason: `Insufficient payment: ${valueEth} ETH (need ${GENERATION_FEE})` };
+    }
+    // Check success
+    if (tx.success === false) {
+      return { valid: false, reason: 'Transaction failed' };
+    }
+    return { valid: true, from: tx.from };
+  } catch (e) {
+    return { valid: false, reason: 'Verification failed: ' + e.message };
+  }
 }
 
 export default {
@@ -57,18 +87,31 @@ export default {
       }
     }
 
-    // ── Stability AI Image Generation ──
+    // ── Stability AI Image Generation (requires payment proof) ──
     if (url.pathname === '/generate') {
       try {
-        const { prompt } = await request.json();
+        const { prompt, txHash } = await request.json();
         if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 3) {
-          return new Response('Prompt must be at least 3 characters', { status: 400, headers });
+          return Response.json({ error: 'Prompt must be at least 3 characters' }, { status: 400, headers });
+        }
+        if (!txHash || typeof txHash !== 'string') {
+          return Response.json({ error: 'Payment transaction hash required' }, { status: 400, headers });
         }
 
+        // Verify payment
+        console.log('Verifying payment tx:', txHash);
+        const payment = await verifyPayment(txHash);
+        if (!payment.valid) {
+          console.error('Payment verification failed:', payment.reason);
+          return Response.json({ error: `Payment invalid: ${payment.reason}` }, { status: 402, headers });
+        }
+        console.log('Payment verified from:', payment.from);
+
+        // Generate image
+        console.log('Calling Stability AI with prompt:', prompt.trim());
         const formData = new FormData();
-        formData.append('prompt', prompt.trim());
-        formData.append('output_format', 'png');
-        formData.append('aspect_ratio', '1:1');
+        formData.set('prompt', prompt.trim());
+        formData.set('output_format', 'png');
 
         const aiRes = await fetch(STABILITY_API, {
           method: 'POST',
@@ -82,7 +125,7 @@ export default {
         if (!aiRes.ok) {
           const errText = await aiRes.text();
           console.error('Stability API error:', aiRes.status, errText);
-          return new Response(`AI generation failed: ${aiRes.status}`, { status: 502, headers });
+          return Response.json({ error: `AI generation failed: ${aiRes.status}` }, { status: 502, headers });
         }
 
         const imageBuffer = await aiRes.arrayBuffer();
@@ -97,7 +140,7 @@ export default {
         });
       } catch (e) {
         console.error('Worker error:', e);
-        return new Response('Internal error', { status: 500, headers });
+        return Response.json({ error: 'Internal error: ' + e.message }, { status: 500, headers });
       }
     }
 

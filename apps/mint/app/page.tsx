@@ -1,27 +1,32 @@
 'use client';
 
-import { InkWalletProvider, ConnectButton, useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from '@inksuite/wallet';
-import { useState, useCallback } from 'react';
+import { InkWalletProvider, ConnectButton, useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useSendTransaction } from '@inksuite/wallet';
+import { useState, useEffect, useCallback } from 'react';
 import { parseEther } from 'viem';
 import { INKMINT_ADDRESS, INKMINT_ABI, WALRUS_AGGREGATOR, WALRUS_UPLOAD_PROXY, AI_WORKER_URL } from './components/contract';
 
-const MINT_PRICE = parseEther('0.000777');
+const GENERATION_FEE = parseEther('0.0002');
+const MINT_FEE = parseEther('0.000577');
+const FEE_RECIPIENT = '0x9E84D77264d94C646dF91A70dbae99C20330eAD0' as const;
 
-type MintStep = 'idle' | 'generating' | 'uploading' | 'minting' | 'confirming' | 'done';
+type Step = 'prompt' | 'paying' | 'generating' | 'preview' | 'uploading' | 'minting' | 'confirming' | 'done';
 
 function MintApp() {
   const { address, isConnected } = useAccount();
   const [prompt, setPrompt] = useState('');
-  const [step, setStep] = useState<MintStep>('idle');
+  const [step, setStep] = useState<Step>('prompt');
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageBlob, setImageBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
+  const [payTxHash, setPayTxHash] = useState<`0x${string}` | undefined>();
+  const [mintTxHash, setMintTxHash] = useState<`0x${string}` | undefined>();
   const [mintedTokenId, setMintedTokenId] = useState<number | null>(null);
 
+  const { sendTransaction, isPending: isPayPending } = useSendTransaction();
+  const { isSuccess: isPayConfirmed } = useWaitForTransactionReceipt({ hash: payTxHash });
   const { writeContract } = useWriteContract();
-  const { isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash: txHash });
+  const { isSuccess: isMintConfirmed } = useWaitForTransactionReceipt({ hash: mintTxHash });
 
-  // Contract stats
   const { data: totalSupplyRaw } = useReadContract({
     address: INKMINT_ADDRESS, abi: INKMINT_ABI, functionName: 'totalSupply',
   });
@@ -32,57 +37,72 @@ function MintApp() {
   const totalSupply = Number(totalSupplyRaw ?? 0);
   const maxSupply = Number(maxSupplyRaw ?? 10000);
 
-  const handleGenerate = useCallback(async () => {
-    if (!prompt.trim()) return;
+  // Step 1: Pay generation fee
+  const handlePay = useCallback(() => {
+    if (!address || !prompt.trim()) return;
     setError(null);
-    setImageUrl(null);
+    setStep('paying');
+    sendTransaction(
+      { to: FEE_RECIPIENT, value: GENERATION_FEE },
+      {
+        onSuccess: (hash) => setPayTxHash(hash),
+        onError: (e) => { setError(e.message); setStep('prompt'); },
+      },
+    );
+  }, [address, prompt, sendTransaction]);
+
+  // Step 2: After payment confirmed, generate image
+  useEffect(() => {
+    if (!isPayConfirmed || !payTxHash || step !== 'paying') return;
     setStep('generating');
 
-    try {
-      // Call our Worker to generate image
-      const res = await fetch(`${AI_WORKER_URL}/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: prompt.trim() }),
-      });
+    // Wait a few seconds for Blockscout to index the tx
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`${AI_WORKER_URL}/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: prompt.trim(), txHash: payTxHash }),
+        });
 
-      if (!res.ok) {
-        const err = await res.text();
-        throw new Error(err || 'Image generation failed');
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({ error: 'Generation failed' }));
+          throw new Error(errData.error || `Generation failed: ${res.status}`);
+        }
+
+        const blob = await res.blob();
+        const localUrl = URL.createObjectURL(blob);
+        setImageUrl(localUrl);
+        setImageBlob(blob);
+        setStep('preview');
+      } catch (e: any) {
+        setError(e.message || 'Generation failed');
+        setStep('prompt');
       }
+    }, 5000); // 5s delay for Blockscout indexing
 
-      const blob = await res.blob();
-      const localUrl = URL.createObjectURL(blob);
-      setImageUrl(localUrl);
-      setStep('idle');
-    } catch (e: any) {
-      setError(e.message || 'Generation failed');
-      setStep('idle');
-    }
-  }, [prompt]);
+    return () => clearTimeout(timer);
+  }, [isPayConfirmed, payTxHash, prompt, step]);
 
+  // Step 3: Mint as NFT
   const handleMint = useCallback(async () => {
-    if (!imageUrl || !address) return;
+    if (!imageBlob || !address) return;
     setError(null);
+    setStep('uploading');
 
     try {
-      // Upload image to Walrus
-      setStep('uploading');
-      const imgRes = await fetch(imageUrl);
-      const imgBlob = await imgRes.blob();
-
+      // Upload image to Walrus via proxy
       const walrusRes = await fetch(WALRUS_UPLOAD_PROXY, {
         method: 'POST',
         headers: { 'Content-Type': 'image/png' },
-        body: imgBlob,
+        body: imageBlob,
       });
-
-      if (!walrusRes.ok) throw new Error('Walrus upload failed');
+      if (!walrusRes.ok) throw new Error('Image upload failed');
       const walrusData = await walrusRes.json();
       const blobId = walrusData?.newlyCreated?.blobObject?.blobId || walrusData?.alreadyCertified?.blobId;
-      if (!blobId) throw new Error('No blob ID from Walrus');
+      if (!blobId) throw new Error('No blob ID');
 
-      // Create metadata JSON
+      // Upload metadata
       const metadata = {
         name: `InkMint #${totalSupply + 1}`,
         description: `AI-generated NFT on Ink chain. Prompt: "${prompt}"`,
@@ -93,14 +113,11 @@ function MintApp() {
           { trait_type: 'Chain', value: 'Ink' },
         ],
       };
-
-      // Upload metadata to Walrus
       const metaRes = await fetch(WALRUS_UPLOAD_PROXY, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(metadata),
       });
-
       if (!metaRes.ok) throw new Error('Metadata upload failed');
       const metaData = await metaRes.json();
       const metaBlobId = metaData?.newlyCreated?.blobObject?.blobId || metaData?.alreadyCertified?.blobId;
@@ -108,46 +125,44 @@ function MintApp() {
 
       const tokenURI = `${WALRUS_AGGREGATOR}/v1/${metaBlobId}`;
 
-      // Mint on-chain
+      // Mint on contract
       setStep('minting');
       writeContract({
         address: INKMINT_ADDRESS,
         abi: INKMINT_ABI,
         functionName: 'mint',
         args: [tokenURI, prompt],
-        value: MINT_PRICE,
+        value: MINT_FEE,
       }, {
         onSuccess: (hash) => {
-          setTxHash(hash);
+          setMintTxHash(hash);
           setStep('confirming');
           setMintedTokenId(totalSupply + 1);
         },
-        onError: (e) => {
-          setError(e.message);
-          setStep('idle');
-        },
+        onError: (e) => { setError(e.message); setStep('preview'); },
       });
     } catch (e: any) {
       setError(e.message || 'Mint failed');
-      setStep('idle');
+      setStep('preview');
     }
-  }, [imageUrl, address, prompt, totalSupply, writeContract]);
+  }, [imageBlob, address, prompt, totalSupply, writeContract]);
 
   const reset = () => {
     setPrompt('');
     setImageUrl(null);
-    setStep('idle');
+    setImageBlob(null);
+    setStep('prompt');
     setError(null);
-    setTxHash(undefined);
+    setPayTxHash(undefined);
+    setMintTxHash(undefined);
     setMintedTokenId(null);
   };
 
   return (
     <div className="space-y-8">
-      {/* Top bar */}
       <div className="flex items-center justify-between">
         <div />
-        <ConnectButton showBalance={false} />
+        <ConnectButton showBalance />
       </div>
 
       {/* Stats */}
@@ -161,44 +176,43 @@ function MintApp() {
           <div className="mt-1 font-mono text-2xl font-bold text-ink-900">{maxSupply.toLocaleString()}</div>
         </div>
         <div className="rounded-xl bg-white p-4 text-center ring-1 ring-inset ring-purple-100 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-wider text-ink-500">Mint Price</div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-ink-500">Total Cost</div>
           <div className="mt-1 font-mono text-2xl font-bold text-ink-900">0.000777</div>
-          <div className="text-[10px] text-ink-400">ETH</div>
+          <div className="text-[10px] text-ink-400">ETH (generate + mint)</div>
         </div>
       </div>
 
-      {/* Confirmed state */}
-      {(isConfirmed || step === 'done') && txHash ? (
+      {/* Mint success */}
+      {(isMintConfirmed || step === 'done') && mintTxHash ? (
         <div className="rounded-xl bg-emerald-50 p-8 text-center ring-1 ring-inset ring-emerald-200">
           <div className="text-4xl mb-4">NFT Minted!</div>
-          {imageUrl && (
-            <img src={imageUrl} alt="Generated NFT" className="mx-auto mb-4 h-48 w-48 rounded-xl object-cover ring-2 ring-emerald-300" />
-          )}
+          {imageUrl && <img src={imageUrl} alt="NFT" className="mx-auto mb-4 h-48 w-48 rounded-xl object-cover ring-2 ring-emerald-300" />}
           <p className="text-emerald-700 font-semibold">InkMint #{mintedTokenId}</p>
           <p className="mt-1 text-sm text-emerald-600">&quot;{prompt}&quot;</p>
-          <a
-            href={`https://explorer.inkonchain.com/tx/${txHash}`}
-            target="_blank" rel="noopener noreferrer"
-            className="mt-3 inline-block text-sm text-ink-500 underline hover:text-ink-600"
-          >
-            View transaction
-          </a>
+          <a href={`https://explorer.inkonchain.com/tx/${mintTxHash}`} target="_blank" rel="noopener noreferrer"
+            className="mt-3 inline-block text-sm text-ink-500 underline">View transaction</a>
           <div className="mt-4">
-            <button onClick={reset}
-              className="rounded-lg bg-ink-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-ink-600">
+            <button onClick={reset} className="rounded-lg bg-ink-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-ink-600">
               Mint Another
             </button>
           </div>
         </div>
       ) : (
         <>
-          {/* Generator */}
+          {/* Main flow */}
           <div className="rounded-xl bg-white p-6 ring-1 ring-inset ring-purple-100 shadow-sm space-y-4">
             <h2 className="text-xl font-bold text-ink-900">Create Your NFT</h2>
-            <p className="text-sm text-ink-600">
-              Describe what you want. AI generates the art. Mint it as an NFT on Ink chain.
-            </p>
 
+            {/* Step indicator */}
+            <div className="flex items-center gap-2 text-xs">
+              <span className={`rounded-full px-2.5 py-1 font-semibold ${step === 'prompt' ? 'bg-ink-500 text-white' : 'bg-ink-100 text-ink-600'}`}>1. Prompt</span>
+              <span className="text-ink-300">→</span>
+              <span className={`rounded-full px-2.5 py-1 font-semibold ${step === 'paying' || step === 'generating' ? 'bg-ink-500 text-white' : imageUrl ? 'bg-emerald-100 text-emerald-600' : 'bg-ink-100 text-ink-600'}`}>2. Pay & Generate</span>
+              <span className="text-ink-300">→</span>
+              <span className={`rounded-full px-2.5 py-1 font-semibold ${step === 'preview' || step === 'uploading' || step === 'minting' || step === 'confirming' ? 'bg-ink-500 text-white' : 'bg-ink-100 text-ink-600'}`}>3. Mint</span>
+            </div>
+
+            {/* Prompt input */}
             <div>
               <label className="block text-xs font-semibold text-ink-600 mb-1">Prompt</label>
               <textarea
@@ -206,12 +220,12 @@ function MintApp() {
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="A cosmic whale swimming through a nebula, digital art, vibrant colors..."
                 rows={3}
-                disabled={step !== 'idle'}
+                disabled={step !== 'prompt'}
                 className="w-full rounded-lg border border-purple-200 bg-ink-50 px-4 py-3 text-sm text-ink-900 placeholder:text-ink-300 focus:border-ink-500 focus:outline-none resize-y disabled:opacity-50"
               />
             </div>
 
-            {/* Generated image preview */}
+            {/* Image preview */}
             {imageUrl && (
               <div className="flex justify-center">
                 <img src={imageUrl} alt="AI Generated" className="h-64 w-64 rounded-xl object-cover ring-2 ring-purple-200 shadow-lg" />
@@ -220,42 +234,72 @@ function MintApp() {
 
             {error && <p className="text-sm text-red-600">{error}</p>}
 
-            <div className="flex items-center gap-3">
-              {!imageUrl ? (
-                <button
-                  onClick={handleGenerate}
-                  disabled={step !== 'idle' || !prompt.trim()}
-                  className="rounded-lg bg-ink-500 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-ink-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {step === 'generating' ? (
-                    <span className="flex items-center gap-2">
-                      <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      Generating...
-                    </span>
-                  ) : 'Generate Art'}
-                </button>
-              ) : (
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleMint}
-                    disabled={!isConnected || step !== 'idle'}
-                    className="rounded-lg bg-ink-500 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-ink-600 disabled:opacity-50"
-                  >
-                    {step === 'uploading' ? 'Uploading...' : step === 'minting' ? 'Confirm in wallet...' : step === 'confirming' ? 'Confirming...' : 'Mint as NFT (0.000777 ETH)'}
+            {/* Action buttons */}
+            <div className="space-y-3">
+              {step === 'prompt' && (
+                isConnected ? (
+                  <button onClick={handlePay} disabled={!prompt.trim()}
+                    className="w-full rounded-lg bg-ink-500 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-ink-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Generate Art (0.0002 ETH)
                   </button>
-                  <button
-                    onClick={() => { setImageUrl(null); setStep('idle'); }}
-                    disabled={step !== 'idle'}
-                    className="rounded-lg bg-white px-4 py-3 text-sm font-semibold text-ink-700 ring-1 ring-inset ring-purple-200 hover:bg-purple-50 disabled:opacity-50"
-                  >
-                    Regenerate
-                  </button>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-ink-500 mb-3">Connect wallet to generate art</p>
+                  </div>
+                )
+              )}
+
+              {step === 'paying' && (
+                <div className="text-center py-4">
+                  <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-ink-500 border-t-transparent" />
+                  <p className="mt-2 text-sm text-amber-600">{isPayPending ? 'Confirm payment in wallet...' : 'Waiting for confirmation...'}</p>
                 </div>
               )}
-              {!isConnected && imageUrl && (
-                <span className="text-xs text-ink-400">Connect wallet to mint</span>
+
+              {step === 'generating' && (
+                <div className="text-center py-4">
+                  <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-ink-500 border-t-transparent" />
+                  <p className="mt-2 text-sm text-ink-600">Payment confirmed! Generating your art...</p>
+                  <p className="text-xs text-ink-400">This may take 10-15 seconds</p>
+                </div>
+              )}
+
+              {step === 'preview' && (
+                <button onClick={handleMint}
+                  className="w-full rounded-lg bg-ink-500 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-ink-600">
+                  Mint as NFT (0.000577 ETH)
+                </button>
+              )}
+
+              {step === 'uploading' && (
+                <div className="text-center py-2">
+                  <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-ink-500 border-t-transparent" />
+                  <p className="mt-2 text-sm text-ink-600">Uploading to decentralized storage...</p>
+                </div>
+              )}
+
+              {step === 'minting' && (
+                <div className="text-center py-2">
+                  <p className="text-sm text-amber-600">Confirm mint in wallet...</p>
+                </div>
+              )}
+
+              {step === 'confirming' && (
+                <div className="text-center py-2">
+                  <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
+                  <p className="mt-2 text-sm text-emerald-600">Minting... waiting for confirmation</p>
+                </div>
               )}
             </div>
+
+            {/* Pricing breakdown */}
+            {step === 'prompt' && (
+              <div className="rounded-lg bg-ink-50 p-3 text-xs text-ink-500">
+                <div className="flex justify-between"><span>AI Generation fee</span><span className="font-mono">0.0002 ETH</span></div>
+                <div className="flex justify-between"><span>NFT Mint fee</span><span className="font-mono">0.000577 ETH</span></div>
+                <div className="flex justify-between border-t border-purple-200 mt-1 pt-1 font-semibold text-ink-700"><span>Total</span><span className="font-mono">0.000777 ETH</span></div>
+              </div>
+            )}
           </div>
 
           {/* How it works */}
@@ -264,18 +308,18 @@ function MintApp() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="rounded-xl bg-white p-5 ring-1 ring-inset ring-purple-100 shadow-sm">
                 <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-ink-500 text-sm font-bold text-white">1</div>
-                <h3 className="text-sm font-semibold text-ink-900">Describe</h3>
-                <p className="mt-1 text-xs text-ink-600">Write a text prompt describing the art you want. Be creative!</p>
+                <h3 className="text-sm font-semibold text-ink-900">Describe & Pay</h3>
+                <p className="mt-1 text-xs text-ink-600">Write your prompt and pay 0.0002 ETH generation fee. AI creates your unique art.</p>
               </div>
               <div className="rounded-xl bg-white p-5 ring-1 ring-inset ring-purple-100 shadow-sm">
                 <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-ink-500 text-sm font-bold text-white">2</div>
-                <h3 className="text-sm font-semibold text-ink-900">Generate</h3>
-                <p className="mt-1 text-xs text-ink-600">AI creates a unique image from your prompt. Don&apos;t like it? Regenerate for free.</p>
+                <h3 className="text-sm font-semibold text-ink-900">Preview</h3>
+                <p className="mt-1 text-xs text-ink-600">See your generated art. Like it? Proceed to mint.</p>
               </div>
               <div className="rounded-xl bg-white p-5 ring-1 ring-inset ring-purple-100 shadow-sm">
                 <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-ink-500 text-sm font-bold text-white">3</div>
                 <h3 className="text-sm font-semibold text-ink-900">Mint</h3>
-                <p className="mt-1 text-xs text-ink-600">Mint as an ERC-721 NFT on Ink chain (0.000777 ETH). Image stored on Walrus.</p>
+                <p className="mt-1 text-xs text-ink-600">Mint as ERC-721 NFT (0.000577 ETH). Image stored on decentralized storage.</p>
               </div>
             </div>
           </div>
@@ -293,7 +337,7 @@ function MintApp() {
           </div>
           <div><span className="font-semibold text-ink-700">Standard:</span> ERC-721</div>
           <div><span className="font-semibold text-ink-700">AI Engine:</span> Stability AI</div>
-          <div><span className="font-semibold text-ink-700">Storage:</span> Walrus (decentralized)</div>
+          <div><span className="font-semibold text-ink-700">Storage:</span> Decentralized (Walrus)</div>
         </div>
       </div>
     </div>
@@ -310,7 +354,7 @@ export default function MintPage() {
             ← inksuite.xyz
           </a>
           <h1 className="text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">InkMint</h1>
-          <p className="mt-2 text-sm text-ink-600">AI-powered NFT generator on Ink chain.</p>
+          <p className="mt-2 text-sm text-ink-600">AI-powered NFT generator on Ink chain. Pay, generate, mint.</p>
         </header>
 
         <MintApp />
