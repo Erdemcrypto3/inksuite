@@ -341,7 +341,7 @@ importers:
         specifier: ^5.6.3
         version: 5.9.3
 
-  apps/inkpoll:
+  apps/inkpress:
     dependencies:
       '@inksuite/chain':
         specifier: workspace:*
@@ -384,7 +384,7 @@ importers:
         specifier: ^5.6.3
         version: 5.9.3
 
-  apps/inkpress:
+  apps/inksight:
     dependencies:
       '@inksuite/chain':
         specifier: workspace:*
