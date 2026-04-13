@@ -20,28 +20,56 @@ type Article = {
 type View = 'feed' | 'read' | 'write' | 'apply';
 
 /* ── Article Card ── */
-function ArticleCard({ article, index, onRead }: { article: Article; index: number; onRead: (a: Article, i: number) => void }) {
+function ArticleCard({ article, index, onRead, isOwner }: { article: Article; index: number; onRead: (a: Article, i: number) => void; isOwner: boolean }) {
   const date = new Date(Number(article.publishedAt) * 1000);
+  const { writeContract, isPending } = useWriteContract();
+
+  const handleToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const fn = article.active ? 'unpublishArticle' : 'republishArticle';
+    writeContract({
+      address: CONTRACT_ADDRESS, abi: INKPRESS_ABI,
+      functionName: fn, args: [BigInt(index)],
+    });
+  };
+
   return (
-    <button
+    <div
       onClick={() => onRead(article, index)}
-      className="group w-full rounded-xl bg-white p-6 text-left ring-1 ring-inset ring-purple-100 shadow-sm transition hover:bg-purple-50 hover:ring-ink-500"
+      className="group cursor-pointer rounded-xl bg-white p-6 text-left ring-1 ring-inset ring-purple-100 shadow-sm transition hover:bg-purple-50 hover:ring-ink-500"
     >
       <div className="mb-2 flex items-start justify-between gap-2">
         <h3 className="text-lg font-semibold text-ink-900 group-hover:text-ink-600">{article.title}</h3>
-        {article.tags.length > 0 && (
-          <span className="shrink-0 rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-ink-600 ring-1 ring-inset ring-purple-200">
-            {article.tags[0]}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {!article.active && (
+            <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-medium text-red-600 ring-1 ring-inset ring-red-200">
+              Unpublished
+            </span>
+          )}
+          {article.tags.length > 0 && (
+            <span className="shrink-0 rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-ink-600 ring-1 ring-inset ring-purple-200">
+              {article.tags[0]}
+            </span>
+          )}
+        </div>
       </div>
       {article.description && <p className="mb-2 text-sm text-ink-600 line-clamp-2">{article.description}</p>}
-      <div className="flex items-center gap-3 text-xs text-ink-500">
-        <span className="font-mono">{article.author.slice(0, 6)}...{article.author.slice(-4)}</span>
-        <span>{date.toLocaleDateString()}</span>
-        <span>{Number(article.totalMinted)} collected</span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 text-xs text-ink-500">
+          <span className="font-mono">{article.author.slice(0, 6)}...{article.author.slice(-4)}</span>
+          <span>{date.toLocaleDateString()}</span>
+          <span>{Number(article.totalMinted)} collected</span>
+        </div>
+        {isOwner && (
+          <button onClick={handleToggle} disabled={isPending}
+            className={`rounded-lg px-3 py-1 text-xs font-semibold ring-1 ring-inset ${
+              article.active ? 'text-red-600 ring-red-200 hover:bg-red-50' : 'text-emerald-600 ring-emerald-200 hover:bg-emerald-50'
+            }`}>
+            {isPending ? '...' : article.active ? 'Unpublish' : 'Republish'}
+          </button>
+        )}
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -473,23 +501,28 @@ function BlogFeed() {
         </div>
       )}
 
-      {/* Articles list */}
-      {activeArticles.length > 0 ? (
-        <div>
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-ink-600">Latest Articles</h2>
-          <div className="space-y-3">
-            {activeArticles.map((article, i) => (
-              <ArticleCard key={i} index={i} article={article} onRead={(a, idx) => { setSelectedArticle(a); setSelectedArticleId(idx); setView('read'); }} />
-            ))}
+      {/* Articles list — owner sees all, others see only active */}
+      {(() => {
+        const visibleArticles = isAuthor ? articles : activeArticles;
+        return visibleArticles.length > 0 ? (
+          <div>
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-ink-600">
+              {isAuthor ? 'All Articles' : 'Latest Articles'}
+            </h2>
+            <div className="space-y-3">
+              {visibleArticles.map((article, i) => (
+                <ArticleCard key={i} index={i} article={article} isOwner={!!isAuthor} onRead={(a, idx) => { setSelectedArticle(a); setSelectedArticleId(idx); setView('read'); }} />
+              ))}
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="rounded-xl bg-white p-8 text-center ring-1 ring-inset ring-purple-100 shadow-sm">
-          <div className="text-3xl mb-3">No articles yet</div>
-          <p className="text-sm text-ink-500">Articles will appear here once writers start publishing.</p>
-          {!isConnected && <p className="mt-2 text-xs text-ink-400">Connect your wallet to collect articles or apply to write.</p>}
-        </div>
-      )}
+        ) : (
+          <div className="rounded-xl bg-white p-8 text-center ring-1 ring-inset ring-purple-100 shadow-sm">
+            <div className="text-3xl mb-3">No articles yet</div>
+            <p className="text-sm text-ink-500">Articles will appear here once writers start publishing.</p>
+            {!isConnected && <p className="mt-2 text-xs text-ink-400">Connect your wallet to collect articles or apply to write.</p>}
+          </div>
+        );
+      })()}
 
       {/* How it works */}
       <div>
