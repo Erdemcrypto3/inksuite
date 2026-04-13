@@ -1,7 +1,6 @@
 export const CONTRACT_ADDRESS = '0x7A0bB0C37a934b3858436E61838719a5a7F63720' as const;
 
-export const WALRUS_AGGREGATOR = 'https://walrus-mainnet.chainode.tech:9002';
-export const WALRUS_UPLOAD_PROXY = 'https://api.inksuite.xyz/walrus-upload';
+export const API_URL = 'https://api.inksuite.xyz';
 
 export const BLOG_TAGS = [
   'Tech/Web3',

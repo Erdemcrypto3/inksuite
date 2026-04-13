@@ -5,5 +5,9 @@ routes = [
   { pattern = "api.inksuite.xyz", custom_domain = true }
 ]
 
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "inksuite-storage"
+
 [vars]
 ALLOWED_ORIGIN = "https://mint.inksuite.xyz"

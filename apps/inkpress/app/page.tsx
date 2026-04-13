@@ -3,7 +3,7 @@
 import { InkWalletProvider, ConnectButton, useAccount, useReadContract, useWriteContract, useSendTransaction, useWaitForTransactionReceipt } from '@inksuite/wallet';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toHex } from 'viem';
-import { CONTRACT_ADDRESS, INKPRESS_ABI, WALRUS_AGGREGATOR, WALRUS_UPLOAD_PROXY, BLOG_TAGS } from './components/contract';
+import { CONTRACT_ADDRESS, INKPRESS_ABI, API_URL, BLOG_TAGS } from './components/contract';
 
 type Article = {
   walrusBlobId: string;
@@ -89,9 +89,11 @@ function ArticleReader({ article, articleId, onBack, isOwner }: { article: Artic
 
   useEffect(() => {
     if (!article.walrusBlobId) { setContent('Content not available.'); setLoading(false); return; }
-    fetch(`${WALRUS_AGGREGATOR}/v1/${article.walrusBlobId}`)
+    // walrusBlobId now stores R2 key or full URL
+    const contentUrl = article.walrusBlobId.startsWith('http') ? article.walrusBlobId : `${API_URL}/file/${article.walrusBlobId}`;
+    fetch(contentUrl)
       .then((r) => r.text()).then(setContent)
-      .catch(() => setContent('Failed to load content from Walrus.'))
+      .catch(() => setContent('Failed to load content.'))
       .finally(() => setLoading(false));
   }, [article.walrusBlobId]);
 
@@ -117,7 +119,7 @@ function ArticleReader({ article, articleId, onBack, isOwner }: { article: Artic
           {!article.active && <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600">Unpublished</span>}
         </div>
         {loading ? (
-          <div className="py-12 text-center text-ink-400">Loading content from Walrus...</div>
+          <div className="py-12 text-center text-ink-400">Loading content...</div>
         ) : (
           <div className="prose max-w-none text-ink-800 leading-relaxed whitespace-pre-wrap">{content}</div>
         )}
@@ -176,16 +178,16 @@ function WriteArticle({ onBack, onPublished }: { onBack: () => void; onPublished
     setStep('uploading');
 
     try {
-      // Upload content via Worker proxy (Walrus PUT needs server-side, CORS blocks browser PUT)
-      const res = await fetch(WALRUS_UPLOAD_PROXY, {
+      // Upload content to R2
+      const res = await fetch(`${API_URL}/upload`, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: body,
       });
-      if (!res.ok) throw new Error('Walrus upload failed');
+      if (!res.ok) throw new Error('Content upload failed');
       const data = await res.json();
-      const blobId = data?.newlyCreated?.blobObject?.blobId || data?.alreadyCertified?.blobId;
-      if (!blobId) throw new Error('No blob ID returned');
+      const blobId = data.url;
+      if (!blobId) throw new Error('No URL returned');
 
       setStep('publishing');
       writeContract({
@@ -277,9 +279,9 @@ function WriteArticle({ onBack, onPublished }: { onBack: () => void; onPublished
               disabled={step !== 'write' || !title.trim() || !body.trim()}
               className="rounded-lg bg-ink-500 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-ink-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {step === 'uploading' ? 'Uploading to Walrus...' : step === 'publishing' ? 'Confirm in wallet...' : 'Publish Article'}
+              {step === 'uploading' ? 'Uploading...' : step === 'publishing' ? 'Confirm in wallet...' : 'Publish Article'}
             </button>
-            <span className="text-xs text-ink-400">Content stored on Walrus, metadata on Ink chain</span>
+            <span className="text-xs text-ink-400">Content stored permanently, metadata on Ink chain</span>
           </div>
         </div>
       )}
@@ -458,11 +460,11 @@ function BlogFeed() {
         <h2 className="text-2xl font-bold sm:text-3xl">Decentralized Blog on Ink</h2>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/80">
           Read articles and collect them as ERC-1155 NFTs on Ink chain. Content stored on
-          Walrus (decentralized storage). Want to write? Apply to become an approved writer.
+          permanent storage. Want to write? Apply to become an approved writer.
         </p>
         <div className="mt-4 flex flex-wrap gap-2 text-xs">
           <span className="rounded-full bg-white/20 px-3 py-1">ERC-1155 NFTs</span>
-          <span className="rounded-full bg-white/20 px-3 py-1">Walrus Storage</span>
+          <span className="rounded-full bg-white/20 px-3 py-1">Cloudflare R2</span>
           <span className="rounded-full bg-white/20 px-3 py-1">Ink Chain</span>
           <span className="rounded-full bg-white/20 px-3 py-1">0.0005 ETH per mint</span>
         </div>
@@ -531,7 +533,7 @@ function BlogFeed() {
           <div className="rounded-xl bg-white p-5 ring-1 ring-inset ring-purple-100 shadow-sm">
             <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-ink-500 text-sm font-bold text-white">1</div>
             <h3 className="text-sm font-semibold text-ink-900">Read Articles</h3>
-            <p className="mt-1 text-xs text-ink-600">Browse articles published by approved writers. All content stored on decentralized Walrus.</p>
+            <p className="mt-1 text-xs text-ink-600">Browse articles published by approved writers. All content stored permanently.</p>
           </div>
           <div className="rounded-xl bg-white p-5 ring-1 ring-inset ring-purple-100 shadow-sm">
             <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-ink-500 text-sm font-bold text-white">2</div>
@@ -557,7 +559,7 @@ function BlogFeed() {
           </div>
           <div><span className="font-semibold text-ink-700">Chain:</span> Ink Mainnet (57073)</div>
           <div><span className="font-semibold text-ink-700">Standard:</span> ERC-1155 (UUPS Upgradeable)</div>
-          <div><span className="font-semibold text-ink-700">Storage:</span> Walrus (decentralized)</div>
+          <div><span className="font-semibold text-ink-700">Storage:</span> Cloudflare R2</div>
         </div>
       </div>
     </div>

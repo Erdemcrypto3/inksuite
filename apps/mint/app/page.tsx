@@ -3,7 +3,7 @@
 import { InkWalletProvider, ConnectButton, useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useSendTransaction } from '@inksuite/wallet';
 import { useState, useEffect, useCallback } from 'react';
 import { parseEther } from 'viem';
-import { INKMINT_ADDRESS, INKMINT_ABI, WALRUS_AGGREGATOR, WALRUS_UPLOAD_PROXY, AI_WORKER_URL } from './components/contract';
+import { INKMINT_ADDRESS, INKMINT_ABI, API_URL } from './components/contract';
 
 const GENERATION_FEE = parseEther('0.0002');
 const MINT_FEE = parseEther('0.000577');
@@ -58,7 +58,7 @@ function MintApp() {
     await new Promise((r) => setTimeout(r, 8000));
 
     try {
-      const res = await fetch(`${AI_WORKER_URL}/generate`, {
+      const res = await fetch(`${API_URL}/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: prompt.trim(), txHash: txh }),
@@ -94,39 +94,34 @@ function MintApp() {
     setStep('uploading');
 
     try {
-      // Upload image to Walrus via proxy
-      const walrusRes = await fetch(WALRUS_UPLOAD_PROXY, {
+      // Upload image to R2
+      const imgRes2 = await fetch(`${API_URL}/upload`, {
         method: 'POST',
         headers: { 'Content-Type': 'image/jpeg' },
         body: imageBlob,
       });
-      if (!walrusRes.ok) throw new Error('Image upload failed');
-      const walrusData = await walrusRes.json();
-      const blobId = walrusData?.newlyCreated?.blobObject?.blobId || walrusData?.alreadyCertified?.blobId;
-      if (!blobId) throw new Error('No blob ID');
+      if (!imgRes2.ok) throw new Error('Image upload failed');
+      const imgData = await imgRes2.json();
 
-      // Upload metadata
+      // Upload metadata to R2
       const metadata = {
         name: `InkMint #${totalSupply + 1}`,
         description: `AI-generated NFT on Ink chain. Prompt: "${prompt}"`,
-        image: `${WALRUS_AGGREGATOR}/v1/${blobId}`,
+        image: imgData.url,
         attributes: [
           { trait_type: 'Prompt', value: prompt },
           { trait_type: 'Generator', value: 'Stability AI' },
           { trait_type: 'Chain', value: 'Ink' },
         ],
       };
-      const metaRes = await fetch(WALRUS_UPLOAD_PROXY, {
+      const metaRes = await fetch(`${API_URL}/upload`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(metadata),
       });
       if (!metaRes.ok) throw new Error('Metadata upload failed');
       const metaData = await metaRes.json();
-      const metaBlobId = metaData?.newlyCreated?.blobObject?.blobId || metaData?.alreadyCertified?.blobId;
-      if (!metaBlobId) throw new Error('No metadata blob ID');
-
-      const tokenURI = `${WALRUS_AGGREGATOR}/v1/${metaBlobId}`;
+      const tokenURI = metaData.url;
 
       // Mint on contract
       setStep('minting');
@@ -340,7 +335,7 @@ function MintApp() {
           </div>
           <div><span className="font-semibold text-ink-700">Standard:</span> ERC-721</div>
           <div><span className="font-semibold text-ink-700">AI Engine:</span> Stability AI</div>
-          <div><span className="font-semibold text-ink-700">Storage:</span> Decentralized (Walrus)</div>
+          <div><span className="font-semibold text-ink-700">Storage:</span> Cloudflare R2</div>
         </div>
       </div>
     </div>
