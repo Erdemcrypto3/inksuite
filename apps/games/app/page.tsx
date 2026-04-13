@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { InkWalletProvider, ConnectButton } from '@inksuite/wallet';
+import { InkWalletProvider, ConnectButton, useAccount, useWriteContract } from '@inksuite/wallet';
+import { parseEther } from 'viem';
 import { Hangman } from './components/hangman';
 import { Minesweeper } from './components/minesweeper';
 import { Snake } from './components/snake';
@@ -16,20 +17,83 @@ type GameId = 'hangman' | 'minesweeper' | 'snake' | 'tetris' | 'solotest' | 'cro
 type GameInfo = {
   id: GameId & string;
   title: string;
+  icon: string;
   description: string;
   status: 'live' | 'coming';
 };
 
+const INKMINT_ADDRESS = '0x964bf77C2cF0901F0acFaC277601816d2dbEACEe' as const;
+const INKMINT_ABI = [{name:'mint',type:'function',stateMutability:'payable',inputs:[{name:'uri',type:'string'},{name:'prompt',type:'string'}],outputs:[]}] as const;
+const MINT_FEE = parseEther('0.000577');
+const API_URL = 'https://api.inksuite.xyz';
+
 const games: GameInfo[] = [
-  { id: 'hangman', title: 'Hangman', description: 'Guess the word before the man hangs. 6 wrong guesses allowed.', status: 'live' },
-  { id: 'minesweeper', title: 'Minesweeper', description: 'Clear the board without hitting a mine. Classic logic puzzle.', status: 'live' },
-  { id: 'snake', title: 'Snake', description: 'Eat food, grow longer, don\'t hit the walls or yourself.', status: 'live' },
-  { id: 'tetris', title: 'Tetris', description: 'Stack tetrominoes, clear lines, chase the high score. Classic arcade.', status: 'live' },
-  { id: 'solotest', title: 'Solo Test', description: 'Jump pegs to remove them. Can you leave just one? English board peg solitaire.', status: 'live' },
-  { id: 'crossword', title: 'Crossword', description: '5×5 mini crossword puzzles. Across and down clues. 20 themed puzzles to solve.', status: 'live' },
-  { id: 'checkers', title: 'Checkers', description: 'Classic checkers against AI. Capture all opponent pieces to win. Kings move backwards.', status: 'live' },
-  { id: 'towerdefense', title: 'Tower Defense', description: 'Defend the Ink network from spam txs, bots, and MEV attackers. 15 waves, 4 tower types.', status: 'live' },
+  { id: 'hangman', icon: '🔤', title: 'Hangman', description: 'Guess the word before the man hangs. 6 wrong guesses allowed.', status: 'live' },
+  { id: 'minesweeper', icon: '💣', title: 'Minesweeper', description: 'Clear the board without hitting a mine. Classic logic puzzle.', status: 'live' },
+  { id: 'snake', icon: '🐍', title: 'Snake', description: 'Eat food, grow longer, don\'t hit the walls or yourself.', status: 'live' },
+  { id: 'tetris', icon: '🧱', title: 'Tetris', description: 'Stack tetrominoes, clear lines, chase the high score. Classic arcade.', status: 'live' },
+  { id: 'solotest', icon: '⚫', title: 'Solo Test', description: 'Jump pegs to remove them. Can you leave just one? English board peg solitaire.', status: 'live' },
+  { id: 'crossword', icon: '📝', title: 'Crossword', description: '5×5 mini crossword puzzles. Across and down clues. 20 themed puzzles to solve.', status: 'live' },
+  { id: 'checkers', icon: '♟️', title: 'Checkers', description: 'Classic checkers against AI. Capture all opponent pieces to win. Kings move backwards.', status: 'live' },
+  { id: 'towerdefense', icon: '🏰', title: 'Tower Defense', description: 'Defend the Ink network from spam txs, bots, and MEV attackers. 15 waves, 4 tower types.', status: 'live' },
 ];
+
+function MintScoreButton({ gameId, gameTitle, gameIcon, score }: { gameId: string; gameTitle: string; gameIcon: string; score: number }) {
+  const { address, isConnected } = useAccount();
+  const { writeContract, isPending } = useWriteContract();
+  const [minted, setMinted] = useState(false);
+  const [minting, setMinting] = useState(false);
+
+  if (!isConnected || score <= 0) return null;
+
+  const handleMint = async () => {
+    if (!address) return;
+    setMinting(true);
+    try {
+      const shortAddr = `${address.slice(0, 6)}...${address.slice(-4)}`;
+      const metadata = {
+        name: `${gameTitle} High Score`,
+        description: `${gameIcon} ${gameTitle} — Score: ${score} by ${shortAddr} on Ink Game Hub`,
+        attributes: [
+          { trait_type: 'Game', value: gameTitle },
+          { trait_type: 'Score', value: score.toString() },
+          { trait_type: 'Wallet', value: shortAddr },
+          { trait_type: 'Icon', value: gameIcon },
+        ],
+      };
+
+      const metaRes = await fetch(`${API_URL}/upload`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(metadata),
+      });
+      if (!metaRes.ok) throw new Error('Upload failed');
+      const metaData = await metaRes.json();
+
+      writeContract({
+        address: INKMINT_ADDRESS,
+        abi: INKMINT_ABI,
+        functionName: 'mint',
+        args: [metaData.url, `${gameIcon} ${gameTitle}: ${score} pts`],
+        value: MINT_FEE,
+      }, {
+        onSuccess: () => setMinted(true),
+        onError: () => setMinting(false),
+      });
+    } catch {
+      setMinting(false);
+    }
+  };
+
+  if (minted) return <span className="text-[10px] text-emerald-600 font-semibold">Score NFT Minted!</span>;
+
+  return (
+    <button onClick={handleMint} disabled={isPending || minting}
+      className="rounded-lg bg-ink-500 px-3 py-1 text-[10px] font-semibold text-white hover:bg-ink-600 disabled:opacity-50">
+      {isPending || minting ? 'Minting...' : 'Mint Score NFT'}
+    </button>
+  );
+}
 
 function getHighScore(gameId: string): number | null {
   if (typeof window === 'undefined') return null;
@@ -68,7 +132,7 @@ function GameHubContent() {
         {games.map((g) => {
           const hs = getHighScore(g.id);
           return (
-            <button
+            <div
               key={g.id}
               onClick={() => g.status === 'live' ? setActiveGame(g.id as GameId) : undefined}
               className={`group rounded-xl bg-white p-6 text-left ring-1 ring-inset ring-purple-100 shadow-sm transition ${
@@ -76,7 +140,10 @@ function GameHubContent() {
               }`}
             >
               <div className="mb-2 flex items-start justify-between">
-                <h3 className="text-lg font-semibold text-ink-900">{g.title}</h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">{g.icon}</span>
+                  <h3 className="text-lg font-semibold text-ink-900">{g.title}</h3>
+                </div>
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
                   g.status === 'live' ? 'bg-emerald-500/20 text-emerald-300 ring-emerald-500/40' : 'bg-purple-50/50 text-ink-500 ring-purple-100'
                 }`}>
@@ -85,11 +152,14 @@ function GameHubContent() {
               </div>
               <p className="mb-4 text-sm text-ink-700">{g.description}</p>
               {hs !== null && (
-                <div className="text-xs text-ink-500">
-                  Best: <span className="font-mono text-ink-500">{hs}</span>
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-ink-500">
+                    Best: <span className="font-mono text-ink-500">{hs}</span>
+                  </div>
+                  <MintScoreButton gameId={g.id} gameTitle={g.title} gameIcon={g.icon} score={hs} />
                 </div>
               )}
-            </button>
+            </div>
           );
         })}
       </div>

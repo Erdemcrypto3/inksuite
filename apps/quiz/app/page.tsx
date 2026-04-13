@@ -5,7 +5,13 @@ import type { Category, CategoryProgress, Question } from './components/types';
 import { CATEGORIES, ACHIEVEMENTS, MAX_POINTS_PER_CATEGORY } from './components/types';
 import { QuizSession } from './components/quiz-session';
 import { AchievementTimeline } from './components/achievement-timeline';
-import { InkWalletProvider, ConnectButton } from '@inksuite/wallet';
+import { InkWalletProvider, ConnectButton, useAccount, useWriteContract } from '@inksuite/wallet';
+import { parseEther } from 'viem';
+
+const INKMINT_ADDRESS = '0x964bf77C2cF0901F0acFaC277601816d2dbEACEe' as const;
+const INKMINT_ABI = [{name:'mint',type:'function',stateMutability:'payable',inputs:[{name:'uri',type:'string'},{name:'prompt',type:'string'}],outputs:[]}] as const;
+const MINT_FEE = parseEther('0.000577');
+const API_URL = 'https://api.inksuite.xyz';
 
 function loadProgress(): Record<Category, CategoryProgress> {
   if (typeof window === 'undefined') return getDefaultProgress();
@@ -40,7 +46,68 @@ function getAchievementLevel(points: number, quizzesTaken: number): number {
   return 0;
 }
 
+function MintAchievementButton({ category, level, points }: { category: { id: string; label: string; icon: string }; level: number; points: number }) {
+  const { address } = useAccount();
+  const { writeContract, isPending } = useWriteContract();
+  const [minted, setMinted] = useState(false);
+  const [minting, setMinting] = useState(false);
+
+  const handleMint = async () => {
+    if (!address) return;
+    setMinting(true);
+    try {
+      const achievementName = ACHIEVEMENTS[level]?.name || 'Unknown';
+      const shortAddr = `${address.slice(0, 6)}...${address.slice(-4)}`;
+
+      // Create metadata
+      const metadata = {
+        name: `${category.label} ${achievementName}`,
+        description: `Quiz achievement: ${achievementName} level in ${category.label}. Score: ${points}/${MAX_POINTS_PER_CATEGORY}. Earned by ${shortAddr}.`,
+        attributes: [
+          { trait_type: 'Category', value: category.label },
+          { trait_type: 'Achievement', value: achievementName },
+          { trait_type: 'Points', value: points.toString() },
+          { trait_type: 'Max Points', value: MAX_POINTS_PER_CATEGORY.toString() },
+          { trait_type: 'Wallet', value: shortAddr },
+        ],
+      };
+
+      // Upload metadata to R2
+      const metaRes = await fetch(`${API_URL}/upload`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(metadata),
+      });
+      if (!metaRes.ok) throw new Error('Upload failed');
+      const metaData = await metaRes.json();
+
+      writeContract({
+        address: INKMINT_ADDRESS,
+        abi: INKMINT_ABI,
+        functionName: 'mint',
+        args: [metaData.url, `Quiz: ${category.label} ${achievementName} (${points}pts)`],
+        value: MINT_FEE,
+      }, {
+        onSuccess: () => setMinted(true),
+        onError: () => setMinting(false),
+      });
+    } catch {
+      setMinting(false);
+    }
+  };
+
+  if (minted) return <span className="text-[10px] text-emerald-600 font-semibold">NFT Minted!</span>;
+
+  return (
+    <button onClick={handleMint} disabled={isPending || minting}
+      className="rounded-lg bg-ink-500 px-3 py-1 text-[10px] font-semibold text-white hover:bg-ink-600 disabled:opacity-50">
+      {isPending || minting ? 'Minting...' : 'Mint NFT (0.000577 ETH)'}
+    </button>
+  );
+}
+
 function QuizContent() {
+  const { isConnected } = useAccount();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState<Record<Category, CategoryProgress>>(getDefaultProgress());
@@ -212,23 +279,37 @@ function QuizContent() {
         })}
       </div>
 
-      {/* Achievement timelines per category */}
-      {totalQuizzes > 0 && (
-        <div className="mt-10 space-y-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-ink-600">
-            Achievement Progress
-          </h2>
-          {CATEGORIES.filter((c) => progress[c.id].quizzesTaken > 0).map((cat) => (
+      {/* Achievement timelines — always show all 5 categories */}
+      <div className="mt-10 space-y-4">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-ink-600">
+          Achievement Progress
+        </h2>
+        {CATEGORIES.map((cat) => {
+          const p = progress[cat.id];
+          return (
             <div key={cat.id}>
-              <div className="mb-1 text-xs font-semibold text-ink-700">{cat.label}</div>
+              <div className="mb-1 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className={`inline-flex h-6 w-6 items-center justify-center rounded text-xs ${cat.bgColor} ${cat.color}`}>{cat.icon}</span>
+                  <span className="text-xs font-semibold text-ink-700">{cat.label}</span>
+                  {p.achievementLevel >= 0 && (
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 ring-1 ring-inset ring-emerald-300">
+                      {ACHIEVEMENTS[p.achievementLevel]?.name}
+                    </span>
+                  )}
+                </div>
+                {p.achievementLevel >= 0 && isConnected && (
+                  <MintAchievementButton category={cat} level={p.achievementLevel} points={p.totalPoints} />
+                )}
+              </div>
               <AchievementTimeline
-                totalPoints={progress[cat.id].totalPoints}
-                achievementLevel={progress[cat.id].achievementLevel}
+                totalPoints={p.totalPoints}
+                achievementLevel={p.achievementLevel}
               />
             </div>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
 
       <footer className="mt-16 border-t border-purple-200 pt-8 text-sm text-ink-500">
         <div className="flex flex-wrap items-center justify-between gap-4">
