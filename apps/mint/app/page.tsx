@@ -23,7 +23,7 @@ function MintApp() {
   const [mintedTokenId, setMintedTokenId] = useState<number | null>(null);
 
   const { sendTransaction, isPending: isPayPending } = useSendTransaction();
-  const { isSuccess: isPayConfirmed } = useWaitForTransactionReceipt({ hash: payTxHash });
+  const { isSuccess: isPayConfirmed, isLoading: isPayWaiting } = useWaitForTransactionReceipt({ hash: payTxHash });
   const { writeContract } = useWriteContract();
   const { isSuccess: isMintConfirmed } = useWaitForTransactionReceipt({ hash: mintTxHash });
 
@@ -52,37 +52,40 @@ function MintApp() {
   }, [address, prompt, sendTransaction]);
 
   // Step 2: After payment confirmed, generate image
-  useEffect(() => {
-    if (!isPayConfirmed || !payTxHash || step !== 'paying') return;
+  const generateImage = useCallback(async (txh: string) => {
     setStep('generating');
+    // Wait for Blockscout to index the tx
+    await new Promise((r) => setTimeout(r, 8000));
 
-    // Wait a few seconds for Blockscout to index the tx
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(`${AI_WORKER_URL}/generate`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: prompt.trim(), txHash: payTxHash }),
-        });
+    try {
+      const res = await fetch(`${AI_WORKER_URL}/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: prompt.trim(), txHash: txh }),
+      });
 
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({ error: 'Generation failed' }));
-          throw new Error(errData.error || `Generation failed: ${res.status}`);
-        }
-
-        const blob = await res.blob();
-        const localUrl = URL.createObjectURL(blob);
-        setImageUrl(localUrl);
-        setImageBlob(blob);
-        setStep('preview');
-      } catch (e: any) {
-        setError(e.message || 'Generation failed');
-        setStep('prompt');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({ error: 'Generation failed' }));
+        throw new Error(errData.error || `Generation failed: ${res.status}`);
       }
-    }, 5000); // 5s delay for Blockscout indexing
 
-    return () => clearTimeout(timer);
-  }, [isPayConfirmed, payTxHash, prompt, step]);
+      const blob = await res.blob();
+      const localUrl = URL.createObjectURL(blob);
+      setImageUrl(localUrl);
+      setImageBlob(blob);
+      setStep('preview');
+    } catch (e: any) {
+      setError(e.message || 'Generation failed');
+      setStep('prompt');
+    }
+  }, [prompt]);
+
+  // Watch for payment confirmation
+  useEffect(() => {
+    if (isPayConfirmed && payTxHash && step === 'paying') {
+      generateImage(payTxHash);
+    }
+  }, [isPayConfirmed, payTxHash, step, generateImage]);
 
   // Step 3: Mint as NFT
   const handleMint = useCallback(async () => {
