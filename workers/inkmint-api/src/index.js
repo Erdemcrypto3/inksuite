@@ -111,7 +111,7 @@ export default {
         console.log('Calling Stability AI with prompt:', prompt.trim());
         const formData = new FormData();
         formData.set('prompt', prompt.trim());
-        formData.set('output_format', 'png');
+        formData.set('output_format', 'jpeg');
 
         const aiRes = await fetch(STABILITY_API, {
           method: 'POST',
@@ -134,7 +134,7 @@ export default {
           status: 200,
           headers: {
             ...headers,
-            'Content-Type': 'image/png',
+            'Content-Type': 'image/jpeg',
             'Cache-Control': 'no-store',
           },
         });

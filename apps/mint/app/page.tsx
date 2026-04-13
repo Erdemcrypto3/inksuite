@@ -97,7 +97,7 @@ function MintApp() {
       // Upload image to Walrus via proxy
       const walrusRes = await fetch(WALRUS_UPLOAD_PROXY, {
         method: 'POST',
-        headers: { 'Content-Type': 'image/png' },
+        headers: { 'Content-Type': 'image/jpeg' },
         body: imageBlob,
       });
       if (!walrusRes.ok) throw new Error('Image upload failed');
