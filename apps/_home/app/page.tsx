@@ -56,7 +56,7 @@ const apps: AppCard[] = [
   },
   {
     title: 'Game Hub',
-    description: '7 games — Hangman, Minesweeper, Snake, Tetris, Solo Test, Crossword, Checkers.',
+    description: '8 games — Hangman, Minesweeper, Snake, Tetris, Solo Test, Crossword, Checkers, Tower Defense.',
     subdomain: 'games',
     status: 'live',
   },

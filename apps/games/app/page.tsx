@@ -9,8 +9,9 @@ import { Tetris } from './components/tetris';
 import { SoloTest } from './components/solo-test';
 import { Crossword } from './components/crossword';
 import { Checkers } from './components/checkers';
+import { TowerDefense } from './components/tower-defense';
 
-type GameId = 'hangman' | 'minesweeper' | 'snake' | 'tetris' | 'solotest' | 'crossword' | 'checkers' | null;
+type GameId = 'hangman' | 'minesweeper' | 'snake' | 'tetris' | 'solotest' | 'crossword' | 'checkers' | 'towerdefense' | null;
 
 type GameInfo = {
   id: GameId & string;
@@ -27,6 +28,7 @@ const games: GameInfo[] = [
   { id: 'solotest', title: 'Solo Test', description: 'Jump pegs to remove them. Can you leave just one? English board peg solitaire.', status: 'live' },
   { id: 'crossword', title: 'Crossword', description: '5×5 mini crossword puzzles. Across and down clues. 20 themed puzzles to solve.', status: 'live' },
   { id: 'checkers', title: 'Checkers', description: 'Classic checkers against AI. Capture all opponent pieces to win. Kings move backwards.', status: 'live' },
+  { id: 'towerdefense', title: 'Tower Defense', description: 'Defend the Ink network from spam txs, bots, and MEV attackers. 15 waves, 4 tower types.', status: 'live' },
 ];
 
 function getHighScore(gameId: string): number | null {
@@ -45,6 +47,7 @@ function GameHubContent() {
   if (activeGame === 'solotest') return <GameWrapper title="Solo Test" onBack={() => setActiveGame(null)}><SoloTest /></GameWrapper>;
   if (activeGame === 'crossword') return <GameWrapper title="Crossword" onBack={() => setActiveGame(null)}><Crossword /></GameWrapper>;
   if (activeGame === 'checkers') return <GameWrapper title="Checkers" onBack={() => setActiveGame(null)}><Checkers /></GameWrapper>;
+  if (activeGame === 'towerdefense') return <GameWrapper title="Tower Defense" onBack={() => setActiveGame(null)}><TowerDefense /></GameWrapper>;
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
