@@ -3,7 +3,8 @@
 import { InkWalletProvider, ConnectButton, useAccount, useReadContract, useWriteContract, useSendTransaction, useWaitForTransactionReceipt } from '@inksuite/wallet';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toHex } from 'viem';
-import { CONTRACT_ADDRESS, INKPRESS_ABI, API_URL, BLOG_TAGS } from './components/contract';
+import { CONTRACT_ADDRESS, INKPRESS_ABI, API_URL, loadCategories, getAllTags } from './components/contract';
+import { CategoryManagerWithCounts } from './components/category-manager';
 
 type Article = {
   walrusBlobId: string;
@@ -17,7 +18,7 @@ type Article = {
   tags: string[];
 };
 
-type View = 'feed' | 'read' | 'write' | 'apply';
+type View = 'feed' | 'read' | 'write' | 'apply' | 'categories';
 
 /* ── Article Card ── */
 function ArticleCard({ article, index, onRead, isOwner }: { article: Article; index: number; onRead: (a: Article, i: number) => void; isOwner: boolean }) {
@@ -159,7 +160,8 @@ function WriteArticle({ onBack, onPublished }: { onBack: () => void; onPublished
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [body, setBody] = useState('');
-  const [tag, setTag] = useState<string>(BLOG_TAGS[0]);
+  const allTags = getAllTags(loadCategories());
+  const [tag, setTag] = useState<string>(allTags[0] || '');
   const [step, setStep] = useState<'write' | 'uploading' | 'publishing' | 'done'>('write');
   const [error, setError] = useState<string | null>(null);
   const { writeContract, isPending } = useWriteContract();
@@ -249,7 +251,7 @@ function WriteArticle({ onBack, onPublished }: { onBack: () => void; onPublished
               value={tag} onChange={(e) => setTag(e.target.value)}
               className="rounded-lg border border-purple-200 bg-ink-50 px-4 py-2.5 text-sm text-ink-900 focus:border-ink-500 focus:outline-none"
             >
-              {BLOG_TAGS.map((t) => <option key={t} value={t}>{t}</option>)}
+              {allTags.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
 
@@ -422,16 +424,27 @@ function BlogFeed() {
     return <ApplyWriter onBack={() => setView('feed')} />;
   }
 
+  // Category management view (owner only)
+  if (view === 'categories') {
+    return <CategoryManagerWithCounts articles={articles} onClose={() => setView('feed')} />;
+  }
+
   return (
     <div className="space-y-8">
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <div className="flex gap-2">
           {isConnected && isAuthor && (
-            <button onClick={() => setView('write')}
-              className="rounded-lg bg-ink-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ink-600">
-              Write Article
-            </button>
+            <>
+              <button onClick={() => setView('write')}
+                className="rounded-lg bg-ink-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-ink-600">
+                Write Article
+              </button>
+              <button onClick={() => setView('categories')}
+                className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-ink-700 ring-1 ring-inset ring-purple-200 hover:bg-purple-50">
+                Categories
+              </button>
+            </>
           )}
           {isConnected && !isAuthor && (
             <button onClick={() => setView('apply')}

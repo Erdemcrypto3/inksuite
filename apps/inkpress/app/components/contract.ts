@@ -2,15 +2,38 @@ export const CONTRACT_ADDRESS = '0x7A0bB0C37a934b3858436E61838719a5a7F63720' as 
 
 export const API_URL = 'https://api.inksuite.xyz';
 
-export const BLOG_TAGS = [
-  'Tech/Web3',
-  'DeFi',
-  'NFTs',
-  'Ink Ecosystem',
-  'Tutorials',
-  'Opinion',
-  'News',
-] as const;
+export type CategoryItem = { main: string; subs: string[] };
+
+export const DEFAULT_CATEGORIES: CategoryItem[] = [
+  { main: 'Blockchain & Web3', subs: ['Layer 1 & Layer 2', 'Smart Contracts', 'Wallets & Security', 'Interoperability'] },
+  { main: 'DeFi', subs: ['Lending & Borrowing', 'DEX & Trading', 'Yield & Staking', 'Stablecoins'] },
+  { main: 'NFTs & Digital Assets', subs: ['Art & Collectibles', 'Gaming & Metaverse', 'Utility NFTs', 'Marketplaces'] },
+  { main: 'Ink Ecosystem', subs: ['Ink Chain Updates', 'Ink dApps', 'Builder Stories', 'Tutorials & Guides'] },
+  { main: 'Opinion & Analysis', subs: ['Market Analysis', 'Project Reviews', 'Predictions', 'Editorials'] },
+  { main: 'Development', subs: ['Solidity & EVM', 'Frontend & dApps', 'Tools & Infrastructure', 'Open Source'] },
+];
+
+export function loadCategories(): CategoryItem[] {
+  if (typeof window === 'undefined') return DEFAULT_CATEGORIES;
+  try {
+    const raw = localStorage.getItem('inkpress-categories');
+    return raw ? JSON.parse(raw) : DEFAULT_CATEGORIES;
+  } catch { return DEFAULT_CATEGORIES; }
+}
+
+export function saveCategories(cats: CategoryItem[]) {
+  localStorage.setItem('inkpress-categories', JSON.stringify(cats));
+}
+
+export function getAllTags(cats: CategoryItem[]): string[] {
+  const tags: string[] = [];
+  for (const c of cats) {
+    for (const s of c.subs) {
+      tags.push(`${c.main} > ${s}`);
+    }
+  }
+  return tags;
+}
 
 // Matches BaseBlog.sol Article struct exactly:
 // walrusBlobId, title, description, coverImageBlobId, author, totalMinted, publishedAt, active, tags[]

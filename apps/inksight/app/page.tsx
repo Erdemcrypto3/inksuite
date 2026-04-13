@@ -524,6 +524,24 @@ function AdminPanel({ address }: { address: string }) {
     writeContract({ address: INKPOLL_ADDRESS, abi: INKPOLL_ABI, functionName: 'closePoll', args: [BigInt(id)] });
   };
 
+  // Read on-chain categories
+  const { data: onChainCategories } = useReadContract({
+    address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+    functionName: 'getAllCategories',
+  });
+  const categories = (onChainCategories as string[] | undefined) ?? [...CATEGORIES];
+
+  const [newCatName, setNewCatName] = useState('');
+
+  const addCategoryOnChain = () => {
+    if (!newCatName.trim()) return;
+    writeContract({
+      address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+      functionName: 'addCategory', args: [newCatName.trim()],
+    });
+    setNewCatName('');
+  };
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <h2 className="text-xl font-bold">Admin Dashboard</h2>
@@ -538,6 +556,31 @@ function AdminPanel({ address }: { address: string }) {
           Transaction confirmed!
         </div>
       )}
+
+      {/* Category Management */}
+      <div className="bg-white rounded-xl ring-1 ring-inset ring-purple-100 p-5 shadow-sm">
+        <h3 className="font-bold mb-3">Categories ({categories.length})</h3>
+        <p className="text-xs text-ink-400 mb-3">On-chain categories. Users select these during registration. Polls target specific categories.</p>
+        <div className="space-y-2 mb-4">
+          {categories.map((cat, i) => {
+            const mask = 1 << i;
+            return (
+              <CategoryRow key={i} index={i} name={cat} mask={mask} />
+            );
+          })}
+        </div>
+        <div className="flex gap-2">
+          <input value={newCatName} onChange={(e) => setNewCatName(e.target.value)}
+            placeholder="New category name..."
+            className="flex-1 px-3 py-2 rounded-lg bg-ink-50 ring-1 ring-inset ring-purple-100 text-sm focus:outline-none"
+            onKeyDown={(e) => e.key === 'Enter' && addCategoryOnChain()} />
+          <button onClick={addCategoryOnChain} disabled={isPending || !newCatName.trim()}
+            className="px-4 py-2 rounded-lg bg-ink-500 text-white text-sm font-medium hover:bg-ink-600 disabled:opacity-50">
+            Add Category
+          </button>
+        </div>
+        <p className="mt-2 text-[10px] text-ink-400">Adding a category requires an on-chain transaction. Categories cannot be removed once added.</p>
+      </div>
 
       {/* Poll Actions */}
       <div className="bg-white rounded-xl ring-1 ring-inset ring-purple-100 p-5 shadow-sm">
@@ -574,6 +617,24 @@ function AdminPanel({ address }: { address: string }) {
           Transaction pending...
         </div>
       )}
+    </div>
+  );
+}
+
+function CategoryRow({ index, name, mask }: { index: number; name: string; mask: number }) {
+  const { data: audienceSize } = useReadContract({
+    address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+    functionName: 'getAudienceSize', args: [mask],
+  });
+  const count = Number(audienceSize ?? 0);
+
+  return (
+    <div className="flex items-center justify-between rounded-lg bg-ink-50 px-3 py-2">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium text-ink-700">{name}</span>
+        <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[9px] font-mono text-ink-500">bit {index}</span>
+      </div>
+      <span className="text-xs font-mono text-ink-500">{count} users</span>
     </div>
   );
 }
