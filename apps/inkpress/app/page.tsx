@@ -30,6 +30,8 @@ function ArticleCard({ article, index, onRead, isOwner }: { article: Article; in
     writeContract({
       address: CONTRACT_ADDRESS, abi: INKPRESS_ABI,
       functionName: fn, args: [BigInt(index)],
+    }, {
+      onSuccess: () => { setTimeout(() => window.location.reload(), 3000); },
     });
   };
 
@@ -102,6 +104,8 @@ function ArticleReader({ article, articleId, onBack, isOwner }: { article: Artic
     writeContract2({
       address: CONTRACT_ADDRESS, abi: INKPRESS_ABI,
       functionName: fn, args: [BigInt(articleId)],
+    }, {
+      onSuccess: () => { setTimeout(() => window.location.reload(), 3000); },
     });
   };
 
