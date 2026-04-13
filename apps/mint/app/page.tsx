@@ -1,8 +1,8 @@
 'use client';
 
-import { InkWalletProvider, ConnectButton, useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useSendTransaction } from '@inksuite/wallet';
+import { InkWalletProvider, ConnectButton, useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useSendTransaction, useBalance } from '@inksuite/wallet';
 import { useState, useEffect, useCallback } from 'react';
-import { parseEther } from 'viem';
+import { parseEther, formatEther } from 'viem';
 import { INKMINT_ADDRESS, INKMINT_ABI, API_URL } from './components/contract';
 
 const GENERATION_FEE = parseEther('0.0002');
@@ -23,9 +23,15 @@ function MintApp() {
   const [mintedTokenId, setMintedTokenId] = useState<number | null>(null);
 
   const { sendTransaction, isPending: isPayPending } = useSendTransaction();
-  const { isSuccess: isPayConfirmed, isLoading: isPayWaiting } = useWaitForTransactionReceipt({ hash: payTxHash });
+  const { isSuccess: isPayConfirmed, isError: isPayFailed } = useWaitForTransactionReceipt({ hash: payTxHash });
   const { writeContract } = useWriteContract();
-  const { isSuccess: isMintConfirmed } = useWaitForTransactionReceipt({ hash: mintTxHash });
+  const { isSuccess: isMintConfirmed, isError: isMintFailed } = useWaitForTransactionReceipt({ hash: mintTxHash });
+
+  // Balance check
+  const { data: balanceData } = useBalance({ address });
+  const balance = balanceData?.value ?? BigInt(0);
+  const totalCost = GENERATION_FEE + MINT_FEE;
+  const hasEnoughBalance = balance >= totalCost;
 
   const { data: totalSupplyRaw } = useReadContract({
     address: INKMINT_ADDRESS, abi: INKMINT_ABI, functionName: 'totalSupply',
@@ -80,12 +86,24 @@ function MintApp() {
     }
   }, [prompt]);
 
-  // Watch for payment confirmation
+  // Watch for payment confirmation or failure
   useEffect(() => {
+    if (isPayFailed && step === 'paying') {
+      setError('Payment transaction failed. Please try again.');
+      setStep('prompt');
+    }
     if (isPayConfirmed && payTxHash && step === 'paying') {
       generateImage(payTxHash);
     }
-  }, [isPayConfirmed, payTxHash, step, generateImage]);
+  }, [isPayConfirmed, isPayFailed, payTxHash, step, generateImage]);
+
+  // Watch for mint failure
+  useEffect(() => {
+    if (isMintFailed && step === 'confirming') {
+      setError('Mint transaction failed. Your image is still available — try minting again.');
+      setStep('preview');
+    }
+  }, [isMintFailed, step]);
 
   // Step 3: Mint as NFT
   const handleMint = useCallback(async () => {
@@ -236,10 +254,19 @@ function MintApp() {
             <div className="space-y-3">
               {step === 'prompt' && (
                 isConnected ? (
-                  <button onClick={handlePay} disabled={!prompt.trim()}
-                    className="w-full rounded-lg bg-ink-500 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-ink-600 disabled:opacity-50 disabled:cursor-not-allowed">
-                    Generate Art (0.0002 ETH)
-                  </button>
+                  !hasEnoughBalance ? (
+                    <div className="rounded-lg bg-red-50 p-4 ring-1 ring-inset ring-red-200">
+                      <p className="text-sm font-semibold text-red-700">Insufficient balance</p>
+                      <p className="mt-1 text-xs text-red-600">
+                        You need at least 0.000777 ETH (generate + mint). Current balance: {formatEther(balance)} ETH.
+                      </p>
+                    </div>
+                  ) : (
+                    <button onClick={handlePay} disabled={!prompt.trim()}
+                      className="w-full rounded-lg bg-ink-500 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-ink-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                      Generate Art (0.0002 ETH)
+                    </button>
+                  )
                 ) : (
                   <div className="text-center py-4">
                     <p className="text-sm text-ink-500 mb-3">Connect wallet to generate art</p>
