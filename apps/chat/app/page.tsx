@@ -15,6 +15,29 @@ type Message = {
 };
 
 const MSG_PREFIX = 'inkchat:';
+const URL_REGEX = /https?:\/\/[^\s]+|www\.[^\s]+|\.[a-z]{2,}\/[^\s]*/gi;
+
+const SAFETY_WARNINGS = [
+  'Never click links received in on-chain messages — they may lead to phishing sites.',
+  'Never share your seed phrase or private key with anyone, regardless of what they claim.',
+  'If someone offers you free tokens or airdrops via chat, it is almost certainly a scam.',
+  'Verify the identity of who you are chatting with through other channels before taking action.',
+  'On-chain messages are public — anyone can read them. Do not share personal information.',
+  'If a message asks you to approve a transaction or connect to a site, do not comply.',
+];
+
+function loadFriends(): { address: string; label: string }[] {
+  if (typeof window === 'undefined') return [];
+  try { return JSON.parse(localStorage.getItem('inkchat-friends') || '[]'); } catch { return []; }
+}
+
+function saveFriends(friends: { address: string; label: string }[]) {
+  localStorage.setItem('inkchat-friends', JSON.stringify(friends));
+}
+
+function containsLink(text: string): boolean {
+  return URL_REGEX.test(text);
+}
 
 function decodeMessage(input: string): string | null {
   if (!input || input === '0x') return null;
@@ -40,6 +63,11 @@ function ChatApp() {
   const [newMsg, setNewMsg] = useState('');
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
   const [error, setError] = useState<string | null>(null);
+  const [friends, setFriends] = useState<{ address: string; label: string }[]>([]);
+  const [newFriendLabel, setNewFriendLabel] = useState('');
+  const [showAddFriend, setShowAddFriend] = useState(false);
+
+  useEffect(() => { setFriends(loadFriends()); }, []);
 
   const { sendTransaction, isPending } = useSendTransaction();
   const { isSuccess } = useWaitForTransactionReceipt({ hash: txHash });
@@ -117,6 +145,10 @@ function ChatApp() {
 
   const handleSend = useCallback(() => {
     if (!activePeer || !newMsg.trim() || !address) return;
+    if (containsLink(newMsg)) {
+      setError('Links are not allowed in messages for safety reasons.');
+      return;
+    }
     setError(null);
     const calldata = toHex(`${MSG_PREFIX}${newMsg.trim()}`);
     sendTransaction(
@@ -124,6 +156,21 @@ function ChatApp() {
       { onSuccess: (hash) => setTxHash(hash) },
     );
   }, [activePeer, newMsg, address, sendTransaction]);
+
+  const addFriend = (addr: string, label: string) => {
+    if (!isAddress(addr)) return;
+    const updated = [...friends.filter(f => f.address.toLowerCase() !== addr.toLowerCase()), { address: addr, label: label || shortenAddr(addr) }];
+    setFriends(updated);
+    saveFriends(updated);
+    setShowAddFriend(false);
+    setNewFriendLabel('');
+  };
+
+  const removeFriend = (addr: string) => {
+    const updated = friends.filter(f => f.address.toLowerCase() !== addr.toLowerCase());
+    setFriends(updated);
+    saveFriends(updated);
+  };
 
   const startChat = () => {
     const peer = peerAddress.trim();
@@ -172,17 +219,49 @@ function ChatApp() {
           {error && <p className="text-sm text-red-600">{error}</p>}
         </div>
 
+        {/* Friends list */}
+        {friends.length > 0 && (
+          <div className="rounded-xl bg-white p-5 ring-1 ring-inset ring-purple-100 shadow-sm">
+            <h3 className="mb-3 text-sm font-semibold text-ink-900">Friends</h3>
+            <div className="space-y-2">
+              {friends.map((f) => (
+                <div key={f.address} className="flex items-center justify-between rounded-lg bg-ink-50 p-3">
+                  <button onClick={() => { setPeerAddress(f.address); startChat(); setActivePeer(f.address); }}
+                    className="flex items-center gap-2 text-left hover:text-ink-600">
+                    <span className="text-sm font-medium text-ink-700">{f.label}</span>
+                    <span className="font-mono text-[10px] text-ink-400">{shortenAddr(f.address)}</span>
+                  </button>
+                  <button onClick={() => removeFriend(f.address)} className="text-xs text-red-400 hover:text-red-600">Remove</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Safety warnings */}
+        <div className="rounded-xl bg-amber-50 p-5 ring-1 ring-inset ring-amber-200">
+          <h3 className="mb-3 text-sm font-semibold text-amber-800">Safety Guidelines</h3>
+          <ul className="space-y-2">
+            {SAFETY_WARNINGS.map((w, i) => (
+              <li key={i} className="flex items-start gap-2 text-xs text-amber-700">
+                <span className="mt-0.5 shrink-0 text-amber-500">!</span>
+                {w}
+              </li>
+            ))}
+          </ul>
+        </div>
+
         {/* How it works */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="rounded-xl bg-white p-5 ring-1 ring-inset ring-purple-100 shadow-sm">
             <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-ink-500 text-sm font-bold text-white">1</div>
             <h3 className="text-sm font-semibold text-ink-900">Enter Address</h3>
-            <p className="mt-1 text-xs text-ink-600">Paste the wallet address you want to message.</p>
+            <p className="mt-1 text-xs text-ink-600">Paste the wallet address you want to message or select from friends.</p>
           </div>
           <div className="rounded-xl bg-white p-5 ring-1 ring-inset ring-purple-100 shadow-sm">
             <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-ink-500 text-sm font-bold text-white">2</div>
             <h3 className="text-sm font-semibold text-ink-900">Write & Send</h3>
-            <p className="mt-1 text-xs text-ink-600">Type your message. It becomes calldata in a 0-value transaction. Costs only gas.</p>
+            <p className="mt-1 text-xs text-ink-600">Type your message (text only, no links). Costs only gas (~$0.001).</p>
           </div>
           <div className="rounded-xl bg-white p-5 ring-1 ring-inset ring-purple-100 shadow-sm">
             <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-ink-500 text-sm font-bold text-white">3</div>
@@ -206,13 +285,34 @@ function ChatApp() {
       </div>
 
       {/* Chat header */}
-      <div className="rounded-xl bg-white p-4 ring-1 ring-inset ring-purple-100 shadow-sm flex items-center justify-between">
-        <div>
-          <p className="text-xs text-ink-500">Chatting with</p>
-          <a href={`${EXPLORER_URL}/address/${activePeer}`} target="_blank" rel="noopener noreferrer"
-            className="font-mono text-sm text-ink-700 hover:text-ink-500 underline">{shortenAddr(activePeer)}</a>
+      <div className="rounded-xl bg-white p-4 ring-1 ring-inset ring-purple-100 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs text-ink-500">Chatting with</p>
+            <a href={`${EXPLORER_URL}/address/${activePeer}`} target="_blank" rel="noopener noreferrer"
+              className="font-mono text-sm text-ink-700 hover:text-ink-500 underline">{shortenAddr(activePeer)}</a>
+          </div>
+          <div className="flex items-center gap-2">
+            {!friends.some(f => f.address.toLowerCase() === activePeer.toLowerCase()) ? (
+              showAddFriend ? (
+                <div className="flex gap-1">
+                  <input value={newFriendLabel} onChange={(e) => setNewFriendLabel(e.target.value)}
+                    placeholder="Name" className="w-24 rounded border border-purple-200 px-2 py-1 text-xs" />
+                  <button onClick={() => addFriend(activePeer, newFriendLabel)}
+                    className="rounded bg-ink-500 px-2 py-1 text-xs text-white">Save</button>
+                </div>
+              ) : (
+                <button onClick={() => setShowAddFriend(true)}
+                  className="rounded-lg bg-purple-100 px-3 py-1 text-xs font-semibold text-ink-600 hover:bg-purple-200">
+                  Add Friend
+                </button>
+              )
+            ) : (
+              <span className="text-[10px] text-emerald-600 font-semibold">Friend</span>
+            )}
+            <button onClick={loadMessages} className="text-xs text-ink-500 hover:text-ink-700">Refresh</button>
+          </div>
         </div>
-        <button onClick={loadMessages} className="text-xs text-ink-500 hover:text-ink-700">Refresh</button>
       </div>
 
       {/* Messages */}
