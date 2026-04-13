@@ -76,6 +76,20 @@ export const INKPRESS_ABI = [
     outputs: [{ name: '', type: 'uint256' }],
   },
   {
+    name: 'unpublishArticle',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'articleId', type: 'uint256' }],
+    outputs: [],
+  },
+  {
+    name: 'republishArticle',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'articleId', type: 'uint256' }],
+    outputs: [],
+  },
+  {
     name: 'mintArticle',
     type: 'function',
     stateMutability: 'payable',
