@@ -73,6 +73,18 @@ const apps: AppCard[] = [
     status: 'live',
   },
   {
+    title: 'InkTip',
+    description: 'Send on-chain tips to anyone on Ink. Shareable tip links. No middleman.',
+    subdomain: 'tip',
+    status: 'live',
+  },
+  {
+    title: 'InkChat',
+    description: 'Wallet-to-wallet messaging on Ink. Every message is a permanent on-chain transaction.',
+    subdomain: 'chat',
+    status: 'live',
+  },
+  {
     title: 'InkSight',
     description: 'Community insight platform. Projects pay to ask, you earn points for answering.',
     subdomain: 'inksight',
