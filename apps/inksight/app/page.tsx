@@ -11,6 +11,15 @@ import {
 } from '@inksuite/wallet';
 import { INKPOLL_ADDRESS, INKPOLL_ABI, CATEGORIES, categoriesToMask, maskToCategories } from './components/contract';
 
+function getDeactivated(): number[] {
+  if (typeof window === 'undefined') return [];
+  try { return JSON.parse(localStorage.getItem('inksight-deactivated-cats') || '[]'); } catch { return []; }
+}
+
+function isCategoryActive(index: number): boolean {
+  return !getDeactivated().includes(index);
+}
+
 // ═══════════════════════════════════════════════════════════
 // Types
 // ═══════════════════════════════════════════════════════════
@@ -115,7 +124,7 @@ function RegisterPanel({ user, onRegistered }: { user: UserProfile | null; onReg
         Select the categories you want to receive polls for. Earn points for every response.
       </p>
       <div className="grid grid-cols-2 gap-2 mb-5">
-        {CATEGORIES.map((cat, i) => (
+        {CATEGORIES.map((cat, i) => !isCategoryActive(i) ? null : (
           <button
             key={cat}
             onClick={() => toggle(i)}
@@ -505,6 +514,22 @@ function AdminPanel({ address }: { address: string }) {
     functionName: 'getAllCategories',
   });
   const [newCatName, setNewCatName] = useState('');
+  const [deactivated, setDeactivated] = useState<number[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try { return JSON.parse(localStorage.getItem('inksight-deactivated-cats') || '[]'); } catch { return []; }
+  });
+
+  const saveDeactivated = (list: number[]) => {
+    setDeactivated(list);
+    localStorage.setItem('inksight-deactivated-cats', JSON.stringify(list));
+  };
+
+  const toggleDeactivate = (index: number) => {
+    const list = deactivated.includes(index)
+      ? deactivated.filter((i) => i !== index)
+      : [...deactivated, index];
+    saveDeactivated(list);
+  };
 
   const authorized = isAdmin || (ownerAddr as string)?.toLowerCase() === address.toLowerCase();
 
@@ -564,8 +589,11 @@ function AdminPanel({ address }: { address: string }) {
         <div className="space-y-2 mb-4">
           {categories.map((cat, i) => {
             const mask = 1 << i;
+            const isDeactivated = deactivated.includes(i);
             return (
-              <CategoryRow key={i} index={i} name={cat} mask={mask} />
+              <CategoryRow key={i} index={i} name={cat} mask={mask}
+                isDeactivated={isDeactivated}
+                onToggle={() => toggleDeactivate(i)} />
             );
           })}
         </div>
@@ -621,7 +649,7 @@ function AdminPanel({ address }: { address: string }) {
   );
 }
 
-function CategoryRow({ index, name, mask }: { index: number; name: string; mask: number }) {
+function CategoryRow({ index, name, mask, isDeactivated, onToggle }: { index: number; name: string; mask: number; isDeactivated: boolean; onToggle: () => void }) {
   const { data: audienceSize } = useReadContract({
     address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
     functionName: 'getAudienceSize', args: [mask],
@@ -629,12 +657,19 @@ function CategoryRow({ index, name, mask }: { index: number; name: string; mask:
   const count = Number(audienceSize ?? 0);
 
   return (
-    <div className="flex items-center justify-between rounded-lg bg-ink-50 px-3 py-2">
+    <div className={`flex items-center justify-between rounded-lg px-3 py-2 ${isDeactivated ? 'bg-red-50 opacity-60' : 'bg-ink-50'}`}>
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium text-ink-700">{name}</span>
         <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[9px] font-mono text-ink-500">bit {index}</span>
+        {isDeactivated && <span className="rounded-full bg-red-100 px-2 py-0.5 text-[9px] font-semibold text-red-700">Hidden</span>}
       </div>
-      <span className="text-xs font-mono text-ink-500">{count} users</span>
+      <div className="flex items-center gap-3">
+        <span className="text-xs font-mono text-ink-500">{count} users</span>
+        <button onClick={onToggle}
+          className={`rounded-lg px-2 py-1 text-[10px] font-semibold ring-1 ring-inset ${isDeactivated ? 'text-emerald-700 ring-emerald-200 hover:bg-emerald-50' : 'text-red-600 ring-red-200 hover:bg-red-50'}`}>
+          {isDeactivated ? 'Activate' : 'Deactivate'}
+        </button>
+      </div>
     </div>
   );
 }

@@ -15,15 +15,18 @@ export function CategoryManagerWithCounts({ articles, onClose }: { articles: Art
   const [newSub, setNewSub] = useState('');
   const [editingMain, setEditingMain] = useState<number | null>(null);
 
-  const getTagCount = (tagQuery: string): number => {
+  // Tags are stored as sub-category names only (contract 32-byte limit)
+  const getSubCount = (subName: string): number => {
     return articles.filter((a) =>
-      a.tags.some((t) => t.toLowerCase().includes(tagQuery.toLowerCase()))
+      a.tags.some((t) => t.toLowerCase() === subName.toLowerCase())
     ).length;
   };
 
-  const getMainCount = (mainCat: string): number => {
+  // Main category count = sum of all its subs' article counts
+  const getMainCount = (cat: CategoryItem): number => {
+    const subNames = new Set(cat.subs.map((s) => s.toLowerCase()));
     return articles.filter((a) =>
-      a.tags.some((t) => t.toLowerCase().startsWith(mainCat.toLowerCase()))
+      a.tags.some((t) => subNames.has(t.toLowerCase()))
     ).length;
   };
 
@@ -40,8 +43,11 @@ export function CategoryManagerWithCounts({ articles, onClose }: { articles: Art
   };
 
   const removeMainCategory = (index: number) => {
-    const count = getMainCount(categories[index].main);
-    if (count > 0 && !confirm(`This category has ${count} article(s). Remove anyway?`)) return;
+    const count = getMainCount(categories[index]);
+    if (count > 0) {
+      alert(`Cannot remove "${categories[index].main}" — it has ${count} article(s). Unpublish or reassign articles first, or remove the subcategories one by one.`);
+      return;
+    }
     save(categories.filter((_, i) => i !== index));
   };
 
@@ -55,9 +61,12 @@ export function CategoryManagerWithCounts({ articles, onClose }: { articles: Art
   };
 
   const removeSubCategory = (mainIndex: number, subIndex: number) => {
-    const tag = `${categories[mainIndex].main} > ${categories[mainIndex].subs[subIndex]}`;
-    const count = getTagCount(tag);
-    if (count > 0 && !confirm(`This subcategory has ${count} article(s). Remove anyway?`)) return;
+    const subName = categories[mainIndex].subs[subIndex];
+    const count = getSubCount(subName);
+    if (count > 0) {
+      alert(`Cannot remove "${subName}" — it has ${count} article(s). Unpublish or reassign articles first.`);
+      return;
+    }
     const cats = [...categories];
     cats[mainIndex] = { ...cats[mainIndex], subs: cats[mainIndex].subs.filter((_, i) => i !== subIndex) };
     save(cats);
@@ -82,7 +91,7 @@ export function CategoryManagerWithCounts({ articles, onClose }: { articles: Art
 
       <div className="space-y-3">
         {categories.map((cat, mi) => {
-          const mainCount = getMainCount(cat.main);
+          const mainCount = getMainCount(cat);
           return (
             <div key={mi} className="rounded-xl bg-white p-4 ring-1 ring-inset ring-purple-100 shadow-sm">
               <div className="flex items-center justify-between mb-2">
@@ -97,8 +106,7 @@ export function CategoryManagerWithCounts({ articles, onClose }: { articles: Art
               </div>
               <div className="ml-4 space-y-1">
                 {cat.subs.map((sub, si) => {
-                  const subTag = `${cat.main} > ${sub}`;
-                  const subCount = getTagCount(subTag);
+                  const subCount = getSubCount(sub);
                   return (
                     <div key={si} className="flex items-center justify-between rounded bg-ink-50 px-3 py-1.5">
                       <div className="flex items-center gap-2">
