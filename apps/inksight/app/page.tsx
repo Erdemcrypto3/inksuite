@@ -499,6 +499,13 @@ function AdminPanel({ address }: { address: string }) {
   const { writeContract, data: hash, isPending } = useWriteContract();
   const { isSuccess } = useWaitForTransactionReceipt({ hash });
 
+  // Read on-chain categories (must be before any conditional return — React hooks rules)
+  const { data: onChainCategories } = useReadContract({
+    address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+    functionName: 'getAllCategories',
+  });
+  const [newCatName, setNewCatName] = useState('');
+
   const authorized = isAdmin || (ownerAddr as string)?.toLowerCase() === address.toLowerCase();
 
   if (!authorized) {
@@ -508,6 +515,17 @@ function AdminPanel({ address }: { address: string }) {
       </div>
     );
   }
+
+  const categories = (onChainCategories as string[] | undefined) ?? [...CATEGORIES];
+
+  const addCategoryOnChain = () => {
+    if (!newCatName.trim()) return;
+    writeContract({
+      address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+      functionName: 'addCategory', args: [newCatName.trim()],
+    });
+    setNewCatName('');
+  };
 
   const approve = (id: string) => {
     if (!id) return;
@@ -522,24 +540,6 @@ function AdminPanel({ address }: { address: string }) {
   const closePoll = (id: string) => {
     if (!id) return;
     writeContract({ address: INKPOLL_ADDRESS, abi: INKPOLL_ABI, functionName: 'closePoll', args: [BigInt(id)] });
-  };
-
-  // Read on-chain categories
-  const { data: onChainCategories } = useReadContract({
-    address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
-    functionName: 'getAllCategories',
-  });
-  const categories = (onChainCategories as string[] | undefined) ?? [...CATEGORIES];
-
-  const [newCatName, setNewCatName] = useState('');
-
-  const addCategoryOnChain = () => {
-    if (!newCatName.trim()) return;
-    writeContract({
-      address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
-      functionName: 'addCategory', args: [newCatName.trim()],
-    });
-    setNewCatName('');
   };
 
   return (

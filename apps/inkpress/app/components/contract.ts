@@ -25,11 +25,14 @@ export function saveCategories(cats: CategoryItem[]) {
   localStorage.setItem('inkpress-categories', JSON.stringify(cats));
 }
 
+// Contract enforces 32-byte limit on each tag. Keep names short.
 export function getAllTags(cats: CategoryItem[]): string[] {
   const tags: string[] = [];
   for (const c of cats) {
     for (const s of c.subs) {
-      tags.push(`${c.main} > ${s}`);
+      // Sub only — short enough and unique across categories
+      const tag = s.length > 32 ? s.slice(0, 32) : s;
+      if (!tags.includes(tag)) tags.push(tag);
     }
   }
   return tags;
