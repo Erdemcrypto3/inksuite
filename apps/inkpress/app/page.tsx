@@ -1,9 +1,10 @@
 'use client';
 
 import { InkWalletProvider, ConnectButton, useAccount, useReadContract, useWriteContract, useSendTransaction, useWaitForTransactionReceipt } from '@inksuite/wallet';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toHex } from 'viem';
 import { CONTRACT_ADDRESS, INKPRESS_ABI, API_URL, loadCategories, getAllTags, getAllTagOptions } from './components/contract';
+import { RichEditor } from './components/rich-editor';
 import { CategoryManagerWithCounts } from './components/category-manager';
 
 type Article = {
@@ -126,7 +127,7 @@ function ArticleReader({ article, articleId, onBack, isOwner }: { article: Artic
         {loading ? (
           <div className="py-12 text-center text-ink-400">Loading content...</div>
         ) : (
-          <div className="prose max-w-none text-ink-800 leading-relaxed whitespace-pre-wrap">{content}</div>
+          <div className="prose max-w-none text-ink-800 leading-relaxed" dangerouslySetInnerHTML={{ __html: content }} />
         )}
         <div className="mt-8 border-t border-purple-100 pt-6 flex items-center gap-4 flex-wrap">
           {address && mintPrice && (
@@ -165,29 +166,18 @@ function WriteArticle({ onBack, onPublished }: { onBack: () => void; onPublished
   const [step, setStep] = useState<'write' | 'uploading' | 'publishing' | 'done'>('write');
   const [error, setError] = useState<string | null>(null);
   const { writeContract, isPending } = useWriteContract();
-  const bodyRef = useRef<HTMLTextAreaElement>(null);
-
-  const insertFormat = (before: string, after: string) => {
-    const ta = bodyRef.current;
-    if (!ta) return;
-    const start = ta.selectionStart;
-    const end = ta.selectionEnd;
-    const selected = body.slice(start, end);
-    const newText = body.slice(0, start) + before + selected + after + body.slice(end);
-    setBody(newText);
-    setTimeout(() => { ta.focus(); ta.selectionStart = start + before.length; ta.selectionEnd = end + before.length; }, 0);
-  };
 
   const handlePublish = useCallback(async () => {
-    if (!title.trim() || !body.trim()) { setError('Title and content are required.'); return; }
+    const plain = body.replace(/<[^>]+>/g, '').trim();
+    if (!title.trim() || !plain) { setError('Title and content are required.'); return; }
     setError(null);
     setStep('uploading');
 
     try {
-      // Upload content to R2
+      // Upload HTML content to R2
       const res = await fetch(`${API_URL}/upload`, {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
+        headers: { 'Content-Type': 'text/html' },
         body: body,
       });
       if (!res.ok) throw new Error('Content upload failed');
@@ -257,24 +247,8 @@ function WriteArticle({ onBack, onPublished }: { onBack: () => void; onPublished
 
           <div>
             <label className="block text-xs font-semibold text-ink-600 mb-1">Content</label>
-            <div className="flex gap-1 mb-1">
-              <button type="button" onClick={() => insertFormat('**', '**')} className="rounded px-2 py-1 text-xs font-bold text-ink-600 hover:bg-purple-100">B</button>
-              <button type="button" onClick={() => insertFormat('*', '*')} className="rounded px-2 py-1 text-xs italic text-ink-600 hover:bg-purple-100">I</button>
-              <button type="button" onClick={() => insertFormat('\n## ', '\n')} className="rounded px-2 py-1 text-xs font-semibold text-ink-600 hover:bg-purple-100">H2</button>
-              <button type="button" onClick={() => insertFormat('\n### ', '\n')} className="rounded px-2 py-1 text-xs font-semibold text-ink-600 hover:bg-purple-100">H3</button>
-              <button type="button" onClick={() => insertFormat('\n- ', '\n')} className="rounded px-2 py-1 text-xs text-ink-600 hover:bg-purple-100">List</button>
-              <button type="button" onClick={() => insertFormat('\n> ', '\n')} className="rounded px-2 py-1 text-xs text-ink-600 hover:bg-purple-100">Quote</button>
-              <button type="button" onClick={() => insertFormat('`', '`')} className="rounded px-2 py-1 text-xs font-mono text-ink-600 hover:bg-purple-100">Code</button>
-              <button type="button" onClick={() => insertFormat('[', '](url)')} className="rounded px-2 py-1 text-xs text-ink-600 hover:bg-purple-100">Link</button>
-            </div>
-            <textarea
-              ref={bodyRef}
-              value={body} onChange={(e) => setBody(e.target.value)}
-              placeholder="Write your article here... Markdown formatting supported."
-              rows={16}
-              className="w-full rounded-lg border border-purple-200 bg-ink-50 px-4 py-3 text-sm text-ink-900 font-mono placeholder:text-ink-300 focus:border-ink-500 focus:outline-none resize-y"
-            />
-            <p className="mt-1 text-[10px] text-ink-400">Markdown supported: **bold**, *italic*, ## headings, - lists, &gt; quotes, `code`</p>
+            <RichEditor value={body} onChange={setBody} placeholder="Write your article here..." />
+            <p className="mt-1 text-[10px] text-ink-400">Rich text editor — formatting saved as HTML.</p>
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
