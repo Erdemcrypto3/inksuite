@@ -6,9 +6,10 @@ import { POSITION_MAP, SQUAD_STRUCTURE, BUDGET, MAX_PER_TEAM } from './component
 import { PlayerPicker } from './components/player-picker';
 import { SquadView } from './components/squad-view';
 import { PointsView } from './components/points-view';
+import { LeaderboardView } from './components/leaderboard-view';
 import { InkWalletProvider, ConnectButton } from '@inksuite/wallet';
 
-type MainTab = 'squad' | 'points';
+type MainTab = 'squad' | 'points' | 'leaderboard';
 
 type FplData = {
   elements: FplPlayer[];
@@ -158,7 +159,7 @@ function FantasyContent() {
 
       {/* Tab bar */}
       <div className="mb-8 flex gap-1 rounded-lg bg-purple-50/50 p-1 ring-1 ring-inset ring-purple-100">
-        {(['squad', 'points'] as MainTab[]).map((tab) => (
+        {(['squad', 'points', 'leaderboard'] as MainTab[]).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -168,7 +169,11 @@ function FantasyContent() {
                 : 'text-ink-600 hover:bg-purple-50 hover:text-ink-800'
             }`}
           >
-            {tab === 'squad' ? `Squad (${squad.length}/15)` : `Points — GW${data.current_gw}`}
+            {tab === 'squad'
+              ? `Squad (${squad.length}/15)`
+              : tab === 'points'
+                ? `Points — GW${data.current_gw}`
+                : 'Leaderboard'}
           </button>
         ))}
       </div>
@@ -203,6 +208,18 @@ function FantasyContent() {
           recentGWs={data.recent_gws || []}
           captainId={captainId}
           onSetCaptain={handleSetCaptain}
+        />
+      )}
+
+      {/* Leaderboard tab */}
+      {activeTab === 'leaderboard' && (
+        <LeaderboardView
+          players={data.elements}
+          teams={data.teams}
+          squad={squad}
+          captainId={captainId}
+          liveData={data.live || {}}
+          recentGWs={data.recent_gws || []}
         />
       )}
 

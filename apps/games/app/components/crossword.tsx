@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { puzzles, type CrosswordPuzzle } from './crossword-data';
+import { MintScoreNFTButton } from './mint-score-nft';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -509,16 +510,21 @@ export function Crossword() {
               return puzzle.grid[r]?.[c] !== null;
             }).every((s) => s === 'correct');
             return (
-              <div
-                className={`mt-3 rounded-lg px-4 py-2 text-sm font-semibold ${
-                  allCorrect
-                    ? 'bg-emerald-500/20 text-emerald-700'
-                    : 'bg-red-500/10 text-red-600'
-                }`}
-              >
-                {allCorrect
-                  ? `Puzzle solved! Total solved: ${completed}`
-                  : 'Some answers are incorrect — highlighted in red.'}
+              <div className="mt-3 space-y-2">
+                <div
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+                    allCorrect
+                      ? 'bg-emerald-500/20 text-emerald-700'
+                      : 'bg-red-500/10 text-red-600'
+                  }`}
+                >
+                  {allCorrect
+                    ? `Puzzle solved! Total solved: ${completed}`
+                    : 'Some answers are incorrect — highlighted in red.'}
+                </div>
+                {allCorrect && (
+                  <MintScoreNFTButton gameId="crossword" gameTitle="Crossword" gameIcon="📝" score={completed} />
+                )}
               </div>
             );
           })()}

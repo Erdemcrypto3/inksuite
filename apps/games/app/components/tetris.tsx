@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { MintScoreNFTButton } from './mint-score-nft';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const COLS = 10;
@@ -655,12 +656,15 @@ export function Tetris() {
             </button>
           )}
           {gameState === 'gameover' && (
-            <button
-              onClick={startGame}
-              className="bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white font-semibold rounded-xl px-4 py-3 text-sm shadow-sm transition-colors"
-            >
-              Restart
-            </button>
+            <>
+              <MintScoreNFTButton gameId="tetris" gameTitle="Tetris" gameIcon="🧱" score={uiScore} />
+              <button
+                onClick={startGame}
+                className="bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white font-semibold rounded-xl px-4 py-3 text-sm shadow-sm transition-colors"
+              >
+                Restart
+              </button>
+            </>
           )}
           {(gameState === 'playing' || gameState === 'paused') && (
             <button

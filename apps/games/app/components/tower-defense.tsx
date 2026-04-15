@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { MintScoreNFTButton } from './mint-score-nft';
 
 // ── Constants ──
 const COLS = 20;
@@ -492,9 +493,12 @@ export function TowerDefense() {
           <span className="font-semibold text-ink-900">Score: <span className="font-mono text-ink-500">{score}</span></span>
         </div>
         {(phase === 'gameover' || phase === 'win') && (
-          <button onClick={restart} className="rounded-lg bg-ink-500 px-4 py-1.5 text-xs font-semibold text-white hover:bg-ink-600">
-            Play Again
-          </button>
+          <div className="flex items-center gap-2">
+            <MintScoreNFTButton gameId="towerdefense" gameTitle="Tower Defense" gameIcon="🏰" score={score} />
+            <button onClick={restart} className="rounded-lg bg-ink-500 px-4 py-1.5 text-xs font-semibold text-white hover:bg-ink-600">
+              Play Again
+            </button>
+          </div>
         )}
       </div>
 

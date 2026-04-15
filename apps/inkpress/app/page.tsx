@@ -3,7 +3,7 @@
 import { InkWalletProvider, ConnectButton, useAccount, useReadContract, useWriteContract, useSendTransaction, useWaitForTransactionReceipt } from '@inksuite/wallet';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toHex } from 'viem';
-import { CONTRACT_ADDRESS, INKPRESS_ABI, API_URL, loadCategories, getAllTags } from './components/contract';
+import { CONTRACT_ADDRESS, INKPRESS_ABI, API_URL, loadCategories, getAllTags, getAllTagOptions } from './components/contract';
 import { CategoryManagerWithCounts } from './components/category-manager';
 
 type Article = {
@@ -160,8 +160,8 @@ function WriteArticle({ onBack, onPublished }: { onBack: () => void; onPublished
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [body, setBody] = useState('');
-  const allTags = getAllTags(loadCategories());
-  const [tag, setTag] = useState<string>(allTags[0] || '');
+  const tagOptions = getAllTagOptions(loadCategories());
+  const [tag, setTag] = useState<string>(tagOptions[0]?.value || '');
   const [step, setStep] = useState<'write' | 'uploading' | 'publishing' | 'done'>('write');
   const [error, setError] = useState<string | null>(null);
   const { writeContract, isPending } = useWriteContract();
@@ -251,7 +251,7 @@ function WriteArticle({ onBack, onPublished }: { onBack: () => void; onPublished
               value={tag} onChange={(e) => setTag(e.target.value)}
               className="rounded-lg border border-purple-200 bg-ink-50 px-4 py-2.5 text-sm text-ink-900 focus:border-ink-500 focus:outline-none"
             >
-              {allTags.map((t) => <option key={t} value={t}>{t}</option>)}
+              {tagOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
 

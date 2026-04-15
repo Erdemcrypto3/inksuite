@@ -38,6 +38,21 @@ export function getAllTags(cats: CategoryItem[]): string[] {
   return tags;
 }
 
+// Returns {value, label} where value is the stored tag (sub) and label is "Main - Sub"
+export function getAllTagOptions(cats: CategoryItem[]): { value: string; label: string }[] {
+  const opts: { value: string; label: string }[] = [];
+  const seen = new Set<string>();
+  for (const c of cats) {
+    for (const s of c.subs) {
+      const value = s.length > 32 ? s.slice(0, 32) : s;
+      if (seen.has(value)) continue;
+      seen.add(value);
+      opts.push({ value, label: `${c.main} - ${s}` });
+    }
+  }
+  return opts;
+}
+
 // Matches BaseBlog.sol Article struct exactly:
 // walrusBlobId, title, description, coverImageBlobId, author, totalMinted, publishedAt, active, tags[]
 const ARTICLE_TUPLE = [

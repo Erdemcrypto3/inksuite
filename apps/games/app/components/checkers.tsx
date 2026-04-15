@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { MintScoreNFTButton } from './mint-score-nft';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -504,6 +505,9 @@ export function Checkers() {
         <div>
           <p className={`text-base font-semibold ${statusColor()}`}>{statusMessage()}</p>
           <p className="text-xs text-ink-500 mt-0.5">Move {moveCount}</p>
+          {status === 'dark-wins' && (
+            <MintScoreNFTButton gameId="checkers" gameTitle="Checkers" gameIcon="♟️" score={capturedDark * 10 + Math.max(0, 60 - moveCount)} />
+          )}
         </div>
         <div className="flex items-center gap-4 text-xs text-ink-600">
           <span>You captured: <span className="font-mono font-bold text-ink-900">{capturedDark}</span></span>

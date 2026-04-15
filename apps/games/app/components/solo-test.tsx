@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { MintScoreNFTButton } from './mint-score-nft';
 
 // ─── Board definition ───────────────────────────────────────────────────────
 // English board: 7×7 grid, corners (2×2 each) removed → 33 holes
@@ -247,9 +248,12 @@ export function SoloTest() {
 
       {/* Status banner */}
       {isWon && (
-        <div className="rounded-xl bg-emerald-100 border border-emerald-300 px-5 py-2 text-emerald-800 font-semibold text-sm text-center">
-          You won! One peg remaining{pegsLeft === 1 && board[CENTER_R][CENTER_C] ? ' in the center!' : '.'}
-        </div>
+        <>
+          <div className="rounded-xl bg-emerald-100 border border-emerald-300 px-5 py-2 text-emerald-800 font-semibold text-sm text-center">
+            You won! One peg remaining{pegsLeft === 1 && board[CENTER_R][CENTER_C] ? ' in the center!' : '.'}
+          </div>
+          <MintScoreNFTButton gameId="solotest" gameTitle="Solo Test" gameIcon="⚫" score={33 - pegsLeft} />
+        </>
       )}
       {isLost && !isWon && (
         <div className="rounded-xl bg-amber-100 border border-amber-300 px-5 py-2 text-amber-800 font-semibold text-sm text-center">

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { MintScoreNFTButton } from './mint-score-nft';
 
 const WORDS = [
   'BLOCKCHAIN', 'ETHEREUM', 'SOLIDITY', 'WALLET', 'TRANSACTION',
@@ -117,12 +118,15 @@ export function Hangman() {
       </div>
 
       {gameOver && (
-        <button
-          onClick={newGame}
-          className="rounded-lg bg-ink-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-ink-700"
-        >
-          {won ? 'Next Word' : 'Try Again'}
-        </button>
+        <>
+          {won && <MintScoreNFTButton gameId="hangman" gameTitle="Hangman" gameIcon="🔤" score={score} />}
+          <button
+            onClick={newGame}
+            className="rounded-lg bg-ink-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-ink-700"
+          >
+            {won ? 'Next Word' : 'Try Again'}
+          </button>
+        </>
       )}
     </div>
   );

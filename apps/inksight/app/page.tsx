@@ -24,7 +24,7 @@ function isCategoryActive(index: number): boolean {
 // Types
 // ═══════════════════════════════════════════════════════════
 
-type Tab = 'inbox' | 'register' | 'send' | 'admin' | 'leaderboard';
+type Tab = 'account' | 'request' | 'admin' | 'leaderboard';
 
 interface UserProfile {
   registered: boolean;
@@ -118,10 +118,10 @@ function RegisterPanel({ user, onRegistered }: { user: UserProfile | null; onReg
   return (
     <div className="bg-white rounded-xl ring-1 ring-inset ring-purple-100 p-6 shadow-sm max-w-lg mx-auto">
       <h2 className="text-xl font-bold mb-1">
-        {user?.registered ? 'Update Your Interests' : 'Register to Earn Points'}
+        {user?.registered ? 'Your Profile' : 'Register Your Wallet'}
       </h2>
-      <p className="text-sm text-ink-400 mb-4">
-        Select the categories you want to receive polls for. Earn points for every response.
+      <p className="text-sm text-ink-500 mb-4 leading-relaxed">
+        Register your wallet with the categories you are interested in. You will receive questions related to your interests and when you answer them you will earn points.
       </p>
       <div className="grid grid-cols-2 gap-2 mb-5">
         {CATEGORIES.map((cat, i) => !isCategoryActive(i) ? null : (
@@ -393,9 +393,9 @@ function SendPanel() {
 
   return (
     <div className="bg-white rounded-xl ring-1 ring-inset ring-purple-100 p-6 shadow-sm max-w-lg mx-auto">
-      <h2 className="text-xl font-bold mb-1">Submit a Poll</h2>
-      <p className="text-sm text-ink-400 mb-5">
-        Reach categorized wallet holders on Ink. Pay in USDC.
+      <h2 className="text-xl font-bold mb-1">Request User Response</h2>
+      <p className="text-sm text-ink-500 mb-5 leading-relaxed">
+        Select a category and see how many registered wallets there are in that category. You can then create a question with multiple options to get the response of the owners of those wallets. Depending on the number of wallets, you see the cost of the message. There is a deadline for these messages — the messages will disappear from the users&apos; inbox when the deadline is reached.
       </p>
 
       {isSuccess && (
@@ -727,13 +727,26 @@ function LeaderboardPanel() {
 
 function InkPollApp() {
   const { address, isConnected } = useAccount();
-  const [tab, setTab] = useState<Tab>('inbox');
+  const [tab, setTab] = useState<Tab>('account');
 
   const { data: userData, refetch: refetchUser } = useReadContract({
     address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
     functionName: 'users', args: [address as `0x${string}`],
     query: { enabled: !!address },
   });
+
+  // Admin/owner check — only show admin tab to the contract owner or registered admins
+  const { data: isAdminFlag } = useReadContract({
+    address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+    functionName: 'admins', args: [address as `0x${string}`],
+    query: { enabled: !!address },
+  });
+  const { data: ownerAddr } = useReadContract({
+    address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+    functionName: 'owner',
+    query: { enabled: !!address },
+  });
+  const isAdmin = !!isAdminFlag || ((ownerAddr as string | undefined)?.toLowerCase() === address?.toLowerCase());
 
   const user: UserProfile | null = userData
     ? {
@@ -746,16 +759,11 @@ function InkPollApp() {
 
   const handleRegistered = useCallback(() => refetchUser(), [refetchUser]);
 
-  useEffect(() => {
-    if (user && !user.registered && tab === 'inbox') setTab('register');
-  }, [user, tab]);
-
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'inbox', label: 'Inbox' },
-    { id: 'register', label: user?.registered ? 'Profile' : 'Register' },
-    { id: 'send', label: 'Send Poll' },
+    { id: 'account', label: 'My Account' },
+    { id: 'request', label: 'Request user response' },
     { id: 'leaderboard', label: 'Leaderboard' },
-    { id: 'admin', label: 'Admin' },
+    ...(isAdmin ? [{ id: 'admin' as Tab, label: 'Admin' }] : []),
   ];
 
   return (
@@ -814,11 +822,15 @@ function InkPollApp() {
 
           {/* Content */}
           <main className="max-w-4xl mx-auto px-4 py-6">
-            {tab === 'inbox' && address && <InboxPanel address={address} />}
-            {tab === 'register' && <RegisterPanel user={user} onRegistered={handleRegistered} />}
-            {tab === 'send' && <SendPanel />}
+            {tab === 'account' && address && (
+              <div className="space-y-8">
+                <RegisterPanel user={user} onRegistered={handleRegistered} />
+                {user?.registered && <InboxPanel address={address} />}
+              </div>
+            )}
+            {tab === 'request' && <SendPanel />}
             {tab === 'leaderboard' && <LeaderboardPanel />}
-            {tab === 'admin' && address && <AdminPanel address={address} />}
+            {tab === 'admin' && address && isAdmin && <AdminPanel address={address} />}
           </main>
         </>
       )}

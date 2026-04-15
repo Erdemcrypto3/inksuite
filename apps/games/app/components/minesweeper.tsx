@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { MintScoreNFTButton } from './mint-score-nft';
 
 const ROWS = 9;
 const COLS = 9;
@@ -186,6 +187,10 @@ export function Minesweeper() {
 
       {!board && (
         <p className="text-sm text-ink-500">Click any cell to start. Right-click to flag.</p>
+      )}
+
+      {status === 'won' && (
+        <MintScoreNFTButton gameId="minesweeper" gameTitle="Minesweeper" gameIcon="💣" score={score} />
       )}
 
       {(status === 'won' || status === 'lost') && (
