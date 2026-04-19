@@ -10,11 +10,9 @@ binding = "STORAGE"
 bucket_name = "inksuite-storage"
 
 # [C-02] KV namespace for tracking used transaction hashes
-# Create with: wrangler kv:namespace create "USED_TXS"
-# Then paste the id below
-# [[kv_namespaces]]
-# binding = "USED_TXS"
-# id = "PASTE_KV_ID_HERE"
+[[kv_namespaces]]
+binding = "USED_TXS"
+id = "19a9ecc0c73f428bac02daef27276067"
 
 [vars]
 ALLOWED_ORIGIN = "https://mint.inksuite.xyz"
