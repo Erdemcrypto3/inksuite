@@ -3,6 +3,7 @@
 import { InkWalletProvider, ConnectButton, useAccount, useReadContract, useWriteContract, useSendTransaction, useWaitForTransactionReceipt } from '@inksuite/wallet';
 import { useState, useEffect, useCallback } from 'react';
 import { toHex } from 'viem';
+import DOMPurify from 'isomorphic-dompurify';
 import { CONTRACT_ADDRESS, INKPRESS_ABI, API_URL, loadCategories, getAllTags, getAllTagOptions } from './components/contract';
 import { RichEditor } from './components/rich-editor';
 import { CategoryManagerWithCounts } from './components/category-manager';
@@ -93,8 +94,24 @@ function ArticleReader({ article, articleId, onBack, isOwner }: { article: Artic
 
   useEffect(() => {
     if (!article.walrusBlobId) { setContent('Content not available.'); setLoading(false); return; }
-    // walrusBlobId now stores R2 key or full URL
-    const contentUrl = article.walrusBlobId.startsWith('http') ? article.walrusBlobId : `${API_URL}/file/${article.walrusBlobId}`;
+
+    // [C-04 fix] Only allow our own API domain — block external URLs
+    const blobId = article.walrusBlobId;
+    let contentUrl: string;
+    if (blobId.startsWith('http')) {
+      try {
+        const u = new URL(blobId);
+        if (u.hostname !== 'api.inksuite.xyz' || !u.pathname.startsWith('/file/')) {
+          setContent('Invalid content source.'); setLoading(false); return;
+        }
+        contentUrl = blobId;
+      } catch {
+        setContent('Invalid content URL.'); setLoading(false); return;
+      }
+    } else {
+      contentUrl = `${API_URL}/file/${encodeURIComponent(blobId)}`;
+    }
+
     fetch(contentUrl)
       .then((r) => r.text()).then(setContent)
       .catch(() => setContent('Failed to load content.'))
@@ -127,7 +144,13 @@ function ArticleReader({ article, articleId, onBack, isOwner }: { article: Artic
         {loading ? (
           <div className="py-12 text-center text-ink-400">Loading content...</div>
         ) : (
-          <div className="prose max-w-none text-ink-800 leading-relaxed" dangerouslySetInnerHTML={{ __html: content }} />
+          <div className="prose max-w-none text-ink-800 leading-relaxed" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content, {
+            ALLOWED_TAGS: ['p','h1','h2','h3','h4','b','i','u','strong','em','ul','ol','li','blockquote','pre','code','a','br','hr','img','span','div'],
+            ALLOWED_ATTR: ['href','target','rel','class','src','alt','width','height'],
+            ALLOW_DATA_ATTR: false,
+            FORBID_TAGS: ['script','style','iframe','object','embed','form','input','textarea','select','button'],
+            FORBID_ATTR: ['onerror','onload','onclick','onmouseover','onfocus','onblur','style'],
+          }) }} />
         )}
         <div className="mt-8 border-t border-purple-100 pt-6 flex items-center gap-4 flex-wrap">
           {address && mintPrice && (

@@ -1,9 +1,23 @@
+// [H-04 fix] Secure CORS validation
 function corsHeaders(origin, allowedOrigin) {
-  const allowed = origin === allowedOrigin || origin?.startsWith('http://localhost');
+  let allowed = false;
+  if (origin) {
+    try {
+      const u = new URL(origin);
+      allowed =
+        origin === allowedOrigin ||
+        u.hostname === 'inksuite.xyz' ||
+        u.hostname.endsWith('.inksuite.xyz') ||
+        (u.hostname === 'localhost' && u.protocol === 'http:');
+    } catch {
+      allowed = false;
+    }
+  }
   return {
     'Access-Control-Allow-Origin': allowed ? origin : allowedOrigin,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
+    'Vary': 'Origin',
   };
 }
 
@@ -361,6 +375,25 @@ export default {
       let scanUrl = targetUrl.trim();
       if (!scanUrl.startsWith('http://') && !scanUrl.startsWith('https://')) {
         scanUrl = 'https://' + scanUrl;
+      }
+
+      // [H-05 fix] SSRF protection — block private/internal hosts
+      let parsedTarget;
+      try {
+        parsedTarget = new URL(scanUrl);
+      } catch {
+        return Response.json({ error: 'Invalid URL' }, { status: 400, headers });
+      }
+      if (!['http:', 'https:'].includes(parsedTarget.protocol)) {
+        return Response.json({ error: 'Only http/https allowed' }, { status: 400, headers });
+      }
+      const hostname = parsedTarget.hostname.toLowerCase();
+      const blockedPatterns = [
+        /^localhost$/i, /^127\./, /^10\./, /^192\.168\./, /^172\.(1[6-9]|2\d|3[01])\./,
+        /^169\.254\./, /^0\./, /^\[::1?\]$/, /\.local$/i, /\.internal$/i,
+      ];
+      if (blockedPatterns.some((p) => p.test(hostname))) {
+        return Response.json({ error: 'Private/internal hosts not allowed' }, { status: 400, headers });
       }
 
       // Fetch the target
