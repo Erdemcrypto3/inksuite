@@ -112,10 +112,13 @@ function MintApp() {
     setStep('uploading');
 
     try {
-      // Upload image to R2
+      // [CRIT-01] Upload image to R2 with payment header
       const imgRes2 = await fetch(`${API_URL}/upload`, {
         method: 'POST',
-        headers: { 'Content-Type': 'image/jpeg' },
+        headers: {
+          'Content-Type': 'image/jpeg',
+          'X-Payment-Tx': payTxHash ?? '',
+        },
         body: imageBlob,
       });
       if (!imgRes2.ok) throw new Error('Image upload failed');
@@ -134,7 +137,10 @@ function MintApp() {
       };
       const metaRes = await fetch(`${API_URL}/upload`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Payment-Tx': payTxHash ?? '',
+        },
         body: JSON.stringify(metadata),
       });
       if (!metaRes.ok) throw new Error('Metadata upload failed');
@@ -161,7 +167,7 @@ function MintApp() {
       setError(e.message || 'Mint failed');
       setStep('preview');
     }
-  }, [imageBlob, address, prompt, totalSupply, writeContract]);
+  }, [imageBlob, address, prompt, totalSupply, writeContract, payTxHash]);
 
   const reset = () => {
     setPrompt('');

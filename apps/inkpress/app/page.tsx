@@ -2,8 +2,11 @@
 
 import { InkWalletProvider, ConnectButton, useAccount, useReadContract, useWriteContract, useSendTransaction, useWaitForTransactionReceipt } from '@inksuite/wallet';
 import { useState, useEffect, useCallback } from 'react';
-import { toHex } from 'viem';
+import { toHex, parseEther } from 'viem';
 import DOMPurify from 'isomorphic-dompurify';
+
+const GENERATION_FEE = parseEther('0.00005');
+const FEE_RECIPIENT = '0x9E84D77264d94C646dF91A70dbae99C20330eAD0' as const;
 import { CONTRACT_ADDRESS, INKPRESS_ABI, API_URL, loadCategories, getAllTags, getAllTagOptions } from './components/contract';
 import { RichEditor } from './components/rich-editor';
 import { CategoryManagerWithCounts } from './components/category-manager';
@@ -186,43 +189,60 @@ function WriteArticle({ onBack, onPublished }: { onBack: () => void; onPublished
   const [body, setBody] = useState('');
   const tagOptions = getAllTagOptions(loadCategories());
   const [tag, setTag] = useState<string>(tagOptions[0]?.value || '');
-  const [step, setStep] = useState<'write' | 'uploading' | 'publishing' | 'done'>('write');
+  const [step, setStep] = useState<'write' | 'paying' | 'uploading' | 'publishing' | 'done'>('write');
   const [error, setError] = useState<string | null>(null);
   const { writeContract, isPending } = useWriteContract();
+  const { sendTransaction } = useSendTransaction();
+  const [payTxHash, setPayTxHash] = useState<`0x${string}` | undefined>();
+  const { isSuccess: isPayConfirmed } = useWaitForTransactionReceipt({ hash: payTxHash });
 
-  const handlePublish = useCallback(async () => {
+  // [CRIT-01] Step 1: pay upload fee
+  const handlePublish = useCallback(() => {
     const plain = body.replace(/<[^>]+>/g, '').trim();
     if (!title.trim() || !plain) { setError('Title and content are required.'); return; }
     setError(null);
-    setStep('uploading');
-
-    try {
-      // Upload HTML content to R2
-      const res = await fetch(`${API_URL}/upload`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/html' },
-        body: body,
-      });
-      if (!res.ok) throw new Error('Content upload failed');
-      const data = await res.json();
-      const blobId = data.url;
-      if (!blobId) throw new Error('No URL returned');
-
-      setStep('publishing');
-      writeContract({
-        address: CONTRACT_ADDRESS,
-        abi: INKPRESS_ABI,
-        functionName: 'publishArticle',
-        args: [blobId, title, description, '', [tag]],
-      }, {
-        onSuccess: () => { setStep('done'); setTimeout(onPublished, 2000); },
+    setStep('paying');
+    sendTransaction(
+      { to: FEE_RECIPIENT, value: GENERATION_FEE },
+      {
+        onSuccess: (hash) => setPayTxHash(hash),
         onError: (e) => { setError(e.message); setStep('write'); },
-      });
-    } catch (e: any) {
-      setError(e.message || 'Upload failed');
-      setStep('write');
-    }
-  }, [title, body, tag, writeContract, onPublished]);
+      },
+    );
+  }, [title, body, sendTransaction]);
+
+  // Step 2: once payment confirmed, upload + publishArticle
+  useEffect(() => {
+    if (!isPayConfirmed || !payTxHash || step !== 'paying') return;
+    setStep('uploading');
+    (async () => {
+      try {
+        const res = await fetch(`${API_URL}/upload`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/html', 'X-Payment-Tx': payTxHash },
+          body: body,
+        });
+        if (!res.ok) throw new Error('Content upload failed');
+        const data = await res.json();
+        const blobId = data.url;
+        if (!blobId) throw new Error('No URL returned');
+
+        setStep('publishing');
+        writeContract({
+          address: CONTRACT_ADDRESS,
+          abi: INKPRESS_ABI,
+          functionName: 'publishArticle',
+          args: [blobId, title, description, '', [tag]],
+        }, {
+          onSuccess: () => { setStep('done'); setTimeout(onPublished, 2000); },
+          onError: (e) => { setError(e.message); setStep('write'); },
+        });
+      } catch (e: any) {
+        setError(e.message || 'Upload failed');
+        setStep('write');
+      }
+    })();
+  }, [isPayConfirmed, payTxHash, step, title, description, body, tag, writeContract, onPublished]);
 
   return (
     <div className="space-y-6">
@@ -282,7 +302,7 @@ function WriteArticle({ onBack, onPublished }: { onBack: () => void; onPublished
               disabled={step !== 'write' || !title.trim() || !body.trim()}
               className="rounded-lg bg-ink-500 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-ink-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {step === 'uploading' ? 'Uploading...' : step === 'publishing' ? 'Confirm in wallet...' : 'Publish Article'}
+              {step === 'paying' ? 'Confirm payment in wallet...' : step === 'uploading' ? 'Uploading...' : step === 'publishing' ? 'Confirm publish in wallet...' : 'Publish Article (0.00005 ETH)'}
             </button>
             <span className="text-xs text-ink-400">Content stored permanently, metadata on Ink chain</span>
           </div>

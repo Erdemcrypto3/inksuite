@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import DOMPurify from 'isomorphic-dompurify';
 
 type Props = {
   value: string;
@@ -15,10 +16,15 @@ function exec(cmd: string, arg?: string) {
 export function RichEditor({ value, onChange, placeholder }: Props) {
   const ref = useRef<HTMLDivElement>(null);
 
-  // Initialize content once (uncontrolled to avoid caret jumps)
+  // [MED-01] Initialize content once (uncontrolled to avoid caret jumps).
+  // Sanitize value in case it was sourced from localStorage/URL/draft restore —
+  // authoring-time XSS is still a risk before publish-time render sanitizes.
   useEffect(() => {
     if (ref.current && ref.current.innerHTML !== value) {
-      ref.current.innerHTML = value;
+      ref.current.innerHTML = DOMPurify.sanitize(value, {
+        ALLOWED_TAGS: ['p','h1','h2','h3','b','i','u','strong','em','ul','ol','li','blockquote','pre','code','a','br'],
+        ALLOWED_ATTR: ['href','target','rel'],
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

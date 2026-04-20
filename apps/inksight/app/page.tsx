@@ -608,6 +608,7 @@ function AdminPanel({ address }: { address: string }) {
           </button>
         </div>
         <p className="mt-2 text-[10px] text-ink-400">Adding a category requires an on-chain transaction. Categories cannot be removed once added.</p>
+        <p className="mt-1 text-[10px] text-amber-600">Note: Deactivation is local to this browser only. On-chain categories cannot be removed.</p>
       </div>
 
       {/* Poll Actions */}

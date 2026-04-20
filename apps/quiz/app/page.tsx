@@ -5,12 +5,14 @@ import type { Category, CategoryProgress, Question } from './components/types';
 import { CATEGORIES, ACHIEVEMENTS, MAX_POINTS_PER_CATEGORY } from './components/types';
 import { QuizSession } from './components/quiz-session';
 import { AchievementTimeline } from './components/achievement-timeline';
-import { InkWalletProvider, ConnectButton, useAccount, useWriteContract } from '@inksuite/wallet';
+import { InkWalletProvider, ConnectButton, useAccount, useSendTransaction, useWaitForTransactionReceipt, useWriteContract } from '@inksuite/wallet';
 import { parseEther } from 'viem';
 
 const INKMINT_ADDRESS = '0x964bf77C2cF0901F0acFaC277601816d2dbEACEe' as const;
 const INKMINT_ABI = [{name:'mint',type:'function',stateMutability:'payable',inputs:[{name:'uri',type:'string'},{name:'prompt',type:'string'}],outputs:[]}] as const;
 const MINT_FEE = parseEther('0.000577');
+const GENERATION_FEE = parseEther('0.0002');
+const FEE_RECIPIENT = '0x9E84D77264d94C646dF91A70dbae99C20330eAD0' as const;
 const API_URL = 'https://api.inksuite.xyz';
 
 function loadProgress(): Record<Category, CategoryProgress> {
@@ -48,60 +50,74 @@ function getAchievementLevel(points: number, quizzesTaken: number): number {
 
 function MintAchievementButton({ category, level, points }: { category: { id: string; label: string; icon: string }; level: number; points: number }) {
   const { address } = useAccount();
+  const { sendTransaction } = useSendTransaction();
   const { writeContract, isPending } = useWriteContract();
+  const [payTxHash, setPayTxHash] = useState<`0x${string}` | undefined>();
+  const { isSuccess: isPayConfirmed } = useWaitForTransactionReceipt({ hash: payTxHash });
   const [minted, setMinted] = useState(false);
   const [minting, setMinting] = useState(false);
 
-  const handleMint = async () => {
+  const startMint = () => {
     if (!address) return;
     setMinting(true);
-    try {
-      const achievementName = ACHIEVEMENTS[level]?.name || 'Unknown';
-      const shortAddr = `${address.slice(0, 6)}...${address.slice(-4)}`;
-
-      // Create metadata
-      const metadata = {
-        name: `${category.label} ${achievementName}`,
-        description: `Quiz achievement: ${achievementName} level in ${category.label}. Score: ${points}/${MAX_POINTS_PER_CATEGORY}. Earned by ${shortAddr}.`,
-        attributes: [
-          { trait_type: 'Category', value: category.label },
-          { trait_type: 'Achievement', value: achievementName },
-          { trait_type: 'Points', value: points.toString() },
-          { trait_type: 'Max Points', value: MAX_POINTS_PER_CATEGORY.toString() },
-          { trait_type: 'Wallet', value: shortAddr },
-        ],
-      };
-
-      // Upload metadata to R2
-      const metaRes = await fetch(`${API_URL}/upload`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(metadata),
-      });
-      if (!metaRes.ok) throw new Error('Upload failed');
-      const metaData = await metaRes.json();
-
-      writeContract({
-        address: INKMINT_ADDRESS,
-        abi: INKMINT_ABI,
-        functionName: 'mint',
-        args: [metaData.url, `Quiz: ${category.label} ${achievementName} (${points}pts)`],
-        value: MINT_FEE,
-      }, {
-        onSuccess: () => setMinted(true),
+    sendTransaction(
+      { to: FEE_RECIPIENT, value: GENERATION_FEE },
+      {
+        onSuccess: (hash) => setPayTxHash(hash),
         onError: () => setMinting(false),
-      });
-    } catch {
-      setMinting(false);
-    }
+      },
+    );
   };
+
+  useEffect(() => {
+    if (!isPayConfirmed || !payTxHash || !address || minted) return;
+    (async () => {
+      try {
+        const achievementName = ACHIEVEMENTS[level]?.name || 'Unknown';
+        const shortAddr = `${address.slice(0, 6)}...${address.slice(-4)}`;
+
+        const metadata = {
+          name: `${category.label} ${achievementName}`,
+          description: `Quiz achievement: ${achievementName} level in ${category.label}. Score: ${points}/${MAX_POINTS_PER_CATEGORY}. Earned by ${shortAddr}.`,
+          attributes: [
+            { trait_type: 'Category', value: category.label },
+            { trait_type: 'Achievement', value: achievementName },
+            { trait_type: 'Points', value: points.toString() },
+            { trait_type: 'Max Points', value: MAX_POINTS_PER_CATEGORY.toString() },
+            { trait_type: 'Wallet', value: shortAddr },
+          ],
+        };
+
+        const metaRes = await fetch(`${API_URL}/upload`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Payment-Tx': payTxHash },
+          body: JSON.stringify(metadata),
+        });
+        if (!metaRes.ok) throw new Error('Upload failed');
+        const metaData = await metaRes.json();
+
+        writeContract({
+          address: INKMINT_ADDRESS,
+          abi: INKMINT_ABI,
+          functionName: 'mint',
+          args: [metaData.url, `Quiz: ${category.label} ${achievementName} (${points}pts)`],
+          value: MINT_FEE,
+        }, {
+          onSuccess: () => setMinted(true),
+          onError: () => setMinting(false),
+        });
+      } catch {
+        setMinting(false);
+      }
+    })();
+  }, [isPayConfirmed, payTxHash, address, minted, category, level, points, writeContract]);
 
   if (minted) return <span className="text-[10px] text-emerald-600 font-semibold">NFT Minted!</span>;
 
   return (
-    <button onClick={handleMint} disabled={isPending || minting}
+    <button onClick={startMint} disabled={isPending || minting}
       className="rounded-lg bg-ink-500 px-3 py-1 text-[10px] font-semibold text-white hover:bg-ink-600 disabled:opacity-50">
-      {isPending || minting ? 'Minting...' : 'Mint NFT (0.000577 ETH)'}
+      {isPending || minting ? 'Minting...' : 'Mint NFT (~0.0008 ETH)'}
     </button>
   );
 }
