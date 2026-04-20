@@ -1,4 +1,26 @@
 require('@nomicfoundation/hardhat-toolbox');
+const { execSync } = require('child_process');
+
+/**
+ * Resolve deploy key, preferring Windows Credential Manager over env var.
+ * Falls back to env var (for CI) and finally to empty (local hardhat node).
+ */
+function getDeployKey() {
+  if (process.env.DEPLOY_KEY) return process.env.DEPLOY_KEY;
+  if (process.platform !== 'win32') return undefined;
+  try {
+    const key = execSync(
+      `powershell -NoProfile -Command "(Get-StoredCredential -Target BasePress-DeployKey).GetNetworkCredential().Password"`,
+      { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] }
+    ).trim();
+    return key || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+const deployKey = getDeployKey();
+const accounts = deployKey ? [deployKey] : [];
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -21,11 +43,11 @@ module.exports = {
     },
     inkSepolia: {
       url: process.env.INK_SEPOLIA_RPC || 'https://rpc-gel-sepolia.inkonchain.com',
-      accounts: process.env.DEPLOY_KEY ? [process.env.DEPLOY_KEY] : [],
+      accounts,
     },
     ink: {
       url: process.env.INK_RPC || 'https://rpc-gel.inkonchain.com',
-      accounts: process.env.DEPLOY_KEY ? [process.env.DEPLOY_KEY] : [],
+      accounts,
     },
   },
 };

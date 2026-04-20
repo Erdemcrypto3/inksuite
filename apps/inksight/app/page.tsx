@@ -112,7 +112,7 @@ function RegisterPanel({ user, onRegistered }: { user: UserProfile | null; onReg
     if (selected.length === 0) return;
     const mask = categoriesToMask(selected);
     const fn = user?.registered ? 'updateCategories' : 'register';
-    writeContract({ address: INKPOLL_ADDRESS, abi: INKPOLL_ABI, functionName: fn, args: [mask] });
+    writeContract({ address: INKPOLL_ACTIVE_ADDRESS, abi: INKPOLL_V2_ABI, functionName: fn, args: [mask] });
   };
 
   return (
@@ -253,19 +253,19 @@ function InboxPollLoader({ pollId, address, onRespond, isPending }: {
   isPending: boolean;
 }) {
   const { data: pollData } = useReadContract({
-    address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+    address: INKPOLL_ACTIVE_ADDRESS, abi: INKPOLL_V2_ABI,
     functionName: 'polls', args: [BigInt(pollId)],
   });
   const { data: options } = useReadContract({
-    address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+    address: INKPOLL_ACTIVE_ADDRESS, abi: INKPOLL_V2_ABI,
     functionName: 'getPollOptions', args: [BigInt(pollId)],
   });
   const { data: userResponse } = useReadContract({
-    address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+    address: INKPOLL_ACTIVE_ADDRESS, abi: INKPOLL_V2_ABI,
     functionName: 'responses', args: [BigInt(pollId), address as `0x${string}`],
   });
   const { data: results } = useReadContract({
-    address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+    address: INKPOLL_ACTIVE_ADDRESS, abi: INKPOLL_V2_ABI,
     functionName: 'getPollResults', args: [BigInt(pollId)],
   });
 
@@ -301,7 +301,7 @@ function InboxPanel({ address }: { address: string }) {
 
   // Get active polls matching user's categories
   const { data: pollIds, refetch } = useReadContract({
-    address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+    address: INKPOLL_ACTIVE_ADDRESS, abi: INKPOLL_V2_ABI,
     functionName: 'getActivePolls', args: [address as `0x${string}`],
   });
 
@@ -309,7 +309,7 @@ function InboxPanel({ address }: { address: string }) {
 
   const handleRespond = (pollId: number, optionIndex: number) => {
     writeContract({
-      address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+      address: INKPOLL_ACTIVE_ADDRESS, abi: INKPOLL_V2_ABI,
       functionName: 'respond', args: [BigInt(pollId), optionIndex],
     });
   };
@@ -557,19 +557,19 @@ function AdminPanel({ address }: { address: string }) {
   const [generateInput, setGenerateInput] = useState('');
 
   const { data: isAdmin } = useReadContract({
-    address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+    address: INKPOLL_ACTIVE_ADDRESS, abi: INKPOLL_V2_ABI,
     functionName: 'admins', args: [address as `0x${string}`],
   });
   const { data: ownerAddr } = useReadContract({
-    address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+    address: INKPOLL_ACTIVE_ADDRESS, abi: INKPOLL_V2_ABI,
     functionName: 'owner',
   });
   const { data: totalPolls } = useReadContract({
-    address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+    address: INKPOLL_ACTIVE_ADDRESS, abi: INKPOLL_V2_ABI,
     functionName: 'getTotalPolls',
   });
   const { data: totalUsers } = useReadContract({
-    address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+    address: INKPOLL_ACTIVE_ADDRESS, abi: INKPOLL_V2_ABI,
     functionName: 'getTotalUsers',
   });
 
@@ -578,7 +578,7 @@ function AdminPanel({ address }: { address: string }) {
 
   // Read on-chain categories (must be before any conditional return — React hooks rules)
   const { data: onChainCategories } = useReadContract({
-    address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+    address: INKPOLL_ACTIVE_ADDRESS, abi: INKPOLL_V2_ABI,
     functionName: 'getAllCategories',
   });
   const [newCatName, setNewCatName] = useState('');
@@ -614,7 +614,7 @@ function AdminPanel({ address }: { address: string }) {
   const addCategoryOnChain = () => {
     if (!newCatName.trim()) return;
     writeContract({
-      address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+      address: INKPOLL_ACTIVE_ADDRESS, abi: INKPOLL_V2_ABI,
       functionName: 'addCategory', args: [newCatName.trim()],
     });
     setNewCatName('');
@@ -622,17 +622,17 @@ function AdminPanel({ address }: { address: string }) {
 
   const approve = (id: string) => {
     if (!id) return;
-    writeContract({ address: INKPOLL_ADDRESS, abi: INKPOLL_ABI, functionName: 'approvePoll', args: [BigInt(id)] });
+    writeContract({ address: INKPOLL_ACTIVE_ADDRESS, abi: INKPOLL_V2_ABI, functionName: 'approvePoll', args: [BigInt(id)] });
   };
 
   const reject = (id: string) => {
     if (!id) return;
-    writeContract({ address: INKPOLL_ADDRESS, abi: INKPOLL_ABI, functionName: 'rejectPoll', args: [BigInt(id)] });
+    writeContract({ address: INKPOLL_ACTIVE_ADDRESS, abi: INKPOLL_V2_ABI, functionName: 'rejectPoll', args: [BigInt(id)] });
   };
 
   const closePoll = (id: string) => {
     if (!id) return;
-    writeContract({ address: INKPOLL_ADDRESS, abi: INKPOLL_ABI, functionName: 'closePoll', args: [BigInt(id)] });
+    writeContract({ address: INKPOLL_ACTIVE_ADDRESS, abi: INKPOLL_V2_ABI, functionName: 'closePoll', args: [BigInt(id)] });
   };
 
   return (
@@ -720,7 +720,7 @@ function AdminPanel({ address }: { address: string }) {
 
 function CategoryRow({ index, name, mask, isDeactivated, onToggle }: { index: number; name: string; mask: number; isDeactivated: boolean; onToggle: () => void }) {
   const { data: audienceSize } = useReadContract({
-    address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+    address: INKPOLL_ACTIVE_ADDRESS, abi: INKPOLL_V2_ABI,
     functionName: 'getAudienceSize', args: [mask],
   });
   const count = Number(audienceSize ?? 0);
@@ -748,6 +748,9 @@ function CategoryRow({ index, name, mask, isDeactivated, onToggle }: { index: nu
 // ═══════════════════════════════════════════════════════════
 
 function LeaderboardPanel() {
+  // [LOW-02] V2 removed getLeaderboard; audit prescribes off-chain compute from
+  // UserRegistered + PointsAwarded events. Kept V1 read so historical scores
+  // stay visible until the event-indexer implementation lands.
   const { data } = useReadContract({
     address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
     functionName: 'getLeaderboard', args: [BigInt(20)],
@@ -799,19 +802,19 @@ function InkPollApp() {
   const [tab, setTab] = useState<Tab>('account');
 
   const { data: userData, refetch: refetchUser } = useReadContract({
-    address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+    address: INKPOLL_ACTIVE_ADDRESS, abi: INKPOLL_V2_ABI,
     functionName: 'users', args: [address as `0x${string}`],
     query: { enabled: !!address },
   });
 
   // Admin/owner check — only show admin tab to the contract owner or registered admins
   const { data: isAdminFlag } = useReadContract({
-    address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+    address: INKPOLL_ACTIVE_ADDRESS, abi: INKPOLL_V2_ABI,
     functionName: 'admins', args: [address as `0x${string}`],
     query: { enabled: !!address },
   });
   const { data: ownerAddr } = useReadContract({
-    address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+    address: INKPOLL_ACTIVE_ADDRESS, abi: INKPOLL_V2_ABI,
     functionName: 'owner',
     query: { enabled: !!address },
   });

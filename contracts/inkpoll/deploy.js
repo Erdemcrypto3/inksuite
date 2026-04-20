@@ -1,18 +1,21 @@
 /**
  * InkPoll V2 Deploy Script — reads compiled artifact (no hand-pasted bytecode).
  *
- * Usage:
+ * Usage (Windows, key sourced from Credential Manager via hardhat.config.js):
  *   cd contracts
  *   pnpm install
  *   pnpm compile
- *   DEPLOY_KEY=0x... pnpm deploy:testnet    # Ink Sepolia smoke
- *   DEPLOY_KEY=0x... pnpm deploy:mainnet    # Ink mainnet (use hardware wallet!)
+ *   pnpm deploy:testnet    # Ink Sepolia smoke
+ *   pnpm deploy:mainnet    # Ink mainnet
+ *
+ * The signer is auto-pulled from WCM target `BasePress-DeployKey` by
+ * hardhat.config.js:getDeployKey(). For CI or Unix, set DEPLOY_KEY env var.
  *
  * After successful deploy:
- *   1. Copy printed address → update apps/inksight/app/components/contract.ts INKPOLL_ADDRESS
- *   2. Regenerate + paste updated ABI (submitPoll now takes 5 args, getLeaderboard removed)
- *   3. Verify on Blockscout: https://explorer.inkonchain.com/verify-smart-contract
- *   4. Call setTreasury(multisig) once multisig is deployed (HIGH-07)
+ *   1. Copy printed address → set NEXT_PUBLIC_INKPOLL_V2_ADDRESS on inksight
+ *      Cloudflare Pages project (activates the approve UI)
+ *   2. Verify on Blockscout: https://explorer.inkonchain.com/verify-smart-contract
+ *   3. Call setTreasury(multisig) once Safe{Wallet} multisig is deployed (HIGH-07)
  */
 
 const { ethers } = require('hardhat');
