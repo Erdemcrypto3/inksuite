@@ -19,15 +19,14 @@ id = "19a9ecc0c73f428bac02daef27276067"
 binding = "RATE_LIMIT"
 id = "3346e43e14c5475d85b70c4f23d8b0be"
 
-# [CRIT-05] Durable Object for atomic upload counter — requires Workers Paid plan.
-# When enabling: uncomment both blocks below, then `wrangler deploy`.
-# [[durable_objects.bindings]]
-# name = "UPLOAD_COUNTER"
-# class_name = "UploadCounter"
-#
-# [[migrations]]
-# tag = "v1"
-# new_classes = ["UploadCounter"]
+# [CRIT-05] Durable Object for atomic upload counter
+[[durable_objects.bindings]]
+name = "UPLOAD_COUNTER"
+class_name = "UploadCounter"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["UploadCounter"]
 
 [vars]
 ALLOWED_ORIGIN = "https://mint.inksuite.xyz"
