@@ -1,4 +1,46 @@
-// [H-04 fix] Secure CORS validation
+// [CRIT-06] SSRF — block IPv4 private + IPv6 link-local/ULA + DNS metadata services
+function isBlockedHost(hostname) {
+  const h = hostname.toLowerCase();
+  const cleanH = h.startsWith('[') && h.endsWith(']') ? h.slice(1, -1) : h;
+  const blockedPatterns = [
+    /^localhost$/i, /^127\./, /^10\./, /^192\.168\./,
+    /^172\.(1[6-9]|2\d|3[01])\./, /^169\.254\./, /^0\./, /^255\.255\.255\.255$/,
+    /^::1?$/, /^::$/, /^fe80:/i, /^fc[0-9a-f]{2}:/i, /^fd[0-9a-f]{2}:/i,
+    /^ff[0-9a-f]{2}:/i, /^::ffff:/i, /^::[0-9a-f]*:/i,
+    /\.local$/i, /\.internal$/i, /\.localhost$/i,
+    /^metadata\.google/i, /^169\.254\.169\.254$/,
+  ];
+  return blockedPatterns.some((p) => p.test(cleanH));
+}
+
+// [CRIT-06] Manual redirect with hop-by-hop validation
+async function safeFetch(targetUrl, maxRedirects = 3) {
+  let currentUrl = targetUrl;
+  for (let i = 0; i <= maxRedirects; i++) {
+    const parsed = new URL(currentUrl);
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      throw new Error('Protocol not allowed');
+    }
+    if (isBlockedHost(parsed.hostname)) {
+      throw new Error(`Blocked hop: ${parsed.hostname}`);
+    }
+    const res = await fetch(currentUrl, {
+      method: 'GET',
+      redirect: 'manual',
+      headers: { 'User-Agent': 'InkAudit/1.0 (security scanner)' },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (res.status >= 300 && res.status < 400) {
+      const location = res.headers.get('Location');
+      if (!location) return res;
+      currentUrl = new URL(location, currentUrl).href;
+      continue;
+    }
+    return res;
+  }
+  throw new Error('Too many redirects');
+}
+
 function corsHeaders(origin, allowedOrigin) {
   let allowed = false;
   if (origin) {
@@ -377,35 +419,22 @@ export default {
         scanUrl = 'https://' + scanUrl;
       }
 
-      // [H-05 fix] SSRF protection — block private/internal hosts
-      let parsedTarget;
+      // [CRIT-06] SSRF protection — validate initial URL format then delegate hop-by-hop check to safeFetch
       try {
-        parsedTarget = new URL(scanUrl);
+        const parsedTarget = new URL(scanUrl);
+        if (!['http:', 'https:'].includes(parsedTarget.protocol)) {
+          return Response.json({ error: 'Only http/https allowed' }, { status: 400, headers });
+        }
       } catch {
         return Response.json({ error: 'Invalid URL' }, { status: 400, headers });
       }
-      if (!['http:', 'https:'].includes(parsedTarget.protocol)) {
-        return Response.json({ error: 'Only http/https allowed' }, { status: 400, headers });
-      }
-      const hostname = parsedTarget.hostname.toLowerCase();
-      const blockedPatterns = [
-        /^localhost$/i, /^127\./, /^10\./, /^192\.168\./, /^172\.(1[6-9]|2\d|3[01])\./,
-        /^169\.254\./, /^0\./, /^\[::1?\]$/, /\.local$/i, /\.internal$/i,
-      ];
-      if (blockedPatterns.some((p) => p.test(hostname))) {
-        return Response.json({ error: 'Private/internal hosts not allowed' }, { status: 400, headers });
-      }
 
-      // Fetch the target
       let response;
       try {
-        response = await fetch(scanUrl, {
-          method: 'GET',
-          redirect: 'follow',
-          headers: { 'User-Agent': 'InkAudit/1.0 (security scanner)' },
-        });
+        response = await safeFetch(scanUrl);
       } catch (e) {
-        return Response.json({ error: `Could not reach ${scanUrl}: ${e.message}` }, { status: 422, headers });
+        const status = e.message.startsWith('Blocked hop') || e.message === 'Protocol not allowed' || e.message === 'Too many redirects' ? 400 : 422;
+        return Response.json({ error: e.message }, { status, headers });
       }
 
       const h = response.headers;

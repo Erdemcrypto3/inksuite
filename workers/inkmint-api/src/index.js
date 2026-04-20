@@ -4,8 +4,8 @@ const INK_RPC = 'https://rpc-gel.inkonchain.com';
 const INK_RPC_FALLBACK = 'https://rpc-qnd.inkonchain.com';
 const MIN_FEE_WEI = 190000000000000n; // 0.00019 ETH (~95% of 0.0002)
 const MAX_UPLOAD_SIZE = 5 * 1024 * 1024; // 5MB
+const MIN_CONFIRMATIONS = 3n; // [HIGH-01] reorg protection
 
-// [H-04 fix] Secure CORS — no wildcard bypass
 function corsHeaders(origin, allowedOrigin) {
   let allowed = false;
   if (origin) {
@@ -28,12 +28,20 @@ function corsHeaders(origin, allowedOrigin) {
   };
 }
 
-// [L-03 fix] Cryptographically secure ID generation
 function generateId() {
   return crypto.randomUUID().replace(/-/g, '');
 }
 
-// [C-02 fix] RPC-based payment verification with replay protection
+// [CRIT-02] Fail-closed guard — KV must be bound or service is misconfigured
+function requireKV(env) {
+  if (!env.USED_TXS) {
+    throw new Response(
+      JSON.stringify({ error: 'Service misconfigured: KV not bound' }),
+      { status: 503, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}
+
 async function rpcCall(method, params) {
   const rpcs = [INK_RPC, INK_RPC_FALLBACK];
   for (const rpc of rpcs) {
@@ -53,20 +61,17 @@ async function rpcCall(method, params) {
 }
 
 async function verifyPayment(txHash, env) {
-  // 1. Format check
+  requireKV(env); // [CRIT-02] fail-closed
+
   if (!/^0x[0-9a-fA-F]{64}$/.test(txHash)) {
     return { valid: false, reason: 'Invalid tx hash format' };
   }
 
-  // 2. [C-02] Replay protection — check if already used
-  if (env.USED_TXS) {
-    const existing = await env.USED_TXS.get(txHash);
-    if (existing) {
-      return { valid: false, reason: 'Transaction already used' };
-    }
+  const existing = await env.USED_TXS.get(txHash);
+  if (existing) {
+    return { valid: false, reason: 'Transaction already used' };
   }
 
-  // 3. On-chain verification via RPC
   let receipt, tx;
   try {
     [receipt, tx] = await Promise.all([
@@ -80,34 +85,66 @@ async function verifyPayment(txHash, env) {
   if (!receipt || !tx) return { valid: false, reason: 'Tx not found' };
   if (receipt.status !== '0x1') return { valid: false, reason: 'Tx failed' };
 
-  // 4. Recipient check
+  // [HIGH-01] Confirmation count — reorg protection
+  try {
+    const currentBlockHex = await rpcCall('eth_blockNumber', []);
+    const currentBlock = BigInt(currentBlockHex);
+    const txBlock = BigInt(receipt.blockNumber);
+    if (currentBlock < txBlock) return { valid: false, reason: 'Block in future' };
+    if (currentBlock - txBlock < MIN_CONFIRMATIONS) {
+      return { valid: false, reason: `Need ${MIN_CONFIRMATIONS} confirmations, have ${currentBlock - txBlock}` };
+    }
+  } catch (e) {
+    return { valid: false, reason: 'Confirmation check failed: ' + e.message };
+  }
+
   if (tx.to?.toLowerCase() !== FEE_RECIPIENT.toLowerCase()) {
     return { valid: false, reason: 'Wrong recipient' };
   }
 
-  // 5. Amount check
   const value = BigInt(tx.value);
   if (value < MIN_FEE_WEI) {
     return { valid: false, reason: `Insufficient: ${value} wei` };
   }
 
-  // 6. [C-02] Mark as used (90 day TTL)
-  if (env.USED_TXS) {
-    await env.USED_TXS.put(
-      txHash,
-      JSON.stringify({ from: tx.from, value: tx.value, usedAt: Date.now(), uploadsRemaining: 2 }),
-      { expirationTtl: 60 * 60 * 24 * 90 }
-    );
-  }
+  await env.USED_TXS.put(
+    txHash,
+    JSON.stringify({ from: tx.from, value: tx.value, usedAt: Date.now(), uploadsRemaining: 2 }),
+    { expirationTtl: 60 * 60 * 24 * 90 }
+  );
 
   return { valid: true, from: tx.from };
 }
 
-// Magic bytes detection for content-type spoofing prevention
 function detectMimeType(bytes) {
   if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) return 'image/jpeg';
   if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) return 'image/png';
   return null;
+}
+
+// [HIGH-02] Streaming reader that enforces size during read (Content-Length untrusted)
+async function readBodyWithLimit(request, maxSize) {
+  const reader = request.body?.getReader();
+  if (!reader) return { error: 'No body' };
+  const chunks = [];
+  let totalSize = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    totalSize += value.length;
+    if (totalSize > maxSize) {
+      reader.cancel();
+      return { error: 'Body exceeded limit' };
+    }
+    chunks.push(value);
+  }
+  const body = new Uint8Array(totalSize);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return { body: body.buffer };
 }
 
 export default {
@@ -129,11 +166,18 @@ export default {
       const object = await env.STORAGE.get(key);
       if (!object) return new Response('Not found', { status: 404, headers });
 
+      // [HIGH-04] User-generated content (HTML/JSON) must be re-validated; binary assets can be immutable
+      const ct = object.httpMetadata?.contentType || 'application/octet-stream';
+      const isUserContent = ct.startsWith('text/html') || ct.startsWith('application/json');
+      const cacheHeader = isUserContent
+        ? 'public, max-age=3600, must-revalidate'
+        : 'public, max-age=31536000, immutable';
+
       return new Response(object.body, {
         headers: {
           ...headers,
-          'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
-          'Cache-Control': 'public, max-age=31536000, immutable',
+          'Content-Type': ct,
+          'Cache-Control': cacheHeader,
         },
       });
     }
@@ -142,61 +186,64 @@ export default {
       return new Response('Not found', { status: 404, headers });
     }
 
-    // ── [C-03 fix] R2 Upload with auth (POST /upload) ──
+    // ── R2 Upload (POST /upload) ──
     if (url.pathname === '/upload') {
       try {
-        // 1. Payment header required
+        requireKV(env); // [CRIT-02] fail-closed
+
         const txHash = request.headers.get('X-Payment-Tx');
         if (!txHash) {
           return Response.json({ error: 'X-Payment-Tx header required' }, { status: 402, headers });
         }
 
-        // 2. Verify payment exists and has remaining uploads
-        if (env.USED_TXS) {
-          const paymentRaw = await env.USED_TXS.get(txHash);
-          if (!paymentRaw) {
-            return Response.json({ error: 'No valid payment for this tx' }, { status: 402, headers });
+        // [CRIT-01] Inline verifyPayment for /upload-only flows (games/quiz/inkpress never call /generate)
+        let paymentRaw = await env.USED_TXS.get(txHash);
+        if (!paymentRaw) {
+          const verify = await verifyPayment(txHash, env);
+          if (!verify.valid) {
+            return Response.json({ error: `Payment invalid: ${verify.reason}` }, { status: 402, headers });
           }
-          const payment = JSON.parse(paymentRaw);
-          if (payment.uploadsRemaining !== undefined && payment.uploadsRemaining <= 0) {
-            return Response.json({ error: 'Upload limit reached for this payment' }, { status: 402, headers });
-          }
-
-          // Decrement upload counter
-          payment.uploadsRemaining = (payment.uploadsRemaining || 2) - 1;
-          payment.lastUploadAt = Date.now();
-          await env.USED_TXS.put(txHash, JSON.stringify(payment), { expirationTtl: 60 * 60 * 24 * 90 });
+          paymentRaw = await env.USED_TXS.get(txHash);
         }
 
-        // 3. Size limit
-        const contentLength = Number(request.headers.get('Content-Length') || 0);
-        if (contentLength > MAX_UPLOAD_SIZE) {
+        const payment = JSON.parse(paymentRaw);
+        if (payment.uploadsRemaining !== undefined && payment.uploadsRemaining <= 0) {
+          return Response.json({ error: 'Upload limit reached for this payment' }, { status: 402, headers });
+        }
+
+        // Decrement counter (KV; subject to known race per CRIT-05 — Durable Object upgrade pending Workers Paid)
+        payment.uploadsRemaining = (payment.uploadsRemaining ?? 2) - 1;
+        payment.lastUploadAt = Date.now();
+        await env.USED_TXS.put(txHash, JSON.stringify(payment), { expirationTtl: 60 * 60 * 24 * 90 });
+
+        // [HIGH-02] Quick reject via Content-Length hint then enforce during streaming read
+        const contentLengthHint = Number(request.headers.get('Content-Length') || 0);
+        if (contentLengthHint > MAX_UPLOAD_SIZE) {
           return Response.json({ error: 'File too large (max 5MB)' }, { status: 413, headers });
         }
 
-        // 4. Content-Type whitelist
         const contentType = request.headers.get('Content-Type') || '';
         const allowedTypes = ['image/jpeg', 'image/png', 'image/svg+xml', 'application/json', 'text/html', 'text/plain'];
         if (!allowedTypes.some((t) => contentType.startsWith(t))) {
           return Response.json({ error: 'Unsupported content type' }, { status: 400, headers });
         }
 
-        // 5. Read body
-        const body = await request.arrayBuffer();
-        if (body.byteLength > MAX_UPLOAD_SIZE) {
-          return Response.json({ error: 'Too large' }, { status: 413, headers });
+        const read = await readBodyWithLimit(request, MAX_UPLOAD_SIZE);
+        if (read.error) {
+          const status = read.error.includes('exceeded') ? 413 : 400;
+          return Response.json({ error: read.error }, { status, headers });
         }
+        const body = read.body;
 
-        // 6. Magic bytes check (content-type spoofing prevention)
+        // Magic-bytes spoofing check for binary types
         const bytes = new Uint8Array(body.slice(0, 12));
         const detected = detectMimeType(bytes);
         if (detected && !contentType.startsWith(detected)) {
           if (!contentType.includes('json') && !contentType.includes('text') && !contentType.includes('svg')) {
-            return Response.json({ error: `Content-Type mismatch` }, { status: 400, headers });
+            return Response.json({ error: 'Content-Type mismatch' }, { status: 400, headers });
           }
         }
 
-        // 7. Upload to R2
         const ext = contentType.includes('jpeg') || contentType.includes('jpg') ? 'jpg'
           : contentType.includes('png') ? 'png'
           : contentType.includes('svg') ? 'svg'
@@ -213,6 +260,7 @@ export default {
           headers: { ...headers, 'Content-Type': 'application/json' },
         });
       } catch (e) {
+        if (e instanceof Response) return e; // requireKV throws Response
         console.error('R2 upload error:', e);
         return Response.json({ error: 'Upload failed' }, { status: 500, headers });
       }
@@ -221,6 +269,8 @@ export default {
     // ── Stability AI Image Generation (POST /generate) ──
     if (url.pathname === '/generate') {
       try {
+        requireKV(env); // [CRIT-02]
+
         const { prompt, txHash } = await request.json();
         if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 3) {
           return Response.json({ error: 'Prompt must be at least 3 characters' }, { status: 400, headers });
@@ -229,13 +279,11 @@ export default {
           return Response.json({ error: 'Payment transaction hash required' }, { status: 400, headers });
         }
 
-        // [C-02] Verify payment with replay protection
         const payment = await verifyPayment(txHash, env);
         if (!payment.valid) {
           return Response.json({ error: `Payment invalid: ${payment.reason}` }, { status: 402, headers });
         }
 
-        // Generate image
         const formData = new FormData();
         formData.set('prompt', prompt.trim());
         formData.set('output_format', 'jpeg');
@@ -260,6 +308,7 @@ export default {
           headers: { ...headers, 'Content-Type': 'image/jpeg', 'Cache-Control': 'no-store' },
         });
       } catch (e) {
+        if (e instanceof Response) return e;
         console.error('Worker error:', e);
         return Response.json({ error: 'Internal error' }, { status: 500, headers });
       }
