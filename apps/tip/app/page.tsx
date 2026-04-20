@@ -2,7 +2,7 @@
 
 import { InkWalletProvider, ConnectButton, useAccount, useSendTransaction, useWaitForTransactionReceipt, useBalance } from '@inksuite/wallet';
 import { useState, useEffect, useCallback } from 'react';
-import { parseEther, formatEther, isAddress, toHex } from 'viem';
+import { parseEther, formatEther, isAddress, getAddress, toHex } from 'viem';
 import { EXPLORER_URL } from '@inksuite/chain';
 
 const PRESET_AMOUNTS = ['0.0001', '0.0005', '0.001', '0.005', '0.01'];
@@ -143,7 +143,10 @@ function TipApp() {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
     const to = params.get('to');
-    if (to && isAddress(to)) setUrlRecipient(to);
+    // [LOW-03] Normalize to EIP-55 checksum so downstream string compares stay stable
+    if (to && isAddress(to)) {
+      try { setUrlRecipient(getAddress(to)); } catch { /* invalid checksum, ignore */ }
+    }
   }, []);
 
   return (

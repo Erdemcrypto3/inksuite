@@ -5,5 +5,10 @@ routes = [
   { pattern = "audit-api.inksuite.xyz", custom_domain = true }
 ]
 
+# [HIGH-03] Shared rate-limit KV (also bound in inkmint-api)
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "3346e43e14c5475d85b70c4f23d8b0be"
+
 [vars]
 ALLOWED_ORIGIN = "https://audit.inksuite.xyz"

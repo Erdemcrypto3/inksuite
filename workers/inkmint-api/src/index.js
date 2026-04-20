@@ -1,3 +1,7 @@
+// [CRIT-05] Re-export DO class so wrangler can bind it when [[migrations]] is enabled.
+// While the binding is absent (free plan), this export is harmless dead code.
+export { UploadCounter } from './counter.js';
+
 const STABILITY_API = 'https://api.stability.ai/v2beta/stable-image/generate/core';
 const FEE_RECIPIENT = '0x9E84D77264d94C646dF91A70dbae99C20330eAD0';
 const INK_RPC = 'https://rpc-gel.inkonchain.com';
@@ -40,6 +44,25 @@ function requireKV(env) {
       { status: 503, headers: { 'Content-Type': 'application/json' } }
     );
   }
+}
+
+// [HIGH-03] Sliding-bucket rate limit. Silently permits when KV unbound (dev/fallback).
+async function checkRateLimit(request, env, endpoint, limit, windowSec) {
+  if (!env.RATE_LIMIT) return true;
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const bucket = Math.floor(Date.now() / (windowSec * 1000));
+  const key = `rl:${endpoint}:${ip}:${bucket}`;
+  const count = Number((await env.RATE_LIMIT.get(key)) || 0);
+  if (count >= limit) return false;
+  await env.RATE_LIMIT.put(key, String(count + 1), { expirationTtl: windowSec + 10 });
+  return true;
+}
+
+function rateLimitResponse(headers, retryAfter) {
+  return new Response(
+    JSON.stringify({ error: 'Rate limited' }),
+    { status: 429, headers: { ...headers, 'Content-Type': 'application/json', 'Retry-After': String(retryAfter) } }
+  );
 }
 
 async function rpcCall(method, params) {
@@ -112,6 +135,15 @@ async function verifyPayment(txHash, env) {
     JSON.stringify({ from: tx.from, value: tx.value, usedAt: Date.now(), uploadsRemaining: 2 }),
     { expirationTtl: 60 * 60 * 24 * 90 }
   );
+
+  // [CRIT-05] If Durable Object counter is bound, init it to 2 for atomic decrement later.
+  if (env.UPLOAD_COUNTER) {
+    const id = env.UPLOAD_COUNTER.idFromName(txHash);
+    const stub = env.UPLOAD_COUNTER.get(id);
+    await stub.fetch(new Request('https://do/init', {
+      method: 'POST', body: JSON.stringify({ count: 2 }),
+    }));
+  }
 
   return { valid: true, from: tx.from };
 }
@@ -191,6 +223,11 @@ export default {
       try {
         requireKV(env); // [CRIT-02] fail-closed
 
+        // [HIGH-03] 20 uploads per minute per IP
+        if (!(await checkRateLimit(request, env, 'upload', 20, 60))) {
+          return rateLimitResponse(headers, 60);
+        }
+
         const txHash = request.headers.get('X-Payment-Tx');
         if (!txHash) {
           return Response.json({ error: 'X-Payment-Tx header required' }, { status: 402, headers });
@@ -207,14 +244,23 @@ export default {
         }
 
         const payment = JSON.parse(paymentRaw);
-        if (payment.uploadsRemaining !== undefined && payment.uploadsRemaining <= 0) {
-          return Response.json({ error: 'Upload limit reached for this payment' }, { status: 402, headers });
-        }
 
-        // Decrement counter (KV; subject to known race per CRIT-05 — Durable Object upgrade pending Workers Paid)
-        payment.uploadsRemaining = (payment.uploadsRemaining ?? 2) - 1;
-        payment.lastUploadAt = Date.now();
-        await env.USED_TXS.put(txHash, JSON.stringify(payment), { expirationTtl: 60 * 60 * 24 * 90 });
+        // [CRIT-05] Prefer Durable Object atomic decrement when bound; fall back to KV.
+        if (env.UPLOAD_COUNTER) {
+          const id = env.UPLOAD_COUNTER.idFromName(txHash);
+          const stub = env.UPLOAD_COUNTER.get(id);
+          const counterRes = await stub.fetch(new Request('https://do/decrement'));
+          if (!counterRes.ok) {
+            return Response.json({ error: 'Upload limit reached for this payment' }, { status: 402, headers });
+          }
+        } else {
+          if (payment.uploadsRemaining !== undefined && payment.uploadsRemaining <= 0) {
+            return Response.json({ error: 'Upload limit reached for this payment' }, { status: 402, headers });
+          }
+          payment.uploadsRemaining = (payment.uploadsRemaining ?? 2) - 1;
+          payment.lastUploadAt = Date.now();
+          await env.USED_TXS.put(txHash, JSON.stringify(payment), { expirationTtl: 60 * 60 * 24 * 90 });
+        }
 
         // [HIGH-02] Quick reject via Content-Length hint then enforce during streaming read
         const contentLengthHint = Number(request.headers.get('Content-Length') || 0);
@@ -270,6 +316,11 @@ export default {
     if (url.pathname === '/generate') {
       try {
         requireKV(env); // [CRIT-02]
+
+        // [HIGH-03] 10 generate calls per minute per IP (Stability API is costly)
+        if (!(await checkRateLimit(request, env, 'generate', 10, 60))) {
+          return rateLimitResponse(headers, 60);
+        }
 
         const { prompt, txHash } = await request.json();
         if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 3) {

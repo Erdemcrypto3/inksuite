@@ -1,3 +1,22 @@
+// [HIGH-03] Sliding-bucket rate limit. Silently permits when KV unbound.
+async function checkRateLimit(request, env, endpoint, limit, windowSec) {
+  if (!env.RATE_LIMIT) return true;
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const bucket = Math.floor(Date.now() / (windowSec * 1000));
+  const key = `rl:${endpoint}:${ip}:${bucket}`;
+  const count = Number((await env.RATE_LIMIT.get(key)) || 0);
+  if (count >= limit) return false;
+  await env.RATE_LIMIT.put(key, String(count + 1), { expirationTtl: windowSec + 10 });
+  return true;
+}
+
+function rateLimitResponse(headers, retryAfter) {
+  return new Response(
+    JSON.stringify({ error: 'Rate limited' }),
+    { status: 429, headers: { ...headers, 'Content-Type': 'application/json', 'Retry-After': String(retryAfter) } }
+  );
+}
+
 // [CRIT-06] SSRF — block IPv4 private + IPv6 link-local/ULA + DNS metadata services
 function isBlockedHost(hostname) {
   const h = hostname.toLowerCase();
@@ -388,6 +407,11 @@ export default {
 
     if (request.method !== 'POST' || (url.pathname !== '/scan' && url.pathname !== '/scan-repo')) {
       return new Response('Not found', { status: 404, headers });
+    }
+
+    // [HIGH-03] 20 scans per minute per IP on both endpoints
+    if (!(await checkRateLimit(request, env, url.pathname === '/scan-repo' ? 'scan-repo' : 'scan', 20, 60))) {
+      return rateLimitResponse(headers, 60);
     }
 
     // GitHub repo scan

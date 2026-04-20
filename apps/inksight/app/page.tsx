@@ -9,7 +9,7 @@ import {
   useReadContract,
   useWaitForTransactionReceipt,
 } from '@inksuite/wallet';
-import { INKPOLL_ADDRESS, INKPOLL_ABI, CATEGORIES, categoriesToMask, maskToCategories } from './components/contract';
+import { INKPOLL_ADDRESS, INKPOLL_V2_ADDRESS, INKPOLL_ACTIVE_ADDRESS, INKPOLL_ABI, INKPOLL_V2_ABI, USDC_ADDRESS, ERC20_ABI, CATEGORIES, categoriesToMask, maskToCategories } from './components/contract';
 
 function getDeactivated(): number[] {
   if (typeof window === 'undefined') return [];
@@ -347,26 +347,58 @@ function InboxPanel({ address }: { address: string }) {
 // ═══════════════════════════════════════════════════════════
 
 function SendPanel() {
+  const { address } = useAccount();
   const [contentCID, setContentCID] = useState('');
   const [options, setOptions] = useState(['', '']);
   const [selectedCats, setSelectedCats] = useState<number[]>([]);
   const [deadlineDays, setDeadlineDays] = useState(7);
-  const { writeContract, data: hash, isPending } = useWriteContract();
-  const { isSuccess } = useWaitForTransactionReceipt({ hash });
+
+  // [CRIT-04] V2 gate — if V2 contract address is not configured, disable submission
+  const v2Active = !!INKPOLL_V2_ADDRESS;
+
+  // Approve path (CRIT-04 / USDC approve flow)
+  const { writeContract: writeApprove, data: approveHash, isPending: isApproving } = useWriteContract();
+  const { isSuccess: isApproveConfirmed } = useWaitForTransactionReceipt({ hash: approveHash });
+
+  // Submit path
+  const { writeContract: writeSubmit, data: submitHash, isPending: isSubmitting } = useWriteContract();
+  const { isSuccess } = useWaitForTransactionReceipt({ hash: submitHash });
 
   const mask = categoriesToMask(selectedCats);
 
   const { data: audienceSize } = useReadContract({
-    address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+    address: INKPOLL_ACTIVE_ADDRESS, abi: INKPOLL_V2_ABI,
     functionName: 'getAudienceSize', args: [mask],
     query: { enabled: mask > 0 },
   });
 
   const { data: price } = useReadContract({
-    address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+    address: INKPOLL_ACTIVE_ADDRESS, abi: INKPOLL_V2_ABI,
     functionName: 'getPrice', args: [audienceSize ?? BigInt(0)],
     query: { enabled: audienceSize !== undefined },
   });
+
+  const { data: allowance, refetch: refetchAllowance } = useReadContract({
+    address: USDC_ADDRESS, abi: ERC20_ABI, functionName: 'allowance',
+    args: [address ?? '0x0000000000000000000000000000000000000000', (INKPOLL_V2_ADDRESS ?? INKPOLL_ADDRESS) as `0x${string}`],
+    query: { enabled: !!address && v2Active },
+  });
+
+  const { data: balance } = useReadContract({
+    address: USDC_ADDRESS, abi: ERC20_ABI, functionName: 'balanceOf',
+    args: [address ?? '0x0000000000000000000000000000000000000000'],
+    query: { enabled: !!address && v2Active },
+  });
+
+  useEffect(() => {
+    if (isApproveConfirmed) refetchAllowance();
+  }, [isApproveConfirmed, refetchAllowance]);
+
+  const needsApproval = price !== undefined && allowance !== undefined
+    ? (allowance as bigint) < (price as bigint) : true;
+
+  const insufficientBalance = price !== undefined && balance !== undefined
+    ? (balance as bigint) < (price as bigint) : false;
 
   const toggleCat = (i: number) => {
     setSelectedCats((prev) => prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i]);
@@ -380,14 +412,25 @@ function SendPanel() {
     setOptions(next);
   };
 
+  const approveUSDC = () => {
+    if (!price || !v2Active) return;
+    writeApprove({
+      address: USDC_ADDRESS, abi: ERC20_ABI,
+      functionName: 'approve',
+      args: [INKPOLL_V2_ADDRESS!, price as bigint],
+    });
+  };
+
   const submit = () => {
+    if (!v2Active) return;
     const validOptions = options.filter((o) => o.trim());
     if (validOptions.length < 2 || !contentCID.trim() || mask === 0) return;
     const deadline = BigInt(Math.floor(Date.now() / 1000) + deadlineDays * 86400);
-    writeContract({
-      address: INKPOLL_ADDRESS, abi: INKPOLL_ABI,
+    writeSubmit({
+      address: INKPOLL_V2_ADDRESS!, abi: INKPOLL_V2_ABI,
       functionName: 'submitPoll',
-      args: [contentCID, validOptions, deadline, mask],
+      // [CRIT-03] 5-arg signature: _claimedAudience protects against audience under-reporting
+      args: [contentCID, validOptions, deadline, mask, (audienceSize ?? BigInt(0)) as bigint],
     });
   };
 
@@ -467,16 +510,41 @@ function SendPanel() {
         </div>
       )}
 
-      <button
-        onClick={submit}
-        disabled={isPending || options.filter((o) => o.trim()).length < 2 || !contentCID.trim() || mask === 0}
-        className="w-full py-3 rounded-xl bg-ink-500 text-white font-semibold hover:bg-ink-600 disabled:opacity-50 transition-all"
-      >
-        {isPending ? 'Submitting...' : 'Pay & Submit Poll'}
-      </button>
-      <p className="text-xs text-ink-400 text-center mt-2">
-        You must approve USDC spending before submitting.
-      </p>
+      {!v2Active ? (
+        <>
+          <button disabled className="w-full py-3 rounded-xl bg-amber-100 text-amber-700 font-semibold cursor-not-allowed">
+            Poll submission temporarily disabled
+          </button>
+          <p className="text-xs text-amber-600 text-center mt-2">
+            Awaiting InkPoll V2 contract deploy. Set NEXT_PUBLIC_INKPOLL_V2_ADDRESS once deployed.
+          </p>
+        </>
+      ) : insufficientBalance ? (
+        <button disabled className="w-full py-3 rounded-xl bg-red-100 text-red-700 font-semibold cursor-not-allowed">
+          Insufficient USDC Balance
+        </button>
+      ) : needsApproval ? (
+        <>
+          <button
+            onClick={approveUSDC}
+            disabled={isApproving || !price || mask === 0}
+            className="w-full py-3 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 disabled:opacity-50 transition-all"
+          >
+            {isApproving ? 'Approving USDC...' : `Step 1: Approve ${price ? (Number(price) / 1e6).toFixed(0) : '...'} USDC`}
+          </button>
+          <p className="text-xs text-ink-400 text-center mt-2">
+            One-time approval per price tier. Step 2 (Submit) unlocks once approval confirms.
+          </p>
+        </>
+      ) : (
+        <button
+          onClick={submit}
+          disabled={isSubmitting || options.filter((o) => o.trim()).length < 2 || !contentCID.trim() || mask === 0}
+          className="w-full py-3 rounded-xl bg-ink-500 text-white font-semibold hover:bg-ink-600 disabled:opacity-50 transition-all"
+        >
+          {isSubmitting ? 'Submitting...' : 'Step 2: Submit Poll'}
+        </button>
+      )}
     </div>
   );
 }

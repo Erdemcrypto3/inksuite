@@ -1,88 +1,58 @@
 /**
- * InkPoll Deploy Script
+ * InkPoll V2 Deploy Script — reads compiled artifact (no hand-pasted bytecode).
  *
  * Usage:
- *   1. Set WCM env variable with your private key
- *   2. Run: node deploy.js
+ *   cd contracts
+ *   pnpm install
+ *   pnpm compile
+ *   DEPLOY_KEY=0x... pnpm deploy:testnet    # Ink Sepolia smoke
+ *   DEPLOY_KEY=0x... pnpm deploy:mainnet    # Ink mainnet (use hardware wallet!)
  *
- * Prerequisites:
- *   npm install viem
+ * After successful deploy:
+ *   1. Copy printed address → update apps/inksight/app/components/contract.ts INKPOLL_ADDRESS
+ *   2. Regenerate + paste updated ABI (submitPoll now takes 5 args, getLeaderboard removed)
+ *   3. Verify on Blockscout: https://explorer.inkonchain.com/verify-smart-contract
+ *   4. Call setTreasury(multisig) once multisig is deployed (HIGH-07)
  */
 
-const { createWalletClient, createPublicClient, http, defineChain } = require('viem');
-const { privateKeyToAccount } = require('viem/accounts');
-
-// Ink L2 chain definition
-const ink = defineChain({
-  id: 57073,
-  name: 'Ink',
-  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-  rpcUrls: {
-    default: { http: ['https://rpc-gel.inkonchain.com'] },
-  },
-});
+const { ethers } = require('hardhat');
 
 // Constructor parameters
 const USDC_ADDRESS = '0x2D270e6886d130D724215A266106e6832161EAEd';
-const TREASURY_ADDRESS = '0x9e84d77264d94c646df91a70dbae99c20330ead0';
+const TREASURY_ADDRESS = '0x9E84D77264d94C646dF91A70dbae99C20330eAD0';
 
-// Contract bytecode — paste from Remix/Foundry compilation
-const BYTECODE = 'PASTE_COMPILED_BYTECODE_HERE';
+async function main() {
+  const [deployer] = await ethers.getSigners();
+  const network = await ethers.provider.getNetwork();
+  console.log('Deploying from:', deployer.address);
+  console.log('Network:', network.name, `(chainId ${network.chainId})`);
 
-async function deploy() {
-  // Get private key from environment
-  const privateKey = process.env.DEPLOY_KEY;
-  if (!privateKey) {
-    console.error('Set DEPLOY_KEY environment variable');
-    process.exit(1);
-  }
-
-  const account = privateKeyToAccount(privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`);
-  console.log('Deploying from:', account.address);
-
-  const walletClient = createWalletClient({
-    account,
-    chain: ink,
-    transport: http(),
-  });
-
-  const publicClient = createPublicClient({
-    chain: ink,
-    transport: http(),
-  });
-
-  // Check balance
-  const balance = await publicClient.getBalance({ address: account.address });
-  console.log('Balance:', Number(balance) / 1e18, 'ETH');
-
+  const balance = await ethers.provider.getBalance(deployer.address);
+  console.log('Balance:', ethers.formatEther(balance), 'ETH');
   if (balance === 0n) {
-    console.error('No ETH for gas!');
-    process.exit(1);
+    throw new Error('No ETH for gas');
   }
 
-  // Encode constructor args: (address _paymentToken, address _treasury)
-  // ABI-encoded: two address params, each padded to 32 bytes
-  const encodedArgs =
-    USDC_ADDRESS.slice(2).padStart(64, '0') +
-    TREASURY_ADDRESS.slice(2).padStart(64, '0');
+  console.log('\nPayment token (USDC):', USDC_ADDRESS);
+  console.log('Treasury:              ', TREASURY_ADDRESS);
+  console.log('\nDeploying InkPoll V2...');
 
-  const deployData = `0x${BYTECODE}${encodedArgs}`;
+  const InkPoll = await ethers.getContractFactory('inkpoll/InkPoll_V2.sol:InkPoll');
+  const poll = await InkPoll.deploy(USDC_ADDRESS, TREASURY_ADDRESS);
+  const tx = poll.deploymentTransaction();
+  console.log('Tx hash:', tx?.hash);
 
-  console.log('Deploying InkPoll...');
-  console.log('  Payment token (USDC):', USDC_ADDRESS);
-  console.log('  Treasury:', TREASURY_ADDRESS);
-
-  const hash = await walletClient.sendTransaction({
-    data: deployData,
-  });
-
-  console.log('Tx hash:', hash);
-  console.log('Waiting for confirmation...');
-
-  const receipt = await publicClient.waitForTransactionReceipt({ hash });
-  console.log('Contract deployed at:', receipt.contractAddress);
-  console.log('Gas used:', receipt.gasUsed.toString());
-  console.log('\nDone! Update INKPOLL_ADDRESS in contract.ts with:', receipt.contractAddress);
+  await poll.waitForDeployment();
+  const address = await poll.getAddress();
+  console.log('\nContract deployed at:', address);
+  console.log('\nNext steps:');
+  console.log('  1. Update INKPOLL_ADDRESS in apps/inksight/app/components/contract.ts');
+  console.log('  2. Set NEXT_PUBLIC_INKPOLL_V2_ADDRESS =', address, 'in Cloudflare Pages env vars to activate approve UI');
+  console.log('  3. Verify on Blockscout: https://explorer.inkonchain.com/address/' + address + '/contract-code-tab');
+  console.log('  4. After Safe{Wallet} multisig deploy, call setTreasury(multisig)');
 }
 
-deploy().catch(console.error);
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
