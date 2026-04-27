@@ -10,6 +10,10 @@ const PRESET_AMOUNTS = ['0.0001', '0.0005', '0.001', '0.005', '0.01'];
 // Ink Suite tip address (for "Tip Us" feature)
 const INKSUITE_ADDRESS = '0x9E84D77264d94C646dF91A70dbae99C20330eAD0';
 
+// [PAI-0030] Trusted recipient set. Any ?to= deviating from this set must
+// trigger an explicit "this is NOT the default" confirmation before sending.
+const TRUSTED_RECIPIENTS = new Set<string>([INKSUITE_ADDRESS.toLowerCase()]);
+
 type TipRecord = { to: string; amount: string; txHash: string; message: string; date: string };
 
 function loadTipHistory(): TipRecord[] {
@@ -24,16 +28,26 @@ function saveTip(tip: TipRecord) {
   localStorage.setItem('inksuite-tip-history', JSON.stringify(history));
 }
 
-function TipForm({ recipient: defaultRecipient }: { recipient?: string }) {
+function TipForm({ recipient: defaultRecipient, fromUrl }: { recipient?: string; fromUrl?: boolean }) {
   const { address, isConnected } = useAccount();
   const [recipient, setRecipient] = useState(defaultRecipient || '');
   const [amount, setAmount] = useState('0.001');
   const [message, setMessage] = useState('');
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
   const [error, setError] = useState<string | null>(null);
+  // [PAI-0030] When recipient is supplied via ?to= and is NOT a trusted
+  // address, force an explicit confirmation checkbox before Send is enabled.
+  const [externalAck, setExternalAck] = useState(false);
 
   const { sendTransaction, isPending } = useSendTransaction();
   const { isSuccess } = useWaitForTransactionReceipt({ hash: txHash });
+
+  const isUntrustedExternal = !!(
+    fromUrl &&
+    recipient &&
+    isAddress(recipient) &&
+    !TRUSTED_RECIPIENTS.has(recipient.toLowerCase())
+  );
 
   useEffect(() => {
     if (isSuccess && txHash) {
@@ -77,6 +91,31 @@ function TipForm({ recipient: defaultRecipient }: { recipient?: string }) {
     <div className="rounded-xl bg-white p-6 ring-1 ring-inset ring-purple-100 shadow-sm space-y-4">
       <h2 className="text-lg font-bold text-ink-900">Send a Tip</h2>
 
+      {/* [PAI-0030] Untrusted-recipient warning — full address shown,
+          explicit checkbox required before Send becomes enabled. */}
+      {isUntrustedExternal && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-900 space-y-2">
+          <div className="text-sm font-semibold">⚠ Custom recipient from URL</div>
+          <p className="text-xs leading-relaxed">
+            This tip will be sent to a custom address taken from the page URL,
+            <strong> NOT </strong> to the Ink Suite team. Verify the full
+            address below matches who you intend to tip:
+          </p>
+          <div className="break-all font-mono text-[11px] bg-white px-2 py-1.5 rounded ring-1 ring-amber-200 text-ink-900">
+            {recipient}
+          </div>
+          <label className="flex items-start gap-2 text-xs">
+            <input
+              type="checkbox"
+              checked={externalAck}
+              onChange={(e) => setExternalAck(e.target.checked)}
+              className="mt-0.5"
+            />
+            <span>I understand this is NOT the Ink Suite team address.</span>
+          </label>
+        </div>
+      )}
+
       <div>
         <label className="block text-xs font-semibold text-ink-600 mb-1">Recipient Address</label>
         <input
@@ -119,7 +158,9 @@ function TipForm({ recipient: defaultRecipient }: { recipient?: string }) {
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       {isConnected ? (
-        <button onClick={handleTip} disabled={isPending || !recipient.trim()}
+        <button
+          onClick={handleTip}
+          disabled={isPending || !recipient.trim() || (isUntrustedExternal && !externalAck)}
           className="w-full rounded-lg bg-ink-500 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-ink-600 disabled:opacity-50">
           {isPending ? 'Confirm in wallet...' : `Send ${amount} ETH`}
         </button>
@@ -165,8 +206,8 @@ function TipApp() {
         <div className="mt-3 font-mono text-xs text-white/60">{INKSUITE_ADDRESS}</div>
       </div>
 
-      {/* Tip form */}
-      <TipForm recipient={urlRecipient || INKSUITE_ADDRESS} />
+      {/* Tip form — flag fromUrl=true so PAI-0030 warning fires for untrusted ?to= */}
+      <TipForm recipient={urlRecipient || INKSUITE_ADDRESS} fromUrl={!!urlRecipient} />
 
       {/* Share your tip link */}
       {isConnected && (
