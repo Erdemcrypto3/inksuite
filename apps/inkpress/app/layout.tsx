@@ -6,7 +6,7 @@ const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakart
 
 export const metadata: Metadata = {
   title: 'InkPress — Decentralized Blog on Ink',
-  description: 'Publish articles as NFTs on Ink chain. Content stored on Walrus (decentralized storage). Fully on-chain blog platform.',
+  description: 'Publish articles as NFTs on Ink chain. Content stored on R2 (api.inksuite.xyz). Fully on-chain blog platform.',
   openGraph: {
     title: 'InkPress — Decentralized Blog on Ink',
     description: 'On-chain blog platform: publish, read, and collect articles as NFTs.',

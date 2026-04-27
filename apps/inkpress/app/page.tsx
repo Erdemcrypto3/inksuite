@@ -5,6 +5,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { toHex, parseEther } from 'viem';
 import DOMPurify from 'isomorphic-dompurify';
 
+// [PAI-0028] Module-level hook: force-set rel="noopener noreferrer" on every
+// <a target="_blank"> so author content can't reverse-tabnab the parent tab.
+// Idempotent — DOMPurify de-dupes hooks of the same name+phase.
+if (typeof window !== 'undefined') {
+  DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+    if (node.nodeName === 'A' && (node as Element).getAttribute('target') === '_blank') {
+      (node as Element).setAttribute('rel', 'noopener noreferrer');
+    }
+  });
+}
+
 const GENERATION_FEE = parseEther('0.00005');
 const FEE_RECIPIENT = '0x9E84D77264d94C646dF91A70dbae99C20330eAD0' as const;
 import { CONTRACT_ADDRESS, INKPRESS_ABI, API_URL, loadCategories, getAllTags, getAllTagOptions } from './components/contract';
@@ -30,6 +41,11 @@ function ArticleCard({ article, index, onRead, isOwner }: { article: Article; in
   const date = new Date(Number(article.publishedAt) * 1000);
   const { writeContract, isPending } = useWriteContract();
 
+  // [PAI-0034] UI gate is cosmetic — the on-chain
+  // unpublishArticle/republishArticle modifier (only article.author or
+  // contract owner) is the source of truth. A user calling the contract
+  // directly without going through this UI must still be rejected by the
+  // on-chain check; do not assume isOwner can be trusted on the wire.
   const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     const fn = article.active ? 'unpublishArticle' : 'republishArticle';
@@ -121,6 +137,7 @@ function ArticleReader({ article, articleId, onBack, isOwner }: { article: Artic
       .finally(() => setLoading(false));
   }, [article.walrusBlobId]);
 
+  // [PAI-0034] UI guard cosmetic only — contract enforces author/owner check.
   const handleTogglePublish = () => {
     const fn = article.active ? 'unpublishArticle' : 'republishArticle';
     writeContract2({
@@ -148,11 +165,14 @@ function ArticleReader({ article, articleId, onBack, isOwner }: { article: Artic
           <div className="py-12 text-center text-ink-400">Loading content...</div>
         ) : (
           <div className="prose max-w-none text-ink-800 leading-relaxed" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content, {
-            ALLOWED_TAGS: ['p','h1','h2','h3','h4','b','i','u','strong','em','ul','ol','li','blockquote','pre','code','a','br','hr','img','span','div'],
-            ALLOWED_ATTR: ['href','target','rel','class','src','alt','width','height'],
+            // [PAI-0028] Strict allow-list. img/class/src/width/height/alt removed —
+            // they enabled image-beacon exfiltration and CSS click-jack overlays.
+            // Cover images go through the dedicated coverImageBlobId field, not body HTML.
+            ALLOWED_TAGS: ['p','h1','h2','h3','h4','b','i','u','strong','em','ul','ol','li','blockquote','pre','code','a','br','hr'],
+            ALLOWED_ATTR: ['href','target','rel'],
             ALLOW_DATA_ATTR: false,
-            FORBID_TAGS: ['script','style','iframe','object','embed','form','input','textarea','select','button'],
-            FORBID_ATTR: ['onerror','onload','onclick','onmouseover','onfocus','onblur','style'],
+            FORBID_TAGS: ['script','style','iframe','object','embed','form','input','textarea','select','button','img','svg'],
+            FORBID_ATTR: ['onerror','onload','onclick','onmouseover','onfocus','onblur','style','src','class','id'],
           }) }} />
         )}
         <div className="mt-8 border-t border-purple-100 pt-6 flex items-center gap-4 flex-wrap">
@@ -428,7 +448,11 @@ function BlogFeed() {
 
   // Article reader view
   if (view === 'read' && selectedArticle !== null && selectedArticleId !== null) {
-    return <ArticleReader article={selectedArticle} articleId={selectedArticleId} isOwner={!!isAuthor} onBack={() => { setView('feed'); setSelectedArticle(null); setSelectedArticleId(null); }} />;
+    // [PAI-0034] Show toggle button only if connected wallet matches article
+    // author (case-insensitive) OR is approvedAuthor OR is contract owner.
+    // UI gate only — contract still enforces the modifier on chain.
+    const isArticleAuthor = !!(address && selectedArticle.author && address.toLowerCase() === selectedArticle.author.toLowerCase());
+    return <ArticleReader article={selectedArticle} articleId={selectedArticleId} isOwner={isArticleAuthor || !!isAuthor} onBack={() => { setView('feed'); setSelectedArticle(null); setSelectedArticleId(null); }} />;
   }
 
   // Write article view
@@ -546,9 +570,15 @@ function BlogFeed() {
               {isAuthor ? 'All Articles' : 'Latest Articles'}
             </h2>
             <div className="space-y-3">
-              {visibleArticles.map((article, i) => (
-                <ArticleCard key={i} index={i} article={article} isOwner={!!isAuthor} onRead={(a, idx) => { setSelectedArticle(a); setSelectedArticleId(idx); setView('read'); }} />
-              ))}
+              {visibleArticles.map((article, i) => {
+                // [PAI-0034] Per-card UI gate: this connected wallet authored
+                // THIS article, OR is the contract owner / approvedAuthor.
+                // On-chain modifier is still the source of truth.
+                const isArticleAuthor = !!(address && article.author && address.toLowerCase() === article.author.toLowerCase());
+                return (
+                  <ArticleCard key={i} index={i} article={article} isOwner={isArticleAuthor || !!isAuthor} onRead={(a, idx) => { setSelectedArticle(a); setSelectedArticleId(idx); setView('read'); }} />
+                );
+              })}
             </div>
           </div>
         ) : (

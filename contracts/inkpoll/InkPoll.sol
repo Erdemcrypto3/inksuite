@@ -31,7 +31,7 @@ contract InkPoll is Ownable, ReentrancyGuard {
 
     struct Poll {
         address sender;
-        string contentCID;       // Walrus blob ID for full body
+        string contentCID;       // R2 object key (api.inksuite.xyz/file/...) for full body
         string[] options;
         uint32 targetCategory;   // category bitmask to match
         uint256 deadline;
