@@ -3,10 +3,49 @@
 // New submissions must target V2 (see INKPOLL_V2_ADDRESS below).
 export const INKPOLL_ADDRESS = '0x5ce45f8A28FffFf7A94390DE048610ff4146ff3c' as const;
 
-// When set in Cloudflare Pages env vars, SendPanel switches to V2 flow
-// (approve → submit, 5-arg submitPoll with _claimedAudience). Unset = disabled.
-export const INKPOLL_V2_ADDRESS =
+// [PAI-0043] V2 address resolution prefers the runtime /api/config endpoint
+// (api.inksuite.xyz/api/config) so the address can be rotated by updating a
+// Worker env var instead of triggering a full Pages rebuild + cache flush.
+// Build-time NEXT_PUBLIC_INKPOLL_V2_ADDRESS remains as a fallback for first
+// boot before the runtime fetch lands. Components should call
+// `getInkPollV2Address()` if they need the freshest value.
+const BUILD_TIME_INKPOLL_V2_ADDRESS =
   (process.env.NEXT_PUBLIC_INKPOLL_V2_ADDRESS as `0x${string}` | undefined) || undefined;
+
+let runtimeInkPollV2Address: `0x${string}` | undefined = BUILD_TIME_INKPOLL_V2_ADDRESS;
+let runtimeFetchPromise: Promise<void> | null = null;
+
+const RUNTIME_CONFIG_URL = 'https://api.inksuite.xyz/api/config';
+
+function isHexAddress(s: unknown): s is `0x${string}` {
+  return typeof s === 'string' && /^0x[0-9a-fA-F]{40}$/.test(s);
+}
+
+export async function loadRuntimeConfig(): Promise<void> {
+  if (typeof window === 'undefined') return;
+  if (runtimeFetchPromise) return runtimeFetchPromise;
+  runtimeFetchPromise = (async () => {
+    try {
+      const res = await fetch(RUNTIME_CONFIG_URL, { cache: 'no-store' });
+      if (!res.ok) return;
+      const cfg = await res.json();
+      if (isHexAddress(cfg.inkpollV2)) runtimeInkPollV2Address = cfg.inkpollV2;
+    } catch {
+      // Network failure — keep build-time fallback. Don't block app boot.
+    }
+  })();
+  return runtimeFetchPromise;
+}
+
+// Read the freshest known V2 address. Synchronous; returns whatever
+// loadRuntimeConfig() last resolved, or the build-time fallback.
+export function getInkPollV2Address(): `0x${string}` | undefined {
+  return runtimeInkPollV2Address;
+}
+
+// Legacy export kept for callers that read the constant at module load time.
+// Prefer getInkPollV2Address() to pick up runtime rotations.
+export const INKPOLL_V2_ADDRESS = BUILD_TIME_INKPOLL_V2_ADDRESS;
 
 // Active address for read-heavy ops (leaderboard, audience). Prefers V2 when deployed.
 export const INKPOLL_ACTIVE_ADDRESS = (INKPOLL_V2_ADDRESS ?? INKPOLL_ADDRESS) as `0x${string}`;

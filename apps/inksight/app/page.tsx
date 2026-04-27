@@ -9,7 +9,14 @@ import {
   useReadContract,
   useWaitForTransactionReceipt,
 } from '@inksuite/wallet';
-import { INKPOLL_ADDRESS, INKPOLL_V2_ADDRESS, INKPOLL_ACTIVE_ADDRESS, INKPOLL_ABI, INKPOLL_V2_ABI, USDC_ADDRESS, ERC20_ABI, CATEGORIES, categoriesToMask, maskToCategories } from './components/contract';
+import { INKPOLL_ADDRESS, INKPOLL_V2_ADDRESS, INKPOLL_ACTIVE_ADDRESS, INKPOLL_ABI, INKPOLL_V2_ABI, USDC_ADDRESS, ERC20_ABI, CATEGORIES, categoriesToMask, maskToCategories, loadRuntimeConfig } from './components/contract';
+
+// [PAI-0043] Best-effort runtime config fetch at module load. Pulls the
+// canonical INKPOLL_V2 address from api.inksuite.xyz/api/config so the
+// frontend can pick up address rotations without a full Pages rebuild.
+// Failure is silent — build-time NEXT_PUBLIC_INKPOLL_V2_ADDRESS still wins
+// as the fallback.
+if (typeof window !== 'undefined') void loadRuntimeConfig();
 
 function getDeactivated(): number[] {
   if (typeof window === 'undefined') return [];

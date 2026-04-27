@@ -46,15 +46,60 @@ function requireKV(env) {
   }
 }
 
-// [HIGH-03] Sliding-bucket rate limit. Silently permits when KV unbound (dev/fallback).
+// [PAI-0040] Sliding-bucket rate limit, fail-CLOSED when the KV binding is
+// missing in production. The previous behaviour returned `true` (allow) on a
+// missing binding, which silently disabled the rate limit any time the
+// wrangler config drifted.
+//
+// [PAI-0036] Dev bypass requires BOTH env.ENVIRONMENT === 'development' AND
+// env.RATE_LIMIT_DEV === 'true'. A single-flag bypass would let one typo in
+// production wrangler config disable rate-limiting entirely; the double-gate
+// makes accidental copy/paste in prod harmless.
 async function checkRateLimit(request, env, endpoint, limit, windowSec) {
-  if (!env.RATE_LIMIT) return true;
+  if (!env.RATE_LIMIT) {
+    const isDevBypass = env.ENVIRONMENT === 'development' && env.RATE_LIMIT_DEV === 'true';
+    if (isDevBypass) {
+      console.warn('[RATE_LIMIT] DEV BYPASS ACTIVE — KV unbound, ENVIRONMENT=development + RATE_LIMIT_DEV=true');
+      return true;
+    }
+    // [PAI-0040] startup-style alert: log loudly so missing bindings are
+    // obvious in Cloudflare logs even if the resulting 503s look generic.
+    console.error('[RATE_LIMIT] env.RATE_LIMIT KV binding missing — failing closed');
+    throw new Response(
+      JSON.stringify({ error: 'Service misconfigured: rate limit unavailable' }),
+      { status: 503, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
   const bucket = Math.floor(Date.now() / (windowSec * 1000));
   const key = `rl:${endpoint}:${ip}:${bucket}`;
   const count = Number((await env.RATE_LIMIT.get(key)) || 0);
   if (count >= limit) return false;
   await env.RATE_LIMIT.put(key, String(count + 1), { expirationTtl: windowSec + 10 });
+  return true;
+}
+
+// [PAI-0041] Per-IP byte-budget rate limit on /upload. The endpoint already
+// has a per-IP request-count bucket via checkRateLimit('upload', ...); this
+// adds an orthogonal axis (bytes per minute per IP) so an attacker can't
+// burn the R2 quota by uploading many small-but-legitimately-shaped payloads
+// under the request-count threshold.
+const UPLOAD_BYTES_PER_MIN = 10 * 1024 * 1024; // 10 MB / IP / minute
+async function checkUploadByteBudget(request, env, byteCount) {
+  if (!env.RATE_LIMIT) {
+    const isDevBypass = env.ENVIRONMENT === 'development' && env.RATE_LIMIT_DEV === 'true';
+    if (isDevBypass) return true;
+    throw new Response(
+      JSON.stringify({ error: 'Service misconfigured: rate limit unavailable' }),
+      { status: 503, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const bucket = Math.floor(Date.now() / 60000);
+  const key = `rl:upload-bytes:${ip}:${bucket}`;
+  const used = Number((await env.RATE_LIMIT.get(key)) || 0);
+  if (used + byteCount > UPLOAD_BYTES_PER_MIN) return false;
+  await env.RATE_LIMIT.put(key, String(used + byteCount), { expirationTtl: 70 });
   return true;
 }
 
@@ -190,6 +235,31 @@ export default {
 
     const url = new URL(request.url);
 
+    // ── Runtime config (GET /api/config) ──
+    // [PAI-0043] Frontend can fetch contract addresses at boot rather than
+    // depending on NEXT_PUBLIC_* build-time inlining. Lets us rotate
+    // INKPOLL_V2_ADDRESS without a Cloudflare Pages rebuild + cache flush.
+    // Values are sourced from Worker env vars (set via `wrangler secret put`
+    // for prod, [vars] for dev). Frontend should fall back to its build-time
+    // constant if this endpoint is unreachable.
+    if (request.method === 'GET' && url.pathname === '/api/config') {
+      const config = {
+        inkmint: env.INKMINT_ADDRESS || null,
+        inkpoll: env.INKPOLL_ADDRESS || null,
+        inkpollV2: env.INKPOLL_V2_ADDRESS || null,
+        inkpress: env.INKPRESS_ADDRESS || null,
+        usdc: env.USDC_ADDRESS || null,
+      };
+      return new Response(JSON.stringify(config), {
+        status: 200,
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=60', // hot-rotatable, short cache
+        },
+      });
+    }
+
     // ── R2 File Read (GET /file/:key) ──
     if (request.method === 'GET' && url.pathname.startsWith('/file/')) {
       const key = url.pathname.slice(6);
@@ -280,6 +350,12 @@ export default {
           return Response.json({ error: read.error }, { status, headers });
         }
         const body = read.body;
+
+        // [PAI-0041] Per-IP byte-budget gate after the body is read so we
+        // measure actual stream length, not the (untrusted) Content-Length.
+        if (!(await checkUploadByteBudget(request, env, body.byteLength))) {
+          return rateLimitResponse(headers, 60);
+        }
 
         // Magic-bytes spoofing check for binary types
         const bytes = new Uint8Array(body.slice(0, 12));

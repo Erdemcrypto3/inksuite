@@ -1,6 +1,20 @@
-// [HIGH-03] Sliding-bucket rate limit. Silently permits when KV unbound.
+// [PAI-0040] Sliding-bucket rate limit, fail-CLOSED on missing KV binding.
+// [PAI-0036] Dev bypass requires BOTH env.ENVIRONMENT === 'development' AND
+// env.RATE_LIMIT_DEV === 'true' — single-flag bypass is one typo from a
+// production hole.
 async function checkRateLimit(request, env, endpoint, limit, windowSec) {
-  if (!env.RATE_LIMIT) return true;
+  if (!env.RATE_LIMIT) {
+    const isDevBypass = env.ENVIRONMENT === 'development' && env.RATE_LIMIT_DEV === 'true';
+    if (isDevBypass) {
+      console.warn('[RATE_LIMIT] DEV BYPASS ACTIVE — KV unbound, ENVIRONMENT=development + RATE_LIMIT_DEV=true');
+      return true;
+    }
+    console.error('[RATE_LIMIT] env.RATE_LIMIT KV binding missing — failing closed');
+    throw new Response(
+      JSON.stringify({ error: 'Service misconfigured: rate limit unavailable' }),
+      { status: 503, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
   const bucket = Math.floor(Date.now() / (windowSec * 1000));
   const key = `rl:${endpoint}:${ip}:${bucket}`;
@@ -409,9 +423,15 @@ export default {
       return new Response('Not found', { status: 404, headers });
     }
 
-    // [HIGH-03] 20 scans per minute per IP on both endpoints
-    if (!(await checkRateLimit(request, env, url.pathname === '/scan-repo' ? 'scan-repo' : 'scan', 20, 60))) {
-      return rateLimitResponse(headers, 60);
+    // [HIGH-03] 20 scans per minute per IP on both endpoints.
+    // [HIGH-02] checkRateLimit throws Response on misconfig — catch to surface 503.
+    try {
+      if (!(await checkRateLimit(request, env, url.pathname === '/scan-repo' ? 'scan-repo' : 'scan', 20, 60))) {
+        return rateLimitResponse(headers, 60);
+      }
+    } catch (e) {
+      if (e instanceof Response) return e;
+      throw e;
     }
 
     // GitHub repo scan
