@@ -1,5 +1,5 @@
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://explorer.inkonchain.com https://fonts.gstatic.com; img-src 'self' data: blob:; font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://explorer.inkonchain.com https://rpc-gel.inkonchain.com https://relay.walletconnect.com wss://relay.walletconnect.com https://*.walletconnect.com https://*.walletconnect.org https://verify.walletconnect.org https://fonts.gstatic.com; img-src 'self' data: blob: https://*.walletconnect.com; font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; frame-ancestors 'none'
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
