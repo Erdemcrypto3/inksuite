@@ -1,13 +1,20 @@
 // Runs during build to fetch FPL data and save as static JSON
 // Avoids CORS issues since this runs server-side in Node.js
+//
+// [PAI-0038] If the FPL API is unreachable from the build runner (CF Pages
+// IPs blocked, rate limit, transient outage), this script must NOT fail the
+// build. We catch the network error and write a committed stale-but-valid
+// fallback (`_fallback.json`) into place so `next build` always finds a
+// schema-compatible fpl.json.
 
-import { writeFileSync, mkdirSync } from 'fs';
+import { writeFileSync, mkdirSync, existsSync, copyFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, '..', 'app', 'data');
 const OUTPUT = join(DATA_DIR, 'fpl.json');
+const FALLBACK = join(__dirname, 'fpl.fallback.json');
 const BASE_URL = 'https://fantasy.premierleague.com/api';
 
 async function fetchJSON(url) {
@@ -122,6 +129,33 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error('Failed to fetch FPL data:', e.message);
-  process.exit(1);
+  console.warn(`[fpl] live fetch failed (${e.message}) — falling back to committed snapshot`);
+  // [PAI-0038] Build must not depend on third-party reachability. If the
+  // committed fallback snapshot exists, copy it into place; otherwise write
+  // an empty-but-schema-valid stub so Next.js can still complete the build.
+  try {
+    mkdirSync(DATA_DIR, { recursive: true });
+    if (existsSync(FALLBACK)) {
+      copyFileSync(FALLBACK, OUTPUT);
+      console.warn('[fpl] wrote fallback snapshot to', OUTPUT);
+    } else {
+      const empty = {
+        teams: [],
+        elements: [],
+        current_gw: 1,
+        completed_gws: [],
+        recent_gws: [],
+        live: {},
+        fixtures: [],
+        fetched_at: new Date(0).toISOString(),
+        _fallback: true,
+        _reason: e.message,
+      };
+      writeFileSync(OUTPUT, JSON.stringify(empty));
+      console.warn('[fpl] wrote empty stub to', OUTPUT);
+    }
+  } catch (writeErr) {
+    console.error('[fpl] fallback write also failed:', writeErr.message);
+    process.exit(1);
+  }
 });
