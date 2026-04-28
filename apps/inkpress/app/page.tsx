@@ -30,6 +30,8 @@ import { RichEditor } from './components/rich-editor';
 import { CategoryManagerWithCounts } from './components/category-manager';
 
 type Article = {
+  // Legacy field name from the pre-launch Walrus design — mirrors the on-chain struct
+  // (BaseBlog.sol). Storage is now Cloudflare R2; this string holds an R2 URL or blob id.
   walrusBlobId: string;
   title: string;
   description: string;

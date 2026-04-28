@@ -21,8 +21,11 @@
 const { ethers } = require('hardhat');
 
 // Constructor parameters
-const USDC_ADDRESS = '0x2D270e6886d130D724215A266106e6832161EAEd';
+// USDC.e — Ink mainnet bridged USDC (verified via eth_call symbol() = "USDC.e", 2026-04-28)
+// Source of truth: workers/inkmint-api/wrangler.toml [vars] USDC_ADDRESS + Infrastructure.txt
+const USDC_ADDRESS = '0xF1815bd50389c46847f0Bda824eC8da914045D14';
 const TREASURY_ADDRESS = '0x9E84D77264d94C646dF91A70dbae99C20330eAD0';
+const EXPECTED_USDC_SYMBOL = 'USDC.e';
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -35,6 +38,19 @@ async function main() {
   if (balance === 0n) {
     throw new Error('No ETH for gas');
   }
+
+  // [PAI-0048 fix] Refuse to deploy if USDC_ADDRESS doesn't point at a real USDC.e token.
+  // paymentToken is immutable in InkPoll_V2.sol — wrong address = permanent funds lock.
+  const erc20Abi = ['function symbol() view returns (string)'];
+  const usdc = new ethers.Contract(USDC_ADDRESS, erc20Abi, ethers.provider);
+  const symbol = await usdc.symbol();
+  if (symbol !== EXPECTED_USDC_SYMBOL) {
+    throw new Error(
+      `USDC pre-flight failed: ${USDC_ADDRESS} symbol() = "${symbol}", expected "${EXPECTED_USDC_SYMBOL}". ` +
+      `Refusing to deploy — paymentToken is immutable.`
+    );
+  }
+  console.log(`USDC pre-flight OK: ${USDC_ADDRESS} symbol() = "${symbol}"`);
 
   console.log('\nPayment token (USDC):', USDC_ADDRESS);
   console.log('Treasury:              ', TREASURY_ADDRESS);

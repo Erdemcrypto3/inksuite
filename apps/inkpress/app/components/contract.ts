@@ -118,8 +118,11 @@ export function getAllTagOptions(cats: CategoryItem[]): { value: string; label: 
   return opts;
 }
 
-// Matches BaseBlog.sol Article struct exactly:
-// walrusBlobId, title, description, coverImageBlobId, author, totalMinted, publishedAt, active, tags[]
+// Matches BaseBlog.sol Article struct exactly. Field names are kept as-is to mirror the
+// deployed contract ABI (0x7A0bB0C37a934b3858436E61838719a5a7F63720).
+// Note: `walrusBlobId` / `coverImageBlobId` are legacy names from the pre-launch Walrus design;
+// storage was migrated to Cloudflare R2 before mainnet. The strings now hold an R2 URL or blob id,
+// not a Walrus blob id. Renaming would diverge from the on-chain ABI.
 const ARTICLE_TUPLE = [
   { name: 'walrusBlobId', type: 'string' },
   { name: 'title', type: 'string' },
