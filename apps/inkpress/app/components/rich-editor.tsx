@@ -1,7 +1,14 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import DOMPurify from 'isomorphic-dompurify';
+
+// Lazy-load to avoid JSDOM stylesheet read during static prerender (see page.tsx note).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let DOMPurify: any = null;
+if (typeof window !== 'undefined') {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  DOMPurify = require('isomorphic-dompurify');
+}
 
 type Props = {
   value: string;
@@ -20,7 +27,7 @@ export function RichEditor({ value, onChange, placeholder }: Props) {
   // Sanitize value in case it was sourced from localStorage/URL/draft restore —
   // authoring-time XSS is still a risk before publish-time render sanitizes.
   useEffect(() => {
-    if (ref.current && ref.current.innerHTML !== value) {
+    if (ref.current && ref.current.innerHTML !== value && DOMPurify) {
       ref.current.innerHTML = DOMPurify.sanitize(value, {
         ALLOWED_TAGS: ['p','h1','h2','h3','b','i','u','strong','em','ul','ol','li','blockquote','pre','code','a','br'],
         ALLOWED_ATTR: ['href','target','rel'],

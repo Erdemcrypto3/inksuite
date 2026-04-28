@@ -3,15 +3,22 @@
 import { InkWalletProvider, ConnectButton, useAccount, useReadContract, useWriteContract, useSendTransaction, useWaitForTransactionReceipt } from '@inksuite/wallet';
 import { useState, useEffect, useCallback } from 'react';
 import { toHex, parseEther } from 'viem';
-import DOMPurify from 'isomorphic-dompurify';
-
-// [PAI-0028] Module-level hook: force-set rel="noopener noreferrer" on every
-// <a target="_blank"> so author content can't reverse-tabnab the parent tab.
-// Idempotent — DOMPurify de-dupes hooks of the same name+phase.
+// [PAI-0028] Lazy-loaded — `isomorphic-dompurify` init eagerly creates a JSDOM
+// instance that reads `node_modules/jsdom/.../browser/default-stylesheet.css`,
+// which fails during Next static prerender (ENOENT under /opt/buildhome/...).
+// We only need DOMPurify in the browser, so guard the import behind a window
+// check. See PAI-0028 for the sanitize policy enforced below.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let DOMPurify: any = null;
 if (typeof window !== 'undefined') {
-  DOMPurify.addHook('afterSanitizeAttributes', (node) => {
-    if (node.nodeName === 'A' && (node as Element).getAttribute('target') === '_blank') {
-      (node as Element).setAttribute('rel', 'noopener noreferrer');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  DOMPurify = require('isomorphic-dompurify');
+  // Module-level hook: force-set rel="noopener noreferrer" on every
+  // <a target="_blank"> so author content can't reverse-tabnab the parent tab.
+  // Idempotent — DOMPurify de-dupes hooks of the same name+phase.
+  DOMPurify.addHook('afterSanitizeAttributes', (node: Element) => {
+    if (node.nodeName === 'A' && node.getAttribute('target') === '_blank') {
+      node.setAttribute('rel', 'noopener noreferrer');
     }
   });
 }
@@ -164,7 +171,7 @@ function ArticleReader({ article, articleId, onBack, isOwner }: { article: Artic
         {loading ? (
           <div className="py-12 text-center text-ink-400">Loading content...</div>
         ) : (
-          <div className="prose max-w-none text-ink-800 leading-relaxed" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content, {
+          <div className="prose max-w-none text-ink-800 leading-relaxed" dangerouslySetInnerHTML={{ __html: DOMPurify ? DOMPurify.sanitize(content, {
             // [PAI-0028] Strict allow-list. img/class/src/width/height/alt removed —
             // they enabled image-beacon exfiltration and CSS click-jack overlays.
             // Cover images go through the dedicated coverImageBlobId field, not body HTML.
@@ -173,7 +180,7 @@ function ArticleReader({ article, articleId, onBack, isOwner }: { article: Artic
             ALLOW_DATA_ATTR: false,
             FORBID_TAGS: ['script','style','iframe','object','embed','form','input','textarea','select','button','img','svg'],
             FORBID_ATTR: ['onerror','onload','onclick','onmouseover','onfocus','onblur','style','src','class','id'],
-          }) }} />
+          }) : '' }} />
         )}
         <div className="mt-8 border-t border-purple-100 pt-6 flex items-center gap-4 flex-wrap">
           {address && mintPrice && (
