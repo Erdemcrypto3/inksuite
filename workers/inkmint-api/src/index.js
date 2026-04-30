@@ -248,7 +248,6 @@ export default {
         inkpoll: env.INKPOLL_ADDRESS || null,
         inkpollV2: env.INKPOLL_V2_ADDRESS || null,
         inkpress: env.INKPRESS_ADDRESS || null,
-        usdc: env.USDC_ADDRESS || null,
       };
       return new Response(JSON.stringify(config), {
         status: 200,

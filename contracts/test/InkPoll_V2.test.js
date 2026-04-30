@@ -2,29 +2,24 @@ const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
-describe('InkPoll V2', function () {
-  let poll, usdc, owner, admin, treasury, verifiedSender, regularSender, alice, bob, charlie;
+describe('InkPoll V2 (ETH)', function () {
+  let poll, owner, admin, treasury, verifiedSender, regularSender, alice, bob, charlie;
   const DAY = 24 * 60 * 60;
   const CAT_DEFI = 1 << 0;
   const CAT_NFTS = 1 << 1;
   const CAT_GAMING = 1 << 2;
 
+  const TIER1_PRICE = ethers.parseEther('0.005');
+  const TIER2_PRICE = ethers.parseEther('0.01');
+
   beforeEach(async function () {
     [owner, admin, treasury, verifiedSender, regularSender, alice, bob, charlie] = await ethers.getSigners();
 
-    const MockUSDC = await ethers.getContractFactory('MockUSDC');
-    usdc = await MockUSDC.deploy();
-
     const InkPoll = await ethers.getContractFactory('inkpoll/InkPoll_V2.sol:InkPoll');
-    poll = await InkPoll.deploy(await usdc.getAddress(), treasury.address);
+    poll = await InkPoll.deploy(treasury.address);
 
     await poll.addAdmin(admin.address);
     await poll.verifySender(verifiedSender.address);
-
-    for (const s of [verifiedSender, regularSender]) {
-      await usdc.mint(s.address, 1_000_000_000n);
-      await usdc.connect(s).approve(await poll.getAddress(), 1_000_000_000n);
-    }
 
     for (const u of [alice, bob, charlie]) {
       await poll.connect(u).register(CAT_DEFI | CAT_NFTS);
@@ -32,21 +27,21 @@ describe('InkPoll V2', function () {
   });
 
   describe('constructor & state', function () {
-    it('sets paymentToken and treasury', async function () {
-      expect(await poll.paymentToken()).to.equal(await usdc.getAddress());
+    it('sets treasury', async function () {
       expect(await poll.treasury()).to.equal(treasury.address);
     });
 
-    it('seeds default categories and tiers', async function () {
+    it('seeds default categories and 8 tiers', async function () {
       const cats = await poll.getAllCategories();
       expect(cats.length).to.equal(8);
       expect(cats[0]).to.equal('DeFi');
+      expect(await poll.tierPrice(0)).to.equal(ethers.parseEther('0.005'));
+      expect(await poll.tierPrice(7)).to.equal(ethers.parseEther('0.5'));
     });
 
-    it('rejects zero addresses in constructor', async function () {
+    it('rejects zero address in constructor', async function () {
       const InkPoll = await ethers.getContractFactory('inkpoll/InkPoll_V2.sol:InkPoll');
-      await expect(InkPoll.deploy(ethers.ZeroAddress, treasury.address)).to.be.revertedWith('Zero address');
-      await expect(InkPoll.deploy(await usdc.getAddress(), ethers.ZeroAddress)).to.be.revertedWith('Zero address');
+      await expect(InkPoll.deploy(ethers.ZeroAddress)).to.be.revertedWith('Zero address');
     });
   });
 
@@ -68,7 +63,7 @@ describe('InkPoll V2', function () {
     });
 
     it('rejects responding to own poll', async function () {
-      await poll.connect(verifiedSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 10);
+      await poll.connect(verifiedSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 10, { value: TIER1_PRICE });
       await expect(poll.connect(verifiedSender).respond(0, 0)).to.be.revertedWith('Not registered');
 
       await poll.connect(verifiedSender).register(CAT_DEFI);
@@ -76,79 +71,98 @@ describe('InkPoll V2', function () {
     });
   });
 
-  describe('submitPoll — verified sender (CRIT-03 fix)', function () {
-    it('transfers payment directly to treasury, marks ACTIVE', async function () {
-      const before = await usdc.balanceOf(treasury.address);
-      await poll.connect(verifiedSender).submitPoll('cid', ['yes', 'no'], (await time.latest()) + DAY, CAT_DEFI, 10);
-      const after = await usdc.balanceOf(treasury.address);
-      expect(after - before).to.equal(5_000_000n);
+  describe('submitPoll — verified sender', function () {
+    it('transfers ETH to treasury, marks ACTIVE', async function () {
+      const before = await ethers.provider.getBalance(treasury.address);
+      await poll.connect(verifiedSender).submitPoll('cid', ['yes', 'no'], (await time.latest()) + DAY, CAT_DEFI, 10, { value: TIER1_PRICE });
+      const after = await ethers.provider.getBalance(treasury.address);
+      expect(after - before).to.equal(TIER1_PRICE);
 
       const p = await poll.polls(0);
-      expect(p.status).to.equal(1); // ACTIVE
-      expect(await usdc.balanceOf(await poll.getAddress())).to.equal(0n);
+      expect(p.status).to.equal(1n);
+      expect(await ethers.provider.getBalance(await poll.getAddress())).to.equal(0n);
     });
   });
 
   describe('submitPoll — non-verified sender', function () {
-    it('holds payment in contract, marks PENDING', async function () {
-      await poll.connect(regularSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 10);
+    it('holds ETH in contract, marks PENDING', async function () {
+      await poll.connect(regularSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 10, { value: TIER1_PRICE });
       const p = await poll.polls(0);
-      expect(p.status).to.equal(0); // PENDING
-      expect(await usdc.balanceOf(await poll.getAddress())).to.equal(5_000_000n);
+      expect(p.status).to.equal(0n);
+      expect(await ethers.provider.getBalance(await poll.getAddress())).to.equal(TIER1_PRICE);
     });
 
-    it('admin can approve — funds move to treasury', async function () {
-      await poll.connect(regularSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 10);
-      const before = await usdc.balanceOf(treasury.address);
+    it('admin can approve — ETH moves to treasury', async function () {
+      await poll.connect(regularSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 10, { value: TIER1_PRICE });
+      const before = await ethers.provider.getBalance(treasury.address);
       await poll.connect(admin).approvePoll(0);
-      const after = await usdc.balanceOf(treasury.address);
-      expect(after - before).to.equal(5_000_000n);
-      expect((await poll.polls(0)).status).to.equal(1);
+      const after = await ethers.provider.getBalance(treasury.address);
+      expect(after - before).to.equal(TIER1_PRICE);
+      expect((await poll.polls(0)).status).to.equal(1n);
     });
 
     it('admin can reject — sender refunded', async function () {
-      const beforeSender = await usdc.balanceOf(regularSender.address);
-      await poll.connect(regularSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 10);
+      await poll.connect(regularSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 10, { value: TIER1_PRICE });
+      const beforeReject = await ethers.provider.getBalance(regularSender.address);
       await poll.connect(admin).rejectPoll(0);
-      const afterSender = await usdc.balanceOf(regularSender.address);
-      expect(afterSender).to.equal(beforeSender);
+      const afterReject = await ethers.provider.getBalance(regularSender.address);
+      expect(afterReject - beforeReject).to.equal(TIER1_PRICE);
     });
 
     it('rejects approve after deadline (H-06)', async function () {
-      await poll.connect(regularSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 10);
+      await poll.connect(regularSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 10, { value: TIER1_PRICE });
       await time.increase(2 * DAY);
       await expect(poll.connect(admin).approvePoll(0)).to.be.revertedWith('Expired');
     });
 
     it('sender can self-refund expired PENDING via closePoll', async function () {
-      const before = await usdc.balanceOf(regularSender.address);
-      await poll.connect(regularSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 10);
+      await poll.connect(regularSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 10, { value: TIER1_PRICE });
       await time.increase(2 * DAY);
-      await poll.connect(regularSender).closePoll(0);
-      expect(await usdc.balanceOf(regularSender.address)).to.equal(before);
+      const beforeClose = await ethers.provider.getBalance(regularSender.address);
+      const tx = await poll.connect(regularSender).closePoll(0);
+      const receipt = await tx.wait();
+      const gasSpent = receipt.gasUsed * receipt.gasPrice;
+      const afterClose = await ethers.provider.getBalance(regularSender.address);
+      expect(afterClose + gasSpent - beforeClose).to.equal(TIER1_PRICE);
     });
   });
 
   describe('submitPoll — audience validation (H-02)', function () {
     it('reverts when claim < actual', async function () {
-      // 3 users (alice, bob, charlie) have CAT_DEFI
       await expect(
-        poll.connect(verifiedSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 1)
+        poll.connect(verifiedSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 1, { value: TIER1_PRICE })
       ).to.be.revertedWith('Audience understated');
     });
 
     it('accepts claim >= actual; price scales with claim', async function () {
-      const before = await usdc.balanceOf(treasury.address);
-      await poll.connect(verifiedSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 600);
-      const after = await usdc.balanceOf(treasury.address);
-      expect(after - before).to.equal(10_000_000n); // tier 2 price at 600 audience
+      const before = await ethers.provider.getBalance(treasury.address);
+      await poll.connect(verifiedSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 600, { value: TIER2_PRICE });
+      const after = await ethers.provider.getBalance(treasury.address);
+      expect(after - before).to.equal(TIER2_PRICE);
     });
 
     it('reverts on zero claimed audience', async function () {
-      // CAT_GAMING has no registered users → actualAudience=0; claimed=0 trips the "No matching audience" guard
       await expect(
-        poll.connect(verifiedSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_GAMING, 0)
+        poll.connect(verifiedSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_GAMING, 0, { value: TIER1_PRICE })
       ).to.be.revertedWith('No matching audience');
+    });
+  });
+
+  describe('submitPoll — refund overpayment', function () {
+    it('refunds excess ETH to sender', async function () {
+      const overpay = ethers.parseEther('0.01');
+      const before = await ethers.provider.getBalance(verifiedSender.address);
+      const tx = await poll.connect(verifiedSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 10, { value: overpay });
+      const receipt = await tx.wait();
+      const gasSpent = receipt.gasUsed * receipt.gasPrice;
+      const after = await ethers.provider.getBalance(verifiedSender.address);
+      expect(before - after - gasSpent).to.equal(TIER1_PRICE);
+    });
+
+    it('reverts on insufficient payment', async function () {
+      await expect(
+        poll.connect(verifiedSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 10, { value: 1n })
+      ).to.be.revertedWith('Insufficient payment');
     });
   });
 
@@ -158,48 +172,39 @@ describe('InkPoll V2', function () {
       const signer = (await ethers.getSigners())[10];
       await expect(poll.connect(signer).register(CAT_DEFI)).to.be.reverted;
       await expect(
-        poll.connect(verifiedSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 10)
+        poll.connect(verifiedSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 10, { value: TIER1_PRICE })
       ).to.be.reverted;
     });
   });
 
   describe('access control (H-03)', function () {
     it('verifySender is onlyOwner — admin cannot call', async function () {
-      // OZ v5 Ownable emits OwnableUnauthorizedCaller custom error; matching by name via revertedWithCustomError
-      // requires the ABI to include the error. We fall back to plain `reverted` to avoid ABI plumbing noise.
       await expect(poll.connect(admin).verifySender(alice.address)).to.be.reverted;
     });
 
     it('setPricing is onlyOwner', async function () {
-      await expect(poll.connect(admin).setPricing([100], [1_000_000])).to.be.reverted;
+      await expect(poll.connect(admin).setPricing([100], [ethers.parseEther('0.001')])).to.be.reverted;
       await expect(poll.connect(owner).setPricing([], [])).to.be.revertedWith('Invalid tiers');
-      await poll.setPricing([100, 1000], [1_000_000, 5_000_000]);
+      await poll.setPricing([100, 1000], [ethers.parseEther('0.001'), ethers.parseEther('0.005')]);
       expect(await poll.tierMaxAudience(0)).to.equal(100n);
     });
   });
 
-  describe('allowance=0 reverts', function () {
-    it('submitPoll reverts when allowance insufficient', async function () {
-      await usdc.connect(verifiedSender).approve(await poll.getAddress(), 0);
-      await expect(
-        poll.connect(verifiedSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 10)
-      ).to.be.reverted;
+  describe('sweepETH', function () {
+    it('blocks ETH sweep while PENDING polls exist', async function () {
+      await poll.connect(regularSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 10, { value: TIER1_PRICE });
+      await expect(poll.sweepETH(TIER1_PRICE))
+        .to.be.revertedWith('Active pending polls');
     });
   });
 
-  describe('sweepStuckTokens', function () {
-    it('blocks payment-token sweep while PENDING polls exist', async function () {
-      await poll.connect(regularSender).submitPoll('cid', ['a', 'b'], (await time.latest()) + DAY, CAT_DEFI, 10);
-      await expect(poll.sweepStuckTokens(await usdc.getAddress(), 1_000_000n))
-        .to.be.revertedWith('Active pending polls');
-    });
-
-    it('allows non-payment-token sweep regardless', async function () {
+  describe('sweepERC20', function () {
+    it('allows ERC20 sweep regardless of poll state', async function () {
       const MockUSDC = await ethers.getContractFactory('MockUSDC');
-      const other = await MockUSDC.deploy();
-      await other.mint(await poll.getAddress(), 500n);
-      await poll.sweepStuckTokens(await other.getAddress(), 500n);
-      expect(await other.balanceOf(owner.address)).to.equal(500n);
+      const token = await MockUSDC.deploy();
+      await token.mint(await poll.getAddress(), 500n);
+      await poll.sweepERC20(await token.getAddress(), 500n);
+      expect(await token.balanceOf(owner.address)).to.equal(500n);
     });
   });
 });

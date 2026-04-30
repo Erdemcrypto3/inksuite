@@ -7,10 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 
-/// @title  InkPoll V2 — verified sender fund lock fix, SafeERC20, audience claim
-/// @notice Address of deployed V2 replaces V1 (0x5ce45...) in frontends once ready.
-///         Do NOT keep V1 in service after V2 — migrate users by freezing V1
-///         admin actions and redirecting the UI.
+/// @title  InkPoll V2 — native ETH payments, 8-tier pricing, refund-overpay
 contract InkPoll is Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
 
@@ -37,7 +34,6 @@ contract InkPoll is Ownable, ReentrancyGuard, Pausable {
         uint256 payment;
     }
 
-    IERC20 public immutable paymentToken;
     address public treasury;
     string[] public categories;
     uint256[] public tierMaxAudience;
@@ -75,9 +71,8 @@ contract InkPoll is Ownable, ReentrancyGuard, Pausable {
         _;
     }
 
-    constructor(address _paymentToken, address _treasury) Ownable(msg.sender) {
-        require(_paymentToken != address(0) && _treasury != address(0), "Zero address");
-        paymentToken = IERC20(_paymentToken);
+    constructor(address _treasury) Ownable(msg.sender) {
+        require(_treasury != address(0), "Zero address");
         treasury = _treasury;
 
         categories.push("DeFi");
@@ -89,11 +84,14 @@ contract InkPoll is Ownable, ReentrancyGuard, Pausable {
         categories.push("Trading");
         categories.push("Other");
 
-        tierMaxAudience.push(500);       tierPrice.push(5e6);
-        tierMaxAudience.push(1000);      tierPrice.push(10e6);
-        tierMaxAudience.push(5000);      tierPrice.push(25e6);
-        tierMaxAudience.push(10000);     tierPrice.push(50e6);
-        tierMaxAudience.push(type(uint256).max); tierPrice.push(100e6);
+        tierMaxAudience.push(500);                   tierPrice.push(5e15);
+        tierMaxAudience.push(1000);                  tierPrice.push(1e16);
+        tierMaxAudience.push(2500);                  tierPrice.push(18e15);
+        tierMaxAudience.push(5000);                  tierPrice.push(25e15);
+        tierMaxAudience.push(10000);                 tierPrice.push(5e16);
+        tierMaxAudience.push(25000);                 tierPrice.push(1e17);
+        tierMaxAudience.push(50000);                 tierPrice.push(3e17);
+        tierMaxAudience.push(type(uint256).max);     tierPrice.push(5e17);
     }
 
     // ── User Functions ──
@@ -177,15 +175,13 @@ contract InkPoll is Ownable, ReentrancyGuard, Pausable {
         return tierPrice[tierPrice.length - 1];
     }
 
-    /// @notice Submit a poll. Caller passes a claimed audience size that must be >=
-    ///         actual. Higher claims cost more; lower claims revert.
     function submitPoll(
         string calldata _contentCID,
         string[] calldata _options,
         uint256 _deadline,
         uint32 _targetCategory,
         uint256 _claimedAudience
-    ) external nonReentrant whenNotPaused returns (uint256 pollId) {
+    ) external payable nonReentrant whenNotPaused returns (uint256 pollId) {
         require(_options.length >= 2 && _options.length <= 10, "2-10 options");
         require(_deadline > block.timestamp, "Deadline must be future");
         require(_targetCategory > 0, "Must target a category");
@@ -196,7 +192,7 @@ contract InkPoll is Ownable, ReentrancyGuard, Pausable {
         require(_claimedAudience > 0, "No matching audience");
         uint256 price = getPrice(_claimedAudience);
 
-        paymentToken.safeTransferFrom(msg.sender, address(this), price);
+        require(msg.value >= price, "Insufficient payment");
 
         pollId = polls.length;
         Poll storage poll = polls.push();
@@ -207,10 +203,9 @@ contract InkPoll is Ownable, ReentrancyGuard, Pausable {
         poll.createdAt = block.timestamp;
         poll.payment = price;
 
-        // V2 fix: verified sender goes straight to treasury, no admin bottleneck + no lock
         if (verifiedSenders[msg.sender]) {
             poll.status = PollStatus.ACTIVE;
-            paymentToken.safeTransfer(treasury, price);
+            _sendETH(treasury, price);
         } else {
             poll.status = PollStatus.PENDING;
         }
@@ -219,32 +214,34 @@ contract InkPoll is Ownable, ReentrancyGuard, Pausable {
             poll.options.push(_options[i]);
         }
 
+        if (msg.value > price) {
+            _sendETH(msg.sender, msg.value - price);
+        }
+
         emit PollSubmitted(pollId, msg.sender, _targetCategory, _deadline, price);
         return pollId;
     }
 
     // ── Admin Functions ──
 
-    function approvePoll(uint256 _pollId) external onlyAdmin whenNotPaused {
+    function approvePoll(uint256 _pollId) external onlyAdmin whenNotPaused nonReentrant {
         Poll storage poll = polls[_pollId];
         require(poll.status == PollStatus.PENDING, "Not pending");
         require(block.timestamp < poll.deadline, "Expired");
         poll.status = PollStatus.ACTIVE;
-        paymentToken.safeTransfer(treasury, poll.payment);
+        _sendETH(treasury, poll.payment);
         emit PollApproved(_pollId, poll.payment);
     }
 
-    function rejectPoll(uint256 _pollId) external onlyAdmin {
+    function rejectPoll(uint256 _pollId) external onlyAdmin nonReentrant {
         Poll storage poll = polls[_pollId];
         require(poll.status == PollStatus.PENDING, "Not pending");
         poll.status = PollStatus.REJECTED;
-        paymentToken.safeTransfer(poll.sender, poll.payment);
+        _sendETH(poll.sender, poll.payment);
         emit PollRejected(_pollId, poll.payment);
     }
 
-    /// @notice Close an active poll, or refund a pending-expired one. Sender can
-    ///         close their own poll once the deadline has passed.
-    function closePoll(uint256 _pollId) external {
+    function closePoll(uint256 _pollId) external nonReentrant {
         Poll storage poll = polls[_pollId];
 
         if (poll.status == PollStatus.ACTIVE) {
@@ -257,7 +254,7 @@ contract InkPoll is Ownable, ReentrancyGuard, Pausable {
             bool authorized = admins[msg.sender] || msg.sender == owner() || msg.sender == poll.sender;
             require(authorized, "Not authorized");
             poll.status = PollStatus.REJECTED;
-            paymentToken.safeTransfer(poll.sender, poll.payment);
+            _sendETH(poll.sender, poll.payment);
             emit PollRejected(_pollId, poll.payment);
         } else {
             revert("Invalid state");
@@ -309,14 +306,14 @@ contract InkPoll is Ownable, ReentrancyGuard, Pausable {
     function pause() external onlyOwner { _pause(); }
     function unpause() external onlyOwner { _unpause(); }
 
-    /// @notice Emergency sweep. Blocks payment token sweep while pending polls exist
-    ///         to protect unresolved refunds.
-    function sweepStuckTokens(address token, uint256 amount) external onlyOwner {
-        if (token == address(paymentToken)) {
-            for (uint256 i = 0; i < polls.length; i++) {
-                require(polls[i].status != PollStatus.PENDING, "Active pending polls");
-            }
+    function sweepETH(uint256 amount) external onlyOwner nonReentrant {
+        for (uint256 i = 0; i < polls.length; i++) {
+            require(polls[i].status != PollStatus.PENDING, "Active pending polls");
         }
+        _sendETH(owner(), amount);
+    }
+
+    function sweepERC20(address token, uint256 amount) external onlyOwner {
         IERC20(token).safeTransfer(owner(), amount);
     }
 
@@ -328,9 +325,12 @@ contract InkPoll is Ownable, ReentrancyGuard, Pausable {
         return m < (uint32(1) << catCount);
     }
 
+    function _sendETH(address to, uint256 amount) internal {
+        (bool success,) = to.call{value: amount}("");
+        require(success, "ETH transfer failed");
+    }
+
     // ── View Functions ──
-    // Note: V1's getLeaderboard removed in V2. Frontends compute the leaderboard
-    // off-chain by indexing UserRegistered + PointsAwarded events.
 
     function getActivePolls(address _user) external view returns (uint256[] memory) {
         uint32 userMask = users[_user].categoryMask;

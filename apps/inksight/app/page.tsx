@@ -8,8 +8,9 @@ import {
   useWriteContract,
   useReadContract,
   useWaitForTransactionReceipt,
+  useBalance,
 } from '@inksuite/wallet';
-import { INKPOLL_ADDRESS, INKPOLL_V2_ADDRESS, INKPOLL_ACTIVE_ADDRESS, INKPOLL_ABI, INKPOLL_V2_ABI, USDC_ADDRESS, ERC20_ABI, CATEGORIES, categoriesToMask, maskToCategories, loadRuntimeConfig } from './components/contract';
+import { INKPOLL_ADDRESS, INKPOLL_V2_ADDRESS, INKPOLL_ACTIVE_ADDRESS, INKPOLL_ABI, INKPOLL_V2_ABI, CATEGORIES, categoriesToMask, maskToCategories, loadRuntimeConfig } from './components/contract';
 
 // [PAI-0043] Best-effort runtime config fetch at module load. Pulls the
 // canonical INKPOLL_V2 address from api.inksuite.xyz/api/config so the
@@ -360,15 +361,9 @@ function SendPanel() {
   const [selectedCats, setSelectedCats] = useState<number[]>([]);
   const [deadlineDays, setDeadlineDays] = useState(7);
 
-  // [CRIT-04] V2 gate — if V2 contract address is not configured, disable submission
   const v2Active = !!INKPOLL_V2_ADDRESS;
 
-  // Approve path (CRIT-04 / USDC approve flow)
-  const { writeContract: writeApprove, data: approveHash, isPending: isApproving } = useWriteContract();
-  const { isSuccess: isApproveConfirmed } = useWaitForTransactionReceipt({ hash: approveHash });
-
-  // Submit path
-  const { writeContract: writeSubmit, data: submitHash, isPending: isSubmitting } = useWriteContract();
+  const { writeContract, data: submitHash, isPending: isSubmitting } = useWriteContract();
   const { isSuccess } = useWaitForTransactionReceipt({ hash: submitHash });
 
   const mask = categoriesToMask(selectedCats);
@@ -385,27 +380,10 @@ function SendPanel() {
     query: { enabled: audienceSize !== undefined },
   });
 
-  const { data: allowance, refetch: refetchAllowance } = useReadContract({
-    address: USDC_ADDRESS, abi: ERC20_ABI, functionName: 'allowance',
-    args: [address ?? '0x0000000000000000000000000000000000000000', (INKPOLL_V2_ADDRESS ?? INKPOLL_ADDRESS) as `0x${string}`],
-    query: { enabled: !!address && v2Active },
-  });
+  const { data: ethBalance } = useBalance({ address: address as `0x${string}` | undefined });
 
-  const { data: balance } = useReadContract({
-    address: USDC_ADDRESS, abi: ERC20_ABI, functionName: 'balanceOf',
-    args: [address ?? '0x0000000000000000000000000000000000000000'],
-    query: { enabled: !!address && v2Active },
-  });
-
-  useEffect(() => {
-    if (isApproveConfirmed) refetchAllowance();
-  }, [isApproveConfirmed, refetchAllowance]);
-
-  const needsApproval = price !== undefined && allowance !== undefined
-    ? (allowance as bigint) < (price as bigint) : true;
-
-  const insufficientBalance = price !== undefined && balance !== undefined
-    ? (balance as bigint) < (price as bigint) : false;
+  const insufficientBalance = price !== undefined && ethBalance !== undefined
+    ? ethBalance.value < (price as bigint) : false;
 
   const toggleCat = (i: number) => {
     setSelectedCats((prev) => prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i]);
@@ -419,25 +397,22 @@ function SendPanel() {
     setOptions(next);
   };
 
-  const approveUSDC = () => {
-    if (!price || !v2Active) return;
-    writeApprove({
-      address: USDC_ADDRESS, abi: ERC20_ABI,
-      functionName: 'approve',
-      args: [INKPOLL_V2_ADDRESS!, price as bigint],
-    });
+  const formatETH = (wei: bigint) => {
+    const eth = Number(wei) / 1e18;
+    if (eth < 0.001) return eth.toExponential(1);
+    return eth >= 1 ? eth.toFixed(2) : eth.toPrecision(3);
   };
 
   const submit = () => {
-    if (!v2Active) return;
+    if (!v2Active || !price) return;
     const validOptions = options.filter((o) => o.trim());
     if (validOptions.length < 2 || !contentCID.trim() || mask === 0) return;
     const deadline = BigInt(Math.floor(Date.now() / 1000) + deadlineDays * 86400);
-    writeSubmit({
+    writeContract({
       address: INKPOLL_V2_ADDRESS!, abi: INKPOLL_V2_ABI,
       functionName: 'submitPoll',
-      // [CRIT-03] 5-arg signature: _claimedAudience protects against audience under-reporting
       args: [contentCID, validOptions, deadline, mask, (audienceSize ?? BigInt(0)) as bigint],
+      value: price as bigint,
     });
   };
 
@@ -511,7 +486,7 @@ function SendPanel() {
           <div className="flex justify-between">
             <span className="text-ink-400">Price:</span>
             <span className="font-bold text-ink-700">
-              {price ? `${(Number(price) / 1e6).toFixed(0)} USDC` : '...'}
+              {price ? `${formatETH(price as bigint)} ETH` : '...'}
             </span>
           </div>
         </div>
@@ -528,28 +503,15 @@ function SendPanel() {
         </>
       ) : insufficientBalance ? (
         <button disabled className="w-full py-3 rounded-xl bg-red-100 text-red-700 font-semibold cursor-not-allowed">
-          Insufficient USDC Balance
+          Insufficient ETH Balance
         </button>
-      ) : needsApproval ? (
-        <>
-          <button
-            onClick={approveUSDC}
-            disabled={isApproving || !price || mask === 0}
-            className="w-full py-3 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 disabled:opacity-50 transition-all"
-          >
-            {isApproving ? 'Approving USDC...' : `Step 1: Approve ${price ? (Number(price) / 1e6).toFixed(0) : '...'} USDC`}
-          </button>
-          <p className="text-xs text-ink-400 text-center mt-2">
-            One-time approval per price tier. Step 2 (Submit) unlocks once approval confirms.
-          </p>
-        </>
       ) : (
         <button
           onClick={submit}
-          disabled={isSubmitting || options.filter((o) => o.trim()).length < 2 || !contentCID.trim() || mask === 0}
+          disabled={isSubmitting || options.filter((o) => o.trim()).length < 2 || !contentCID.trim() || mask === 0 || !price}
           className="w-full py-3 rounded-xl bg-ink-500 text-white font-semibold hover:bg-ink-600 disabled:opacity-50 transition-all"
         >
-          {isSubmitting ? 'Submitting...' : 'Step 2: Submit Poll'}
+          {isSubmitting ? 'Submitting...' : `Submit Poll${price ? ` (${formatETH(price as bigint)} ETH)` : ''}`}
         </button>
       )}
     </div>

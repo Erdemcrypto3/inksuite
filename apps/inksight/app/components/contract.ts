@@ -50,15 +50,6 @@ export const INKPOLL_V2_ADDRESS = BUILD_TIME_INKPOLL_V2_ADDRESS;
 // Active address for read-heavy ops (leaderboard, audience). Prefers V2 when deployed.
 export const INKPOLL_ACTIVE_ADDRESS = (INKPOLL_V2_ADDRESS ?? INKPOLL_ADDRESS) as `0x${string}`;
 
-// [CRIT-04] USDC mainnet on Ink
-export const USDC_ADDRESS = '0x2D270e6886d130D724215A266106e6832161EAEd' as const;
-
-export const ERC20_ABI = [
-  { type: 'function', name: 'approve', inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ type: 'bool' }], stateMutability: 'nonpayable' },
-  { type: 'function', name: 'allowance', inputs: [{ name: 'owner', type: 'address' }, { name: 'spender', type: 'address' }], outputs: [{ type: 'uint256' }], stateMutability: 'view' },
-  { type: 'function', name: 'balanceOf', inputs: [{ name: 'account', type: 'address' }], outputs: [{ type: 'uint256' }], stateMutability: 'view' },
-] as const;
-
 export const CATEGORIES = [
   'DeFi', 'NFTs', 'Gaming', 'DAOs', 'Infrastructure', 'Social', 'Trading', 'Other',
 ] as const;
@@ -147,7 +138,7 @@ export const INKPOLL_V2_ABI = [
       { name: '_deadline', type: 'uint256' },
       { name: '_targetCategory', type: 'uint32' },
       { name: '_claimedAudience', type: 'uint256' },
-    ], outputs: [{ name: 'pollId', type: 'uint256' }], stateMutability: 'nonpayable' },
+    ], outputs: [{ name: 'pollId', type: 'uint256' }], stateMutability: 'payable' },
 
   { type: 'function', name: 'approvePoll', inputs: [{ name: '_pollId', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
   { type: 'function', name: 'rejectPoll', inputs: [{ name: '_pollId', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
