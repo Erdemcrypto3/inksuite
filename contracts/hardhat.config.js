@@ -83,4 +83,19 @@ module.exports = {
       accounts,
     },
   },
+  etherscan: {
+    apiKey: {
+      ink: 'empty',
+    },
+    customChains: [
+      {
+        network: 'ink',
+        chainId: 57073,
+        urls: {
+          apiURL: 'https://explorer.inkonchain.com/api',
+          browserURL: 'https://explorer.inkonchain.com',
+        },
+      },
+    ],
+  },
 };
