@@ -8,6 +8,7 @@ const INK_RPC = 'https://rpc-gel.inkonchain.com';
 const INK_RPC_FALLBACK = 'https://rpc-qnd.inkonchain.com';
 const MIN_FEE_WEI = 190000000000000n; // 0.00019 ETH (~95% of 0.0002)
 const MAX_UPLOAD_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_SCORE_UPLOAD_SIZE = 50 * 1024; // 50KB — score SVG + metadata only
 const MIN_CONFIRMATIONS = 3n; // [HIGH-01] reorg protection
 
 function corsHeaders(origin, allowedOrigin) {
@@ -285,6 +286,47 @@ export default {
 
     if (request.method !== 'POST') {
       return new Response('Not found', { status: 404, headers });
+    }
+
+    // ── Score Upload (POST /upload-score) — no payment, strict limits ──
+    if (url.pathname === '/upload-score') {
+      try {
+        const scoreTypes = ['image/svg+xml', 'application/json'];
+        const contentType = request.headers.get('Content-Type') || '';
+        if (!scoreTypes.some((t) => contentType.startsWith(t))) {
+          return Response.json({ error: 'Only SVG and JSON allowed for score uploads' }, { status: 400, headers });
+        }
+
+        if (!(await checkRateLimit(request, env, 'score-upload', 5, 3600))) {
+          return rateLimitResponse(headers, 3600);
+        }
+
+        const contentLengthHint = Number(request.headers.get('Content-Length') || 0);
+        if (contentLengthHint > MAX_SCORE_UPLOAD_SIZE) {
+          return Response.json({ error: 'Score upload too large (max 50KB)' }, { status: 413, headers });
+        }
+
+        const read = await readBodyWithLimit(request, MAX_SCORE_UPLOAD_SIZE);
+        if (read.error) {
+          const status = read.error.includes('exceeded') ? 413 : 400;
+          return Response.json({ error: read.error }, { status, headers });
+        }
+        const body = read.body;
+
+        const ext = contentType.includes('svg') ? 'svg' : 'json';
+        const key = `score/${generateId()}.${ext}`;
+        await env.STORAGE.put(key, body, { httpMetadata: { contentType } });
+
+        const fileUrl = `https://api.inksuite.xyz/file/${key}`;
+        return Response.json({ key, url: fileUrl }, {
+          status: 200,
+          headers: { ...headers, 'Content-Type': 'application/json' },
+        });
+      } catch (e) {
+        if (e instanceof Response) return e;
+        console.error('Score upload error:', e);
+        return Response.json({ error: 'Upload failed' }, { status: 500, headers });
+      }
     }
 
     // ── R2 Upload (POST /upload) ──
