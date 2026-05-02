@@ -292,6 +292,12 @@ export default {
       const key = url.pathname.slice(6);
       if (!key) return new Response('Key required', { status: 400, headers });
 
+      // P012-PAI-0054: restrict /file/* to known R2 key prefixes
+      const allowedPrefixes = ['score/', 'covers/', 'articles/', 'metadata/'];
+      if (!allowedPrefixes.some(p => key.startsWith(p))) {
+        return new Response('Forbidden', { status: 403, headers: corsHeaders(origin, env.ALLOWED_ORIGIN) });
+      }
+
       const object = await env.STORAGE.get(key);
       if (!object) return new Response('Not found', { status: 404, headers });
 
