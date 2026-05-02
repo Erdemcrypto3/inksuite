@@ -1,6 +1,7 @@
 // [CRIT-05] Re-export DO class so wrangler can bind it when [[migrations]] is enabled.
 // While the binding is absent (free plan), this export is harmless dead code.
 export { UploadCounter } from './counter.js';
+import { uploadToArweave } from './arweave.js';
 
 const STABILITY_API = 'https://api.stability.ai/v2beta/stable-image/generate/core';
 const FEE_RECIPIENT = '0x9E84D77264d94C646dF91A70dbae99C20330eAD0';
@@ -417,8 +418,13 @@ export default {
 
         await env.STORAGE.put(key, body, { httpMetadata: { contentType } });
 
-        const fileUrl = `https://api.inksuite.xyz/file/${key}`;
-        return Response.json({ key, url: fileUrl }, {
+        const r2Url = `https://api.inksuite.xyz/file/${key}`;
+
+        // [DEC-0007] Try Arweave for permanent storage; R2 serves as backup/CDN
+        const arweaveResult = await uploadToArweave(body, contentType, env);
+        const fileUrl = arweaveResult ? arweaveResult.url : r2Url;
+
+        return Response.json({ key, url: fileUrl, storage: arweaveResult ? 'arweave' : 'r2' }, {
           status: 200,
           headers: { ...headers, 'Content-Type': 'application/json' },
         });

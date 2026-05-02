@@ -7,6 +7,12 @@
     "deploy": "wrangler deploy"
   },
   "devDependencies": {
-    "wrangler": "^4.14.0"
+    "wrangler": "^3.114.17"
+  },
+  "dependencies": {
+    "@ethersproject/bytes": "^5.8.0",
+    "@ethersproject/wallet": "^5.8.0",
+    "@noble/curves": "^2.2.0",
+    "@noble/hashes": "^2.2.0"
   }
 }

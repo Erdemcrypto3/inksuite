@@ -368,7 +368,7 @@ function MintApp() {
           </div>
           <div><span className="font-semibold text-ink-700">Standard:</span> ERC-721</div>
           <div><span className="font-semibold text-ink-700">AI Engine:</span> Stability AI</div>
-          <div><span className="font-semibold text-ink-700">Storage:</span> Cloudflare R2</div>
+          <div><span className="font-semibold text-ink-700">Storage:</span> Arweave (permanent)</div>
         </div>
       </div>
     </div>
