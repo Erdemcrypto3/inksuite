@@ -226,6 +226,32 @@ async function readBodyWithLimit(request, maxSize) {
   return { body: body.buffer };
 }
 
+// [P012-PAI-0050] Regex-based SVG sanitizer for Cloudflare Workers (no DOM).
+// Strips dangerous elements and attributes that enable stored XSS via SVG:
+// - <script> tags and their contents
+// - on* event handler attributes (onclick, onload, onerror, etc.)
+// - <foreignObject> tags and their contents (can embed arbitrary HTML)
+// - xlink:href / href pointing to javascript: URIs
+// - <use> tags with external references (href="http://...")
+function sanitizeSVG(text) {
+  let s = text;
+  // Strip <script>...</script> (including nested/multiline)
+  s = s.replace(/<script[\s>][\s\S]*?<\/script\s*>/gi, '');
+  // Strip self-closing <script ... />
+  s = s.replace(/<script[^>]*\/\s*>/gi, '');
+  // Strip <foreignObject>...</foreignObject>
+  s = s.replace(/<foreignObject[\s>][\s\S]*?<\/foreignObject\s*>/gi, '');
+  // Strip self-closing <foreignObject ... />
+  s = s.replace(/<foreignObject[^>]*\/\s*>/gi, '');
+  // Strip on* event attributes (onload, onclick, onerror, etc.)
+  s = s.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+  // Strip xlink:href="javascript:..." and href="javascript:..."
+  s = s.replace(/\s+(?:xlink:)?href\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, '');
+  // Strip <use> with external href (http:// or https://)
+  s = s.replace(/<use\s[^>]*href\s*=\s*(?:"https?:\/\/[^"]*"|'https?:\/\/[^']*')[^>]*\/?>/gi, '');
+  return s;
+}
+
 export default {
   async fetch(request, env) {
     const origin = request.headers.get('Origin') || '';
@@ -276,11 +302,15 @@ export default {
         ? 'public, max-age=3600, must-revalidate'
         : 'public, max-age=31536000, immutable';
 
+      // [P012-PAI-0050] Defense-in-depth: CSP sandbox + forced download prevent
+      // stored XSS in user-uploaded SVG (or any active content) served from R2.
       return new Response(object.body, {
         headers: {
           ...headers,
           'Content-Type': ct,
           'Cache-Control': cacheHeader,
+          'Content-Security-Policy': "default-src 'none'; sandbox",
+          'Content-Disposition': 'attachment',
         },
       });
     }
@@ -298,8 +328,10 @@ export default {
           return Response.json({ error: 'Only SVG and JSON allowed for score uploads' }, { status: 400, headers });
         }
 
-        if (!(await checkRateLimit(request, env, 'score-upload', 5, 3600))) {
-          return rateLimitResponse(headers, 3600);
+        // [P012-PAI-0050] Tightened from 5/hour to 5/day — free endpoint,
+        // no payment gate, abuse surface reduced by 24x.
+        if (!(await checkRateLimit(request, env, 'score-upload', 5, 86400))) {
+          return rateLimitResponse(headers, 86400);
         }
 
         const contentLengthHint = Number(request.headers.get('Content-Length') || 0);
@@ -312,7 +344,16 @@ export default {
           const status = read.error.includes('exceeded') ? 413 : 400;
           return Response.json({ error: read.error }, { status, headers });
         }
-        const body = read.body;
+        let body = read.body;
+
+        // [P012-PAI-0050] Sanitize SVG server-side before storing — strip
+        // <script>, on* handlers, <foreignObject>, javascript: hrefs, and
+        // external <use> references to prevent stored XSS via score uploads.
+        if (contentType.includes('svg')) {
+          const raw = new TextDecoder().decode(body);
+          const clean = sanitizeSVG(raw);
+          body = new TextEncoder().encode(clean).buffer;
+        }
 
         const ext = contentType.includes('svg') ? 'svg' : 'json';
         const key = `score/${generateId()}.${ext}`;
