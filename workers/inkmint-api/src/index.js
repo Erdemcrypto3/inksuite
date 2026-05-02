@@ -428,7 +428,8 @@ export default {
         }
 
         const contentType = request.headers.get('Content-Type') || '';
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/svg+xml', 'application/json', 'text/html', 'text/plain'];
+        // P012-PAI-0055: removed text/html and image/svg+xml — active content types not accepted without sanitization
+        const allowedTypes = ['image/jpeg', 'image/png', 'application/json', 'text/plain'];
         if (!allowedTypes.some((t) => contentType.startsWith(t))) {
           return Response.json({ error: 'Unsupported content type' }, { status: 400, headers });
         }
@@ -450,16 +451,14 @@ export default {
         const bytes = new Uint8Array(body.slice(0, 12));
         const detected = detectMimeType(bytes);
         if (detected && !contentType.startsWith(detected)) {
-          if (!contentType.includes('json') && !contentType.includes('text') && !contentType.includes('svg')) {
+          if (!contentType.includes('json') && !contentType.includes('text')) {
             return Response.json({ error: 'Content-Type mismatch' }, { status: 400, headers });
           }
         }
 
         const ext = contentType.includes('jpeg') || contentType.includes('jpg') ? 'jpg'
           : contentType.includes('png') ? 'png'
-          : contentType.includes('svg') ? 'svg'
           : contentType.includes('json') ? 'json'
-          : contentType.includes('html') ? 'html'
           : 'bin';
         const key = `${generateId()}.${ext}`;
 
