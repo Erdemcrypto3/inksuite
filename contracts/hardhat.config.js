@@ -1,4 +1,5 @@
 require('@nomicfoundation/hardhat-toolbox');
+require('@openzeppelin/hardhat-upgrades');
 const { execSync } = require('child_process');
 const os = require('os');
 const fs = require('fs');
@@ -65,7 +66,7 @@ module.exports = {
     },
   },
   paths: {
-    sources: './inkpoll',
+    sources: process.env.COMPILE_INKPRESS ? './inkpress' : './inkpoll',
     tests: './test',
     cache: './cache',
     artifacts: './artifacts',
