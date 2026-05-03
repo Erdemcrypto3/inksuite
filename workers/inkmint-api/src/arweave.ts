@@ -10,13 +10,13 @@ const SIG_TYPE_ETHEREUM = 3;
 
 const encoder = new TextEncoder();
 
-function stringToBytes(s) {
+function stringToBytes(s: string): Uint8Array {
   return encoder.encode(s);
 }
 
-// --- Deep Hash (ANS-104 / Arweave) ---
+type DeepHashInput = Uint8Array | DeepHashInput[];
 
-function deepHash(data) {
+function deepHash(data: DeepHashInput): Uint8Array {
   if (data instanceof Uint8Array) {
     const tagInput = concatBytes(stringToBytes('blob'), stringToBytes(data.byteLength.toString()));
     const tagHash = sha384(tagInput);
@@ -35,14 +35,12 @@ function deepHash(data) {
   return hash;
 }
 
-// --- Avro Tag Serialization ---
-
-function zigzagEncode(n) {
+function zigzagEncode(n: number): number {
   return (n << 1) ^ (n >> 31);
 }
 
-function encodeVarint(value) {
-  const bytes = [];
+function encodeVarint(value: number): Uint8Array {
+  const bytes: number[] = [];
   let v = value >>> 0;
   while (v > 0x7f) {
     bytes.push((v & 0x7f) | 0x80);
@@ -52,18 +50,23 @@ function encodeVarint(value) {
   return new Uint8Array(bytes);
 }
 
-function avroLong(n) {
+function avroLong(n: number): Uint8Array {
   return encodeVarint(zigzagEncode(n));
 }
 
-function avroBytes(buf) {
+function avroBytes(buf: Uint8Array): Uint8Array {
   return concatBytes(avroLong(buf.length), buf);
 }
 
-function serializeAvroTags(tags) {
-  if (!tags || tags.length === 0) return new Uint8Array(0);
+interface Tag {
+  name: string;
+  value: string;
+}
 
-  const parts = [avroLong(tags.length)];
+function serializeAvroTags(tags: Tag[]): Uint8Array {
+  if (tags.length === 0) return new Uint8Array(0);
+
+  const parts: Uint8Array[] = [avroLong(tags.length)];
 
   for (const { name, value } of tags) {
     parts.push(avroBytes(stringToBytes(name)));
@@ -74,17 +77,17 @@ function serializeAvroTags(tags) {
   return concatBytes(...parts);
 }
 
-// --- EIP-191 Ethereum Signing (via ethers for Irys-compatible RFC 6979) ---
-
-async function ethSignMessage(message, privateKeyHex) {
+async function ethSignMessage(message: Uint8Array, privateKeyHex: string): Promise<Uint8Array> {
   const wallet = new Wallet(privateKeyHex);
   const sigHex = await wallet.signMessage(message);
   return new Uint8Array(arrayify(sigHex));
 }
 
-// --- ANS-104 Data Item ---
-
-async function createSignedDataItem(data, tags, privateKeyHex) {
+async function createSignedDataItem(
+  data: Uint8Array,
+  tags: Tag[],
+  privateKeyHex: string
+): Promise<Uint8Array> {
   const privKey = privateKeyHex.startsWith('0x') ? privateKeyHex.slice(2) : privateKeyHex;
   const privateKey = hexToBytes(privKey);
   const publicKey = secp256k1.getPublicKey(privateKey, false);
@@ -92,8 +95,6 @@ async function createSignedDataItem(data, tags, privateKeyHex) {
   const target = new Uint8Array(0);
   const anchor = new Uint8Array(0);
   const serializedTags = serializeAvroTags(tags);
-
-  const dataBytes = data instanceof Uint8Array ? data : new Uint8Array(data);
 
   const signatureData = deepHash([
     stringToBytes('dataitem'),
@@ -103,7 +104,7 @@ async function createSignedDataItem(data, tags, privateKeyHex) {
     target,
     anchor,
     serializedTags,
-    dataBytes,
+    data,
   ]);
 
   const signature = await ethSignMessage(signatureData, privateKeyHex);
@@ -129,13 +130,15 @@ async function createSignedDataItem(data, tags, privateKeyHex) {
     numTags,
     numTagBytes,
     serializedTags,
-    dataBytes,
+    data,
   );
 }
 
-// --- Irys Upload ---
+interface IrysReceipt {
+  id: string;
+}
 
-async function postToIrys(signedDataItem, token) {
+async function postToIrys(signedDataItem: Uint8Array, token: string): Promise<IrysReceipt> {
   const res = await fetch(`${IRYS_NODE}/tx/${token}`, {
     method: 'POST',
     headers: {
@@ -150,25 +153,40 @@ async function postToIrys(signedDataItem, token) {
     throw new Error(`Irys upload failed (${res.status}): ${errText}`);
   }
 
-  return await res.json();
+  return (await res.json()) as IrysReceipt;
 }
 
-// --- Public API ---
+export interface ArweaveEnv {
+  IRYS_PRIVATE_KEY?: string;
+  IRYS_TOKEN?: string;
+}
 
-export async function uploadToArweave(data, contentType, env) {
+export interface ArweaveResult {
+  id: string;
+  url: string;
+}
+
+export async function uploadToArweave(
+  data: Uint8Array | ArrayBuffer | string,
+  contentType: string,
+  env: ArweaveEnv
+): Promise<ArweaveResult | null> {
   if (!env.IRYS_PRIVATE_KEY) {
     return null;
   }
 
-  const tags = [
+  const tags: Tag[] = [
     { name: 'Content-Type', value: contentType },
     { name: 'App-Name', value: 'InkSuite' },
     { name: 'App-Version', value: '1.0.0' },
   ];
 
-  const dataBytes = typeof data === 'string'
-    ? stringToBytes(data)
-    : new Uint8Array(data);
+  const dataBytes =
+    typeof data === 'string'
+      ? stringToBytes(data)
+      : data instanceof Uint8Array
+        ? data
+        : new Uint8Array(data);
 
   const token = env.IRYS_TOKEN || 'ethereum';
 
@@ -181,7 +199,7 @@ export async function uploadToArweave(data, contentType, env) {
       url: `${IRYS_GATEWAY}/${receipt.id}`,
     };
   } catch (e) {
-    console.error('[ARWEAVE] Upload failed, falling back to R2:', e.message);
+    console.error('[ARWEAVE] Upload failed, falling back to R2:', (e as Error).message);
     return null;
   }
 }

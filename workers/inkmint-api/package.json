@@ -7,12 +7,15 @@
     "deploy": "wrangler deploy"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250501.0",
+    "typescript": "^5.8.0",
     "wrangler": "^3.114.17"
   },
   "dependencies": {
     "@ethersproject/bytes": "^5.8.0",
     "@ethersproject/wallet": "^5.8.0",
     "@noble/curves": "^2.2.0",
-    "@noble/hashes": "^2.2.0"
+    "@noble/hashes": "^2.2.0",
+    "hono": "^4.12.16"
   }
 }
