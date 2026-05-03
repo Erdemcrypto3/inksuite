@@ -55,6 +55,8 @@ contract InkPoll is Ownable, ReentrancyGuard, Pausable {
     uint256 public constant POINTS_STREAK_BONUS = 20;
     uint256 public constant STREAK_THRESHOLD = 10;
     uint32 public constant MAX_CATEGORIES = 32;
+    uint256 public constant MAX_USERS = 50000; // P012-PAI-0052: cap users to bound getAudienceSize gas
+    uint256 public constant MAX_POLL_DURATION = 90 days; // P012-PAI-0053: cap deadline to prevent sweepETH DoS
 
     event UserRegistered(address indexed user, uint32 categoryMask);
     event CategoriesUpdated(address indexed user, uint32 categoryMask);
@@ -98,6 +100,7 @@ contract InkPoll is Ownable, ReentrancyGuard, Pausable {
 
     function register(uint32 _categoryMask) external whenNotPaused {
         require(!users[msg.sender].registered, "Already registered");
+        require(userList.length < MAX_USERS, "User cap reached"); // P012-PAI-0052
         require(_categoryMask > 0, "Select at least one category");
         require(_validMask(_categoryMask), "Invalid mask");
 
@@ -158,7 +161,8 @@ contract InkPoll is Ownable, ReentrancyGuard, Pausable {
 
     // ── Sender Functions ──
 
-    function getAudienceSize(uint32 _categoryMask) external view returns (uint256 count) {
+    // P012-PAI-0052: made public so submitPoll uses internal call (halves gas)
+    function getAudienceSize(uint32 _categoryMask) public view returns (uint256 count) {
         for (uint256 i = 0; i < userList.length; i++) {
             if (users[userList[i]].categoryMask & _categoryMask > 0) {
                 count++;
@@ -184,10 +188,11 @@ contract InkPoll is Ownable, ReentrancyGuard, Pausable {
     ) external payable nonReentrant whenNotPaused returns (uint256 pollId) {
         require(_options.length >= 2 && _options.length <= 10, "2-10 options");
         require(_deadline > block.timestamp, "Deadline must be future");
+        require(_deadline <= block.timestamp + MAX_POLL_DURATION, "Deadline too far"); // P012-PAI-0053
         require(_targetCategory > 0, "Must target a category");
         require(_validMask(_targetCategory), "Invalid mask");
 
-        uint256 actualAudience = this.getAudienceSize(_targetCategory);
+        uint256 actualAudience = getAudienceSize(_targetCategory); // P012-PAI-0052: internal call
         require(_claimedAudience >= actualAudience, "Audience understated");
         require(_claimedAudience > 0, "No matching audience");
         uint256 price = getPrice(_claimedAudience);
