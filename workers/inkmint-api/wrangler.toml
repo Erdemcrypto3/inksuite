@@ -1,6 +1,7 @@
 name = "inkmint-api"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
 routes = [
   { pattern = "api.inksuite.xyz", custom_domain = true }
 ]
