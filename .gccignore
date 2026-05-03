@@ -1,0 +1,5 @@
+# GCC false positives — reviewed 2026-05-03
+# arweave.ts: signing param names, not secret values
+workers/inkmint-api/src/arweave.ts
+# OpenZeppelin UUPS deployment metadata — public addresses
+.openzeppelin/
