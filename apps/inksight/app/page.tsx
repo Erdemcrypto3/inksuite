@@ -811,9 +811,9 @@ function InkPollApp() {
     <div className="min-h-screen">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-purple-100 sticky top-0 z-50">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <a href="https://inksuite.xyz" className="inline-flex items-center gap-1 rounded-lg bg-purple-100 px-3 py-1.5 text-xs font-semibold text-ink-700 ring-1 ring-inset ring-purple-200 hover:bg-purple-200 hover:text-ink-900">← inksuite.xyz</a>
+            <a href="https://inksuite.xyz" className="inline-flex items-center gap-2 rounded-lg bg-purple-100 px-4 py-2 text-sm font-semibold text-ink-700 ring-1 ring-inset ring-purple-200 shadow-sm hover:bg-purple-200 hover:text-ink-900">← inksuite.xyz</a>
             <h1 className="text-lg font-bold text-ink-700">InkSight</h1>
             {user?.registered && (
               <span className="text-xs bg-ink-100 text-ink-600 px-2 py-0.5 rounded-full font-medium">
@@ -826,7 +826,7 @@ function InkPollApp() {
       </header>
 
       {!isConnected ? (
-        <div className="max-w-lg mx-auto mt-20 text-center px-4">
+        <div className="max-w-lg mx-auto mt-20 text-center px-6">
           <h2 className="text-3xl font-bold text-ink-700 mb-3">InkSight</h2>
           <p className="text-ink-400 mb-2">Community insight platform for Ink L2</p>
           <p className="text-sm text-ink-300 mb-8">
@@ -845,7 +845,7 @@ function InkPollApp() {
       ) : (
         <>
           {/* Tab Navigation */}
-          <nav className="max-w-4xl mx-auto px-4 pt-4">
+          <nav className="max-w-4xl mx-auto px-6 pt-4">
             <div className="flex gap-1 bg-white rounded-xl ring-1 ring-inset ring-purple-100 p-1">
               {tabs.map((t) => (
                 <button
@@ -862,7 +862,7 @@ function InkPollApp() {
           </nav>
 
           {/* Content */}
-          <main className="max-w-4xl mx-auto px-4 py-6">
+          <main className="max-w-4xl mx-auto px-6 py-6">
             {tab === 'account' && address && (
               <div className="space-y-8">
                 <RegisterPanel user={user} onRegistered={handleRegistered} />
