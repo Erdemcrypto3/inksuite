@@ -79,9 +79,10 @@ export function MintScoreNFTButton({ gameId, gameTitle, gameIcon, score }: Props
       if (!imgRes.ok) throw new Error('Image upload failed');
       const imgData = await imgRes.json();
 
+      // P012-PAI-0051: score is client-claimed, metadata reflects this
       const metadata = {
-        name: `${gameTitle} — ${score} pts`,
-        description: `${gameIcon} ${gameTitle} score of ${score} by ${shortAddr} on Ink Game Hub. Minted ${dateLabel}.`,
+        name: `${gameTitle} — ${score} pts (Self-Claimed)`,
+        description: `${gameIcon} ${gameTitle} score of ${score} by ${shortAddr} on Ink Game Hub. Minted ${dateLabel}. (self-claimed, unverified)`,
         image: imgData.url,
         attributes: [
           { trait_type: 'Game', value: gameTitle },
@@ -90,7 +91,9 @@ export function MintScoreNFTButton({ gameId, gameTitle, gameIcon, score }: Props
           { trait_type: 'Wallet', value: shortAddr },
           { trait_type: 'Timestamp', value: timestamp },
           { display_type: 'date', trait_type: 'Minted', value: Math.floor(Date.now() / 1000) },
+          { trait_type: 'Verified', value: 'false' },
         ],
+        properties: { verified: false },
       };
       const metaRes = await fetch(`${API_URL}/upload-score`, {
         method: 'POST',
@@ -122,7 +125,7 @@ export function MintScoreNFTButton({ gameId, gameTitle, gameIcon, score }: Props
   if (minted || isMintConfirmed) {
     return (
       <div className="mt-3 text-center text-xs font-semibold text-emerald-600">
-        Score NFT Minted!
+        Score Badge Minted!
       </div>
     );
   }
@@ -134,8 +137,9 @@ export function MintScoreNFTButton({ gameId, gameTitle, gameIcon, score }: Props
         disabled={isPending || minting}
         className="rounded-lg bg-ink-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-ink-600 disabled:opacity-50 disabled:cursor-wait"
       >
-        {isPending || minting ? 'Minting…' : 'Mint Score NFT (0.000777 ETH)'}
+        {isPending || minting ? 'Minting…' : 'Mint Score Badge (0.000777 ETH)'}
       </button>
+      <span className="text-[10px] text-zinc-400">Score is self-reported and not verified on-chain.</span>
       {error && <span className="text-xs text-red-500">{error}</span>}
     </div>
   );

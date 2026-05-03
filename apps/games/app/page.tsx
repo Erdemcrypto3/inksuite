@@ -51,15 +51,18 @@ function MintScoreButton({ gameId, gameTitle, gameIcon, score }: { gameId: strin
     setMinting(true);
     try {
       const shortAddr = `${address.slice(0, 6)}...${address.slice(-4)}`;
+      // P012-PAI-0051: score is client-claimed, metadata reflects this
       const metadata = {
-        name: `${gameTitle} High Score`,
-        description: `${gameIcon} ${gameTitle} — Score: ${score} by ${shortAddr} on Ink Game Hub`,
+        name: `${gameTitle} High Score (Self-Claimed)`,
+        description: `${gameIcon} ${gameTitle} — Score: ${score} by ${shortAddr} on Ink Game Hub (self-claimed, unverified)`,
         attributes: [
           { trait_type: 'Game', value: gameTitle },
           { trait_type: 'Score', value: score.toString() },
           { trait_type: 'Wallet', value: shortAddr },
           { trait_type: 'Icon', value: gameIcon },
+          { trait_type: 'Verified', value: 'false' },
         ],
+        properties: { verified: false },
       };
 
       const metaRes = await fetch(`${API_URL}/upload`, {
@@ -85,12 +88,12 @@ function MintScoreButton({ gameId, gameTitle, gameIcon, score }: { gameId: strin
     }
   };
 
-  if (minted) return <span className="text-[10px] text-emerald-600 font-semibold">Score NFT Minted!</span>;
+  if (minted) return <span className="text-[10px] text-emerald-600 font-semibold">Score Badge Minted!</span>;
 
   return (
     <button onClick={handleMint} disabled={isPending || minting}
       className="rounded-lg bg-ink-500 px-3 py-1 text-[10px] font-semibold text-white hover:bg-ink-600 disabled:opacity-50">
-      {isPending || minting ? 'Minting...' : 'Mint Score NFT'}
+      {isPending || minting ? 'Minting...' : 'Mint Score Badge'}
     </button>
   );
 }
