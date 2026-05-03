@@ -1,3 +1,5 @@
+import { CounterInitSchema } from './schemas';
+
 export class UploadCounter {
   private state: DurableObjectState;
 
@@ -9,8 +11,11 @@ export class UploadCounter {
     const url = new URL(request.url);
 
     if (url.pathname === '/init') {
-      const { count } = (await request.json()) as { count: number };
-      await this.state.storage.put('count', count);
+      const result = CounterInitSchema.safeParse(await request.json());
+      if (!result.success) {
+        return Response.json({ error: 'Invalid init payload' }, { status: 400 });
+      }
+      await this.state.storage.put('count', result.data.count);
       return new Response('OK');
     }
 

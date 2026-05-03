@@ -1,5 +1,12 @@
 import { Hono } from 'hono';
 import { uploadToArweave } from './arweave';
+import {
+  TxHashSchema,
+  GenerateBodySchema,
+  UploadContentTypeSchema,
+  ScoreContentTypeSchema,
+  FileKeySchema,
+} from './schemas';
 
 export { UploadCounter } from './counter';
 
@@ -181,7 +188,7 @@ interface VerifyResult {
 async function verifyPayment(txHash: string, env: Bindings): Promise<VerifyResult> {
   requireKV(env);
 
-  if (!/^0x[0-9a-fA-F]{64}$/.test(txHash)) {
+  if (!TxHashSchema.safeParse(txHash).success) {
     return { valid: false, reason: 'Invalid tx hash format' };
   }
 
@@ -321,13 +328,11 @@ app.get('/api/config', (c) => {
 });
 
 app.get('/file/*', async (c) => {
-  const key = c.req.path.slice(6);
-  if (!key) return c.text('Key required', 400);
-
-  const allowedPrefixes = ['score/', 'covers/', 'articles/', 'metadata/'];
-  if (!allowedPrefixes.some((p) => key.startsWith(p))) {
+  const keyResult = FileKeySchema.safeParse(c.req.path.slice(6));
+  if (!keyResult.success) {
     return c.text('Forbidden', 403);
   }
+  const key = keyResult.data;
 
   const object = await c.env.STORAGE.get(key);
   if (!object) return c.text('Not found', 404);
@@ -350,9 +355,8 @@ app.get('/file/*', async (c) => {
 
 app.post('/upload-score', async (c) => {
   try {
-    const scoreTypes = ['image/svg+xml', 'application/json'];
     const contentType = c.req.header('Content-Type') || '';
-    if (!scoreTypes.some((t) => contentType.startsWith(t))) {
+    if (!ScoreContentTypeSchema.safeParse(contentType).success) {
       return c.json({ error: 'Only SVG and JSON allowed for score uploads' }, 400);
     }
 
@@ -398,10 +402,11 @@ app.post('/upload', async (c) => {
       return rateLimitResponse(60);
     }
 
-    const txHash = c.req.header('X-Payment-Tx');
-    if (!txHash) {
-      return c.json({ error: 'X-Payment-Tx header required' }, 402);
+    const txHashResult = TxHashSchema.safeParse(c.req.header('X-Payment-Tx'));
+    if (!txHashResult.success) {
+      return c.json({ error: 'Valid X-Payment-Tx header required' }, 402);
     }
+    const txHash = txHashResult.data;
 
     let paymentRaw = await c.env.USED_TXS.get(txHash);
     if (!paymentRaw) {
@@ -436,8 +441,7 @@ app.post('/upload', async (c) => {
     }
 
     const contentType = c.req.header('Content-Type') || '';
-    const allowedTypes = ['image/jpeg', 'image/png', 'application/json', 'text/plain'];
-    if (!allowedTypes.some((t) => contentType.startsWith(t))) {
+    if (!UploadContentTypeSchema.safeParse(contentType).success) {
       return c.json({ error: 'Unsupported content type' }, 400);
     }
 
@@ -490,13 +494,11 @@ app.post('/generate', async (c) => {
       return rateLimitResponse(60);
     }
 
-    const { prompt, txHash } = (await c.req.json()) as { prompt: unknown; txHash: unknown };
-    if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 3) {
-      return c.json({ error: 'Prompt must be at least 3 characters' }, 400);
+    const bodyResult = GenerateBodySchema.safeParse(await c.req.json());
+    if (!bodyResult.success) {
+      return c.json({ error: bodyResult.error.issues[0]?.message ?? 'Invalid request body' }, 400);
     }
-    if (!txHash || typeof txHash !== 'string') {
-      return c.json({ error: 'Payment transaction hash required' }, 400);
-    }
+    const { prompt, txHash } = bodyResult.data;
 
     const payment = await verifyPayment(txHash, c.env);
     if (!payment.valid) {
@@ -504,7 +506,7 @@ app.post('/generate', async (c) => {
     }
 
     const formData = new FormData();
-    formData.set('prompt', prompt.trim());
+    formData.set('prompt', prompt);
     formData.set('output_format', 'jpeg');
 
     const aiRes = await fetch(STABILITY_API, {

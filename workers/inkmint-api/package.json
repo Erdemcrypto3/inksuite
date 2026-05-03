@@ -16,6 +16,7 @@
     "@ethersproject/wallet": "^5.8.0",
     "@noble/curves": "^2.2.0",
     "@noble/hashes": "^2.2.0",
-    "hono": "^4.12.16"
+    "hono": "^4.12.16",
+    "zod": "^4.4.2"
   }
 }
