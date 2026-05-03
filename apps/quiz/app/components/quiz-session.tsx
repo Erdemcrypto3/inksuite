@@ -18,7 +18,7 @@ export function QuizSession({ questions, onComplete, onBack }: Props) {
   const [results, setResults] = useState<{ questionId: string; correct: boolean; points: number }[]>([]);
   const [finished, setFinished] = useState(false);
 
-  const q = questions[currentIdx];
+  const q = questions[currentIdx]!;
   const isCorrect = selected !== null && selected === q.correctIndex;
   const isAnswered = selected !== null;
 

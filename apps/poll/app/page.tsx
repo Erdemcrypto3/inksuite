@@ -143,7 +143,7 @@ function PollCard({ poll }: { poll: Poll }) {
           try {
             const decoded = Buffer.from(tx.input.slice(2), 'hex').toString('utf8');
             if (!decoded.startsWith(`inkpoll:${poll.id}:`)) continue;
-            const optIdx = parseInt(decoded.split(':')[2], 10);
+            const optIdx = parseInt(decoded.split(':')[2] ?? '', 10);
             if (isNaN(optIdx) || optIdx < 0 || optIdx >= poll.options.length) continue;
             const voter = tx.from.toLowerCase();
             if (seen.has(voter)) continue; // one vote per wallet
@@ -182,7 +182,7 @@ function PollCard({ poll }: { poll: Poll }) {
 
       <div className="space-y-2">
         {poll.options.map((opt, i) => {
-          const count = voteCounts[i];
+          const count = voteCounts[i] ?? 0;
           const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
           const isWinner = totalVotes > 0 && count === Math.max(...voteCounts);
 

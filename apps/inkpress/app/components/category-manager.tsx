@@ -43,9 +43,9 @@ export function CategoryManagerWithCounts({ articles, onClose }: { articles: Art
   };
 
   const removeMainCategory = (index: number) => {
-    const count = getMainCount(categories[index]);
+    const count = getMainCount(categories[index]!);
     if (count > 0) {
-      alert(`Cannot remove "${categories[index].main}" — it has ${count} article(s). Unpublish or reassign articles first, or remove the subcategories one by one.`);
+      alert(`Cannot remove "${categories[index]!.main}" — it has ${count} article(s). Unpublish or reassign articles first, or remove the subcategories one by one.`);
       return;
     }
     save(categories.filter((_, i) => i !== index));
@@ -54,21 +54,21 @@ export function CategoryManagerWithCounts({ articles, onClose }: { articles: Art
   const addSubCategory = (mainIndex: number) => {
     if (!newSub.trim()) return;
     const cats = [...categories];
-    if (cats[mainIndex].subs.some((s) => s.toLowerCase() === newSub.trim().toLowerCase())) return;
-    cats[mainIndex] = { ...cats[mainIndex], subs: [...cats[mainIndex].subs, newSub.trim()] };
+    if (cats[mainIndex]!.subs.some((s) => s.toLowerCase() === newSub.trim().toLowerCase())) return;
+    cats[mainIndex] = { ...cats[mainIndex]!, subs: [...cats[mainIndex]!.subs, newSub.trim()] };
     save(cats);
     setNewSub('');
   };
 
   const removeSubCategory = (mainIndex: number, subIndex: number) => {
-    const subName = categories[mainIndex].subs[subIndex];
+    const subName = categories[mainIndex]!.subs[subIndex]!;
     const count = getSubCount(subName);
     if (count > 0) {
       alert(`Cannot remove "${subName}" — it has ${count} article(s). Unpublish or reassign articles first.`);
       return;
     }
     const cats = [...categories];
-    cats[mainIndex] = { ...cats[mainIndex], subs: cats[mainIndex].subs.filter((_, i) => i !== subIndex) };
+    cats[mainIndex] = { ...cats[mainIndex]!, subs: cats[mainIndex]!.subs.filter((_, i) => i !== subIndex) };
     save(cats);
   };
 

@@ -38,7 +38,7 @@ interface Move {
 function createInitialBoard(): Board {
   return Array.from({ length: ROWS }, (_, r) =>
     Array.from({ length: COLS }, (_, c) => {
-      if (!BOARD_SHAPE[r][c]) return false;
+      if (!BOARD_SHAPE[r]![c]) return false;
       // center starts empty
       if (r === CENTER_R && c === CENTER_C) return false;
       return true;
@@ -50,13 +50,13 @@ function countPegs(board: Board): number {
   let n = 0;
   for (let r = 0; r < ROWS; r++)
     for (let c = 0; c < COLS; c++)
-      if (BOARD_SHAPE[r][c] && board[r][c]) n++;
+      if (BOARD_SHAPE[r]![c] && board[r]![c]) n++;
   return n;
 }
 
 function getValidMoves(board: Board): Move[] {
   const moves: Move[] = [];
-  const dirs = [
+  const dirs: [number, number][] = [
     [-1, 0],
     [1, 0],
     [0, -1],
@@ -64,7 +64,7 @@ function getValidMoves(board: Board): Move[] {
   ];
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      if (!BOARD_SHAPE[r][c] || !board[r][c]) continue;
+      if (!BOARD_SHAPE[r]![c] || !board[r]![c]) continue;
       for (const [dr, dc] of dirs) {
         const overR = r + dr;
         const overC = c + dc;
@@ -73,10 +73,10 @@ function getValidMoves(board: Board): Move[] {
         if (
           toR >= 0 && toR < ROWS &&
           toC >= 0 && toC < COLS &&
-          BOARD_SHAPE[overR][overC] &&
-          BOARD_SHAPE[toR][toC] &&
-          board[overR][overC] &&
-          !board[toR][toC]
+          BOARD_SHAPE[overR]![overC] &&
+          BOARD_SHAPE[toR]![toC] &&
+          board[overR]![overC] &&
+          !board[toR]![toC]
         ) {
           moves.push({ fromR: r, fromC: c, overR, overC, toR, toC });
         }
@@ -87,7 +87,7 @@ function getValidMoves(board: Board): Move[] {
 }
 
 function getValidDestinations(board: Board, r: number, c: number): Array<{ toR: number; toC: number; overR: number; overC: number }> {
-  const dirs = [
+  const dirs: [number, number][] = [
     [-1, 0],
     [1, 0],
     [0, -1],
@@ -102,10 +102,10 @@ function getValidDestinations(board: Board, r: number, c: number): Array<{ toR: 
     if (
       toR >= 0 && toR < ROWS &&
       toC >= 0 && toC < COLS &&
-      BOARD_SHAPE[overR][overC] &&
-      BOARD_SHAPE[toR][toC] &&
-      board[overR][overC] &&
-      !board[toR][toC]
+      BOARD_SHAPE[overR]![overC] &&
+      BOARD_SHAPE[toR]![toC] &&
+      board[overR]![overC] &&
+      !board[toR]![toC]
     ) {
       dests.push({ toR, toC, overR, overC });
     }
@@ -115,9 +115,9 @@ function getValidDestinations(board: Board, r: number, c: number): Array<{ toR: 
 
 function applyMove(board: Board, move: Move): Board {
   const next = board.map(row => [...row]);
-  next[move.fromR][move.fromC] = false;
-  next[move.overR][move.overC] = false;
-  next[move.toR][move.toC] = true;
+  next[move.fromR]![move.fromC] = false;
+  next[move.overR]![move.overC] = false;
+  next[move.toR]![move.toC] = true;
   return next;
 }
 
@@ -191,7 +191,7 @@ export function SoloTest() {
       }
 
       // Clicking own peg → select it (or deselect if already selected)
-      if (board[r][c]) {
+      if (board[r]![c]) {
         if (selected && selected.r === r && selected.c === c) {
           setSelected(null);
         } else {
@@ -209,7 +209,7 @@ export function SoloTest() {
 
   const handleUndo = useCallback(() => {
     if (history.length === 0) return;
-    const last = history[history.length - 1];
+    const last = history[history.length - 1]!;
     setBoard(last.board);
     setHistory(h => h.slice(0, -1));
     setMoveCount(m => m - 1);
@@ -250,7 +250,7 @@ export function SoloTest() {
       {isWon && (
         <>
           <div className="rounded-xl bg-emerald-100 border border-emerald-300 px-5 py-2 text-emerald-800 font-semibold text-sm text-center">
-            You won! One peg remaining{pegsLeft === 1 && board[CENTER_R][CENTER_C] ? ' in the center!' : '.'}
+            You won! One peg remaining{pegsLeft === 1 && board[CENTER_R]![CENTER_C] ? ' in the center!' : '.'}
           </div>
           <MintScoreNFTButton gameId="solotest" gameTitle="Solo Test" gameIcon="⚫" score={33 - pegsLeft} />
         </>
@@ -292,13 +292,13 @@ export function SoloTest() {
           {/* Board cells */}
           {Array.from({ length: ROWS }, (_, r) =>
             Array.from({ length: COLS }, (_, c) => {
-              if (!BOARD_SHAPE[r][c]) return null;
+              if (!BOARD_SHAPE[r]![c]) return null;
 
               const x = cx(c);
               const y = cy(r);
               const isSelected = selected?.r === r && selected?.c === c;
               const isDest = destSet.has(`${r},${c}`);
-              const hasPeg = board[r][c];
+              const hasPeg = board[r]![c];
 
               return (
                 <g

@@ -54,8 +54,8 @@ function calcStreak(records: GmRecord[]): { current: number; longest: number } {
   if (dates[0] === today || dates[0] === yesterday) {
     current = 1;
     for (let i = 1; i < dates.length; i++) {
-      const prev = new Date(dates[i - 1]);
-      const curr = new Date(dates[i]);
+      const prev = new Date(dates[i - 1]!);
+      const curr = new Date(dates[i]!);
       const diffDays = (prev.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24);
       if (diffDays === 1) current++;
       else break;
@@ -67,8 +67,8 @@ function calcStreak(records: GmRecord[]): { current: number; longest: number } {
   let longest = 1;
   let run = 1;
   for (let i = 1; i < sorted.length; i++) {
-    const prev = new Date(sorted[i - 1]);
-    const curr = new Date(sorted[i]);
+    const prev = new Date(sorted[i - 1]!);
+    const curr = new Date(sorted[i]!);
     const diffDays = (curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
     if (diffDays === 1) {
       run++;

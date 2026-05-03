@@ -43,7 +43,7 @@ function getAchievementLevel(points: number, quizzesTaken: number): number {
   if (quizzesTaken === 0) return -1;
   const pct = points / MAX_POINTS_PER_CATEGORY;
   for (let i = ACHIEVEMENTS.length - 1; i >= 0; i--) {
-    if (pct >= ACHIEVEMENTS[i].threshold) return i;
+    if (pct >= ACHIEVEMENTS[i]!.threshold) return i;
   }
   return 0;
 }

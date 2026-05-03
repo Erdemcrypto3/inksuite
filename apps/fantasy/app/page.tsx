@@ -80,7 +80,7 @@ function FantasyContent() {
     (player: FplPlayer): boolean => {
       if (squad.some((p) => p.id === player.id)) return false;
       if (player.now_cost > budget) return false;
-      const pos = POSITION_MAP[player.element_type];
+      const pos = POSITION_MAP[player.element_type]!;
       const posCount = squad.filter((p) => POSITION_MAP[p.element_type] === pos).length;
       if (posCount >= SQUAD_STRUCTURE[pos].total) return false;
       const teamCount = squad.filter((p) => p.team === player.team).length;

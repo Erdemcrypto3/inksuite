@@ -24,7 +24,7 @@ export function SquadView({ squad, teams, onRemove }: Props) {
   const grouped = useMemo(() => {
     const groups: Record<Position, FplPlayer[]> = { GKP: [], DEF: [], MID: [], FWD: [] };
     squad.forEach((p) => {
-      const pos = POSITION_MAP[p.element_type];
+      const pos = POSITION_MAP[p.element_type]!;
       groups[pos].push(p);
     });
     return groups;

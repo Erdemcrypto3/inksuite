@@ -202,7 +202,7 @@ export function TowerDefense() {
           let minDist = Infinity;
           for (const enemy of s.enemies) {
             if (enemy.dead) continue;
-            const [ec, er] = PATH[Math.min(enemy.pathIdx, PATH.length - 1)];
+            const [ec, er] = PATH[Math.min(enemy.pathIdx, PATH.length - 1)]!;
             const ex = (ec + 0.5) * CELL;
             const ey = (er + 0.5) * CELL;
             const dist = Math.sqrt((tx - ex) ** 2 + (ty - ey) ** 2) / CELL;
@@ -213,7 +213,7 @@ export function TowerDefense() {
           }
 
           if (target) {
-            const [ec, er] = PATH[Math.min(target.pathIdx, PATH.length - 1)];
+            const [ec, er] = PATH[Math.min(target.pathIdx, PATH.length - 1)]!;
             s.bullets.push({
               x: tx, y: ty,
               tx: (ec + 0.5) * CELL, ty: (er + 0.5) * CELL,
@@ -225,7 +225,7 @@ export function TowerDefense() {
 
         // Move bullets
         for (let i = s.bullets.length - 1; i >= 0; i--) {
-          const b = s.bullets[i];
+          const b = s.bullets[i]!;
           const dx = b.tx - b.x;
           const dy = b.ty - b.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
@@ -234,7 +234,7 @@ export function TowerDefense() {
             if (b.aoe) {
               for (const enemy of s.enemies) {
                 if (enemy.dead) continue;
-                const [ec, er] = PATH[Math.min(enemy.pathIdx, PATH.length - 1)];
+                const [ec, er] = PATH[Math.min(enemy.pathIdx, PATH.length - 1)]!;
                 const ex = (ec + 0.5) * CELL;
                 const ey = (er + 0.5) * CELL;
                 const d = Math.sqrt((b.tx - ex) ** 2 + (b.ty - ey) ** 2);
@@ -255,7 +255,7 @@ export function TowerDefense() {
               let minD = Infinity;
               for (const enemy of s.enemies) {
                 if (enemy.dead) continue;
-                const [ec, er] = PATH[Math.min(enemy.pathIdx, PATH.length - 1)];
+                const [ec, er] = PATH[Math.min(enemy.pathIdx, PATH.length - 1)]!;
                 const ex = (ec + 0.5) * CELL;
                 const ey = (er + 0.5) * CELL;
                 const d = Math.sqrt((b.tx - ex) ** 2 + (b.ty - ey) ** 2);
@@ -327,8 +327,8 @@ export function TowerDefense() {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       for (let i = 0; i < PATH.length - 1; i += 3) {
-        const [c1, r1] = PATH[i];
-        const [c2, r2] = PATH[Math.min(i + 1, PATH.length - 1)];
+        const [c1, r1] = PATH[i]!;
+        const [c2, r2] = PATH[Math.min(i + 1, PATH.length - 1)]!;
         const dx = c2 - c1;
         const dy = r2 - r1;
         const arrow = dx > 0 ? '→' : dx < 0 ? '←' : dy > 0 ? '↓' : '↑';
@@ -346,7 +346,7 @@ export function TowerDefense() {
         ctx.font = 'bold 10px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(def.name[0], x + CELL / 2, y + CELL / 2);
+        ctx.fillText(def.name[0]!, x + CELL / 2, y + CELL / 2);
 
         // Range circle (subtle)
         if (s.selectedTower === tower.type) {
@@ -362,10 +362,10 @@ export function TowerDefense() {
       for (const enemy of s.enemies) {
         if (enemy.dead) continue;
         const idx = Math.min(enemy.pathIdx, PATH.length - 1);
-        const [c1, r1] = PATH[idx];
+        const [c1, r1] = PATH[idx]!;
         let ex: number, ey: number;
         if (idx < PATH.length - 1) {
-          const [c2, r2] = PATH[idx + 1];
+          const [c2, r2] = PATH[idx + 1]!;
           ex = (c1 + (c2 - c1) * enemy.progress + 0.5) * CELL;
           ey = (r1 + (r2 - r1) * enemy.progress + 0.5) * CELL;
         } else {

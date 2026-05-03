@@ -69,7 +69,7 @@ function createInitialBoard(): Board {
   for (let r = 0; r < 3; r++) {
     for (let c = 0; c < BOARD_SIZE; c++) {
       if ((r + c) % 2 === 1) {
-        board[r][c] = { player: 'light', type: 'man' };
+        board[r]![c] = { player: 'light', type: 'man' };
       }
     }
   }
@@ -77,7 +77,7 @@ function createInitialBoard(): Board {
   for (let r = 5; r < BOARD_SIZE; r++) {
     for (let c = 0; c < BOARD_SIZE; c++) {
       if ((r + c) % 2 === 1) {
-        board[r][c] = { player: 'dark', type: 'man' };
+        board[r]![c] = { player: 'dark', type: 'man' };
       }
     }
   }
@@ -114,8 +114,8 @@ function getJumpsFrom(
     const landC = col + 2 * dc;
 
     if (!inBounds(midR, midC) || !inBounds(landR, landC)) continue;
-    const midCell = board[midR][midC];
-    const landCell = board[landR][landC];
+    const midCell = board[midR]![midC];
+    const landCell = board[landR]![landC];
 
     // Must jump over opponent
     if (!midCell || midCell.player === piece.player) continue;
@@ -127,12 +127,12 @@ function getJumpsFrom(
 
     // Simulate the jump
     const newBoard = cloneBoard(board);
-    newBoard[landR][landC] = newBoard[row][col];
-    newBoard[row][col] = null;
-    newBoard[midR][midC] = null;
+    newBoard[landR]![landC] = newBoard[row]![col] ?? null;
+    newBoard[row]![col] = null;
+    newBoard[midR]![midC] = null;
 
     // Check for king promotion mid-jump
-    const movedPiece = newBoard[landR][landC]!;
+    const movedPiece = newBoard[landR]![landC]!;
     const becameKing = (piece.player === 'dark' && landR === 0) || (piece.player === 'light' && landR === 7);
     if (becameKing) movedPiece.type = 'king';
 
@@ -176,7 +176,7 @@ function getSimpleMovesFrom(board: Board, pos: Position, piece: Piece): Move[] {
   for (const [dr, dc] of dirs) {
     const nr = row + dr;
     const nc = col + dc;
-    if (inBounds(nr, nc) && board[nr][nc] === null) {
+    if (inBounds(nr, nc) && board[nr]![nc] === null) {
       moves.push({ from: pos, to: { row: nr, col: nc }, captured: [] });
     }
   }
@@ -190,7 +190,7 @@ function getAllMoves(board: Board, player: Player): Move[] {
 
   for (let r = 0; r < BOARD_SIZE; r++) {
     for (let c = 0; c < BOARD_SIZE; c++) {
-      const cell = board[r][c];
+      const cell = board[r]![c];
       if (!cell || cell.player !== player) continue;
       const pos = { row: r, col: c };
       const jumps = getJumpsFrom(board, pos, cell, []);
@@ -208,7 +208,7 @@ function getAllMoves(board: Board, player: Player): Move[] {
   const allSimple: Move[] = [];
   for (let r = 0; r < BOARD_SIZE; r++) {
     for (let c = 0; c < BOARD_SIZE; c++) {
-      const cell = board[r][c];
+      const cell = board[r]![c];
       if (!cell || cell.player !== player) continue;
       allSimple.push(...getSimpleMovesFrom(board, { row: r, col: c }, cell));
     }
@@ -219,14 +219,14 @@ function getAllMoves(board: Board, player: Player): Move[] {
 // Apply a move to board, returns new board
 function applyMove(board: Board, move: Move): Board {
   const newBoard = cloneBoard(board);
-  const piece = newBoard[move.from.row][move.from.col]!;
-  newBoard[move.to.row][move.to.col] = { ...piece };
-  newBoard[move.from.row][move.from.col] = null;
+  const piece = newBoard[move.from.row]![move.from.col]!;
+  newBoard[move.to.row]![move.to.col] = { ...piece };
+  newBoard[move.from.row]![move.from.col] = null;
   for (const cap of move.captured) {
-    newBoard[cap.row][cap.col] = null;
+    newBoard[cap.row]![cap.col] = null;
   }
   // King promotion
-  const movedPiece = newBoard[move.to.row][move.to.col]!;
+  const movedPiece = newBoard[move.to.row]![move.to.col]!;
   if (movedPiece.player === 'dark' && move.to.row === 0) movedPiece.type = 'king';
   if (movedPiece.player === 'light' && move.to.row === 7) movedPiece.type = 'king';
   return newBoard;
@@ -245,7 +245,7 @@ function scoreMove(move: Move, board: Board): number {
   score += move.captured.length * 100;
 
   // King moves
-  const piece = board[move.from.row][move.from.col];
+  const piece = board[move.from.row]![move.from.col];
   if (piece?.type === 'king') score += 10;
 
   // Forward progress for light (moving toward row 7)
@@ -269,9 +269,9 @@ function aiChooseMove(board: Board): Move | null {
     const captureMoves = moves.filter(m => m.captured.length > 0);
     captureMoves.sort((a, b) => b.captured.length - a.captured.length);
     // If tied, pick randomly among top scorers
-    const maxCaps = captureMoves[0].captured.length;
+    const maxCaps = captureMoves[0]!.captured.length;
     const best = captureMoves.filter(m => m.captured.length === maxCaps);
-    return best[Math.floor(Math.random() * best.length)];
+    return best[Math.floor(Math.random() * best.length)] ?? null;
   }
 
   // Non-capture: score and add randomness
@@ -279,7 +279,7 @@ function aiChooseMove(board: Board): Move | null {
   scored.sort((a, b) => b.score - a.score);
   // Pick from top 3 randomly
   const topN = Math.min(3, scored.length);
-  return scored[Math.floor(Math.random() * topN)].move;
+  return scored[Math.floor(Math.random() * topN)]?.move ?? null;
 }
 
 // ─── Initial state ────────────────────────────────────────────────────────────
@@ -396,7 +396,7 @@ export function Checkers() {
     if (state.turn !== 'dark' || state.status !== 'playing' || aiThinking) return;
 
     setState(prev => {
-      const cell = prev.board[row][col];
+      const cell = prev.board[row]![col];
       const clickedPos = { row, col };
 
       // If a piece is selected, check if clicking a valid destination
@@ -542,7 +542,7 @@ export function Checkers() {
                     fill={isDark ? COLORS.darkSquareAlpha : COLORS.lightSquare}
                   />
                   {/* Valid destination dot */}
-                  {isValidDest && isDark && !board[r][c] && (
+                  {isValidDest && isDark && !board[r]![c] && (
                     <circle
                       cx={x + CELL_SIZE / 2}
                       cy={y + CELL_SIZE / 2}
@@ -563,7 +563,7 @@ export function Checkers() {
                     />
                   )}
                   {/* Highlight pieces that have valid moves (when it's player's turn, no selection) */}
-                  {!selectedPos && turn === 'dark' && status === 'playing' && piecesWithMoves.has(`${r},${c}`) && board[r][c]?.player === 'dark' && (
+                  {!selectedPos && turn === 'dark' && status === 'playing' && piecesWithMoves.has(`${r},${c}`) && board[r]![c]?.player === 'dark' && (
                     <rect
                       x={x + 2} y={y + 2}
                       width={CELL_SIZE - 4} height={CELL_SIZE - 4}
@@ -582,7 +582,7 @@ export function Checkers() {
           {/* Pieces */}
           {Array.from({ length: BOARD_SIZE }, (_, r) =>
             Array.from({ length: BOARD_SIZE }, (_, c) => {
-              const piece = board[r][c];
+              const piece = board[r]![c];
               if (!piece) return null;
 
               const cx = c * CELL_SIZE + CELL_SIZE / 2;

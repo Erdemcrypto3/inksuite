@@ -110,7 +110,7 @@ export function LeaderboardView({ players, teams, squad, captainId, liveData, re
           </thead>
           <tbody className="divide-y divide-purple-100">
             {playerTotals.map((row, i) => {
-              const pos = POSITION_MAP[row.player.element_type];
+              const pos = POSITION_MAP[row.player.element_type]!;
               const inSquad = squadIds.has(row.player.id);
               return (
                 <tr key={row.player.id} className={inSquad ? 'bg-amber-50/50' : 'hover:bg-purple-50'}>

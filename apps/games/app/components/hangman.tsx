@@ -15,7 +15,7 @@ const WORDS = [
 const MAX_WRONG = 6;
 
 function pickWord(): string {
-  return WORDS[Math.floor(Math.random() * WORDS.length)];
+  return WORDS[Math.floor(Math.random() * WORDS.length)]!;
 }
 
 function saveHighScore(score: number) {

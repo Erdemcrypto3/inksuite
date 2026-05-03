@@ -112,7 +112,7 @@ export function PlayerPicker({ players, teams, squad, budget, filterPosition, on
           </thead>
           <tbody className="divide-y divide-purple-50">
             {filtered.map((p) => {
-              const pos = POSITION_MAP[p.element_type];
+              const pos = POSITION_MAP[p.element_type]!;
               const inSquad = squadIds.has(p.id);
               const teamFull = (teamCounts.get(p.team) || 0) >= MAX_PER_TEAM;
               const tooExpensive = p.now_cost > budget;

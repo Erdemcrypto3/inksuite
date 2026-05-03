@@ -19,19 +19,19 @@ function createBoard(firstR: number, firstC: number): Board {
   while (placed < MINES) {
     const r = Math.floor(Math.random() * ROWS);
     const c = Math.floor(Math.random() * COLS);
-    if (board[r][c].mine || (Math.abs(r - firstR) <= 1 && Math.abs(c - firstC) <= 1)) continue;
-    board[r][c].mine = true;
+    if (board[r]![c]!.mine || (Math.abs(r - firstR) <= 1 && Math.abs(c - firstC) <= 1)) continue;
+    board[r]![c]!.mine = true;
     placed++;
   }
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      if (board[r][c].mine) continue;
+      if (board[r]![c]!.mine) continue;
       let count = 0;
       for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
         const nr = r + dr, nc = c + dc;
-        if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && board[nr][nc].mine) count++;
+        if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && board[nr]![nc]!.mine) count++;
       }
-      board[r][c].adjacent = count;
+      board[r]![c]!.adjacent = count;
     }
   }
   return board;
@@ -43,7 +43,7 @@ function cloneBoard(b: Board): Board {
 
 function floodReveal(board: Board, r: number, c: number) {
   if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return;
-  const cell = board[r][c];
+  const cell = board[r]![c]!;
   if (cell.revealed || cell.flagged || cell.mine) return;
   cell.revealed = true;
   if (cell.adjacent === 0) {
@@ -53,7 +53,7 @@ function floodReveal(board: Board, r: number, c: number) {
 
 function checkWin(board: Board): boolean {
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
-    if (!board[r][c].mine && !board[r][c].revealed) return false;
+    if (!board[r]![c]!.mine && !board[r]![c]!.revealed) return false;
   }
   return true;
 }
@@ -93,11 +93,11 @@ export function Minesweeper() {
       return;
     }
     const b = cloneBoard(board);
-    const cell = b[r][c];
+    const cell = b[r]![c]!;
     if (cell.revealed || cell.flagged) return;
     if (cell.mine) {
       for (let rr = 0; rr < ROWS; rr++) for (let cc = 0; cc < COLS; cc++) {
-        if (b[rr][cc].mine) b[rr][cc].revealed = true;
+        if (b[rr]![cc]!.mine) b[rr]![cc]!.revealed = true;
       }
       setBoard(b);
       setStatus('lost');
@@ -118,7 +118,7 @@ export function Minesweeper() {
     e.preventDefault();
     if (status !== 'playing' || !board) return;
     const b = cloneBoard(board);
-    const cell = b[r][c];
+    const cell = b[r]![c]!;
     if (cell.revealed) return;
     cell.flagged = !cell.flagged;
     setBoard(b);

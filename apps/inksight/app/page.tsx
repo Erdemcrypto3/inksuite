@@ -751,7 +751,7 @@ function LeaderboardPanel() {
                 <tr key={addr} className="border-t border-purple-50 hover:bg-ink-50/50">
                   <td className="py-3 px-4 font-bold text-ink-500">{i + 1}</td>
                   <td className="py-3 px-4 font-mono text-xs">{addr}</td>
-                  <td className="py-3 px-4 text-right font-bold text-ink-600">{points[i].toString()}</td>
+                  <td className="py-3 px-4 text-right font-bold text-ink-600">{points[i]!.toString()}</td>
                 </tr>
               ))}
             </tbody>

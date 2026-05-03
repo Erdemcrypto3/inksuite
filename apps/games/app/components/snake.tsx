@@ -73,7 +73,7 @@ export function Snake() {
   const tick = useCallback(() => {
     dirRef.current = nextDirRef.current;
     const snake = [...snakeRef.current];
-    const head = { ...snake[0] };
+    const head: Pos = { ...snake[0]! };
 
     if (dirRef.current === 'UP') head.y--;
     if (dirRef.current === 'DOWN') head.y++;

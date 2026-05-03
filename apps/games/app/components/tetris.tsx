@@ -114,7 +114,7 @@ interface Piece {
 const PIECE_TYPES: TetrominoType[] = ['I', 'O', 'T', 'S', 'Z', 'J', 'L'];
 
 function randomPiece(): Piece {
-  const type = PIECE_TYPES[Math.floor(Math.random() * PIECE_TYPES.length)];
+  const type = PIECE_TYPES[Math.floor(Math.random() * PIECE_TYPES.length)]!;
   return { type, x: type === 'I' ? 3 : 3, y: 0, rotation: 0 };
 }
 
@@ -123,20 +123,20 @@ function emptyBoard(): Board {
 }
 
 function getShape(piece: Piece): number[][] {
-  return SHAPES[piece.type][piece.rotation];
+  return SHAPES[piece.type][piece.rotation]!;
 }
 
 function isValidPosition(board: Board, piece: Piece, dx = 0, dy = 0, rot?: number): boolean {
   const rotation = rot ?? piece.rotation;
-  const shape = SHAPES[piece.type][rotation];
+  const shape = SHAPES[piece.type][rotation]!;
   for (let r = 0; r < shape.length; r++) {
-    for (let c = 0; c < shape[r].length; c++) {
-      if (!shape[r][c]) continue;
+    for (let c = 0; c < shape[r]!.length; c++) {
+      if (!shape[r]![c]) continue;
       const nx = piece.x + c + dx;
       const ny = piece.y + r + dy;
       if (nx < 0 || nx >= COLS || ny >= ROWS) return false;
       if (ny < 0) continue; // above board is allowed during spawn
-      if (board[ny][nx]) return false;
+      if (board[ny]![nx]) return false;
     }
   }
   return true;
@@ -146,12 +146,12 @@ function lockPiece(board: Board, piece: Piece): Board {
   const newBoard = board.map((row) => [...row]);
   const shape = getShape(piece);
   for (let r = 0; r < shape.length; r++) {
-    for (let c = 0; c < shape[r].length; c++) {
-      if (!shape[r][c]) continue;
+    for (let c = 0; c < shape[r]!.length; c++) {
+      if (!shape[r]![c]) continue;
       const nx = piece.x + c;
       const ny = piece.y + r;
       if (ny >= 0 && ny < ROWS && nx >= 0 && nx < COLS) {
-        newBoard[ny][nx] = piece.type;
+        newBoard[ny]![nx] = piece.type;
       }
     }
   }
@@ -233,11 +233,11 @@ function drawCell(
 
 function drawBoard(ctx: CanvasRenderingContext2D, board: Board) {
   // Background
-  ctx.fillStyle = COLORS.bg;
+  ctx.fillStyle = COLORS.bg!;
   ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
   // Grid lines
-  ctx.strokeStyle = COLORS.grid;
+  ctx.strokeStyle = COLORS.grid!;
   ctx.lineWidth = 1;
   for (let r = 0; r <= ROWS; r++) {
     ctx.beginPath();
@@ -255,8 +255,8 @@ function drawBoard(ctx: CanvasRenderingContext2D, board: Board) {
   // Locked cells
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      const cell = board[r][c];
-      if (cell) drawCell(ctx, c, r, COLORS[cell], CELL);
+      const cell = board[r]![c];
+      if (cell) drawCell(ctx, c, r, COLORS[cell]!, CELL);
     }
   }
 }
@@ -267,9 +267,9 @@ function drawPiece(ctx: CanvasRenderingContext2D, piece: Piece, ghostY?: number)
   // Ghost
   if (ghostY !== undefined && ghostY !== piece.y) {
     for (let r = 0; r < shape.length; r++) {
-      for (let c = 0; c < shape[r].length; c++) {
-        if (shape[r][c]) {
-          drawCell(ctx, piece.x + c, ghostY + r, COLORS.ghost, CELL, true);
+      for (let c = 0; c < shape[r]!.length; c++) {
+        if (shape[r]![c]) {
+          drawCell(ctx, piece.x + c, ghostY + r, COLORS.ghost!, CELL, true);
         }
       }
     }
@@ -277,24 +277,24 @@ function drawPiece(ctx: CanvasRenderingContext2D, piece: Piece, ghostY?: number)
 
   // Active piece
   for (let r = 0; r < shape.length; r++) {
-    for (let c = 0; c < shape[r].length; c++) {
-      if (shape[r][c]) {
-        drawCell(ctx, piece.x + c, piece.y + r, COLORS[piece.type], CELL);
+    for (let c = 0; c < shape[r]!.length; c++) {
+      if (shape[r]![c]) {
+        drawCell(ctx, piece.x + c, piece.y + r, COLORS[piece.type]!, CELL);
       }
     }
   }
 }
 
 function drawPreview(ctx: CanvasRenderingContext2D, type: TetrominoType) {
-  ctx.fillStyle = COLORS.bg;
+  ctx.fillStyle = COLORS.bg!;
   ctx.fillRect(0, 0, PREVIEW_SIZE, PREVIEW_SIZE);
 
-  const shape = SHAPES[type][0];
+  const shape = SHAPES[type][0]!;
   // Find bounding box
   let minR = 4, maxR = -1, minC = 4, maxC = -1;
   for (let r = 0; r < shape.length; r++) {
-    for (let c = 0; c < shape[r].length; c++) {
-      if (shape[r][c]) {
+    for (let c = 0; c < shape[r]!.length; c++) {
+      if (shape[r]![c]) {
         minR = Math.min(minR, r);
         maxR = Math.max(maxR, r);
         minC = Math.min(minC, c);
@@ -308,12 +308,12 @@ function drawPreview(ctx: CanvasRenderingContext2D, type: TetrominoType) {
   const offsetY = Math.floor((PREVIEW_SIZE - blockH) / 2);
 
   for (let r = 0; r < shape.length; r++) {
-    for (let c = 0; c < shape[r].length; c++) {
-      if (shape[r][c]) {
+    for (let c = 0; c < shape[r]!.length; c++) {
+      if (shape[r]![c]) {
         const px = offsetX + (c - minC) * PREVIEW_CELL;
         const py = offsetY + (r - minR) * PREVIEW_CELL;
         const s = PREVIEW_CELL;
-        ctx.fillStyle = COLORS[type];
+        ctx.fillStyle = COLORS[type]!;
         ctx.fillRect(px + 1, py + 1, s - 2, s - 2);
         ctx.fillStyle = 'rgba(255,255,255,0.35)';
         ctx.fillRect(px + 1, py + 1, s - 2, 3);
@@ -406,7 +406,7 @@ export function Tetris() {
     if (pCtx && gameStateRef.current !== 'idle') {
       drawPreview(pCtx, nextPieceRef.current.type);
     } else if (pCtx) {
-      pCtx.fillStyle = COLORS.bg;
+      pCtx.fillStyle = COLORS.bg!;
       pCtx.fillRect(0, 0, PREVIEW_SIZE, PREVIEW_SIZE);
     }
   }, []);

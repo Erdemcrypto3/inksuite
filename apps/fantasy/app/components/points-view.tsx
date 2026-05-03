@@ -166,7 +166,7 @@ export function PointsView({
                   return b.finalPoints - a.finalPoints;
                 })
                 .map((pp) => {
-                  const pos = POSITION_MAP[pp.player.element_type];
+                  const pos = POSITION_MAP[pp.player.element_type]!;
                   return (
                     <tr
                       key={pp.player.id}

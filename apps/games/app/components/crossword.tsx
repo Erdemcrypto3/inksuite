@@ -35,7 +35,7 @@ function setHighScore(n: number) {
 
 function pickPuzzle(exclude?: number): CrosswordPuzzle {
   const candidates = exclude !== undefined ? puzzles.filter((p) => p.id !== exclude) : puzzles;
-  return candidates[Math.floor(Math.random() * candidates.length)];
+  return candidates[Math.floor(Math.random() * candidates.length)]!;
 }
 
 /** Return all cells belonging to an across or down word starting at (row, col). */
@@ -50,7 +50,7 @@ function getWordCells(
   const cols = grid[0]?.length ?? 0;
   let r = row;
   let c = col;
-  while (r < rows && c < cols && grid[r][c] !== null) {
+  while (r < rows && c < cols && grid[r]![c] !== null) {
     cells.push([r, c]);
     if (dir === 'across') c++;
     else r++;
@@ -138,7 +138,7 @@ export function Crossword() {
       const cells = clueCells.get(key) ?? [];
       setActiveClue({ direction: dir, number, row: clue.row, col: clue.col, answer: clue.answer, cells });
       if (focusFirst && cells.length > 0) {
-        const [r, c] = cells[0];
+        const [r, c] = cells[0]!;
         setActiveCell([r, c]);
         focusCell(r, c);
       }
@@ -149,7 +149,7 @@ export function Crossword() {
   // Handle clicking a grid cell
   const handleCellClick = useCallback(
     (row: number, col: number) => {
-      if (puzzle.grid[row][col] === null) return;
+      if (puzzle.grid[row]![col] === null) return;
 
       // If clicking the already-active cell, toggle direction
       let newDir: Direction = activeClue?.direction ?? 'across';
@@ -175,12 +175,12 @@ export function Crossword() {
 
       setUserGrid((prev) => {
         const next = prev.map((r) => [...r]);
-        next[row][col] = letter;
+        next[row]![col] = letter;
         return next;
       });
       setCellStates((prev) => {
         const next = prev.map((r) => [...r]);
-        next[row][col] = 'idle';
+        next[row]![col] = 'idle';
         return next;
       });
       setChecked(false);
@@ -189,7 +189,7 @@ export function Crossword() {
       if (letter && activeClue) {
         const idx = activeClue.cells.findIndex(([r, c]) => r === row && c === col);
         if (idx >= 0 && idx < activeClue.cells.length - 1) {
-          const [nr, nc] = activeClue.cells[idx + 1];
+          const [nr, nc] = activeClue.cells[idx + 1]!;
           setActiveCell([nr, nc]);
           focusCell(nr, nc);
         }
@@ -202,22 +202,22 @@ export function Crossword() {
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>, row: number, col: number) => {
       if (e.key === 'Backspace') {
-        if (userGrid[row][col] !== '') {
+        if (userGrid[row]![col] !== '') {
           setUserGrid((prev) => {
             const next = prev.map((r) => [...r]);
-            next[row][col] = '';
+            next[row]![col] = '';
             return next;
           });
           setCellStates((prev) => {
             const next = prev.map((r) => [...r]);
-            next[row][col] = 'idle';
+            next[row]![col] = 'idle';
             return next;
           });
         } else if (activeClue) {
           // Move back one cell
           const idx = activeClue.cells.findIndex(([r, c]) => r === row && c === col);
           if (idx > 0) {
-            const [pr, pc] = activeClue.cells[idx - 1];
+            const [pr, pc] = activeClue.cells[idx - 1]!;
             setActiveCell([pr, pc]);
             focusCell(pr, pc);
           }
@@ -231,7 +231,7 @@ export function Crossword() {
         if (!activeClue) return;
         const idx = activeClue.cells.findIndex(([r, c]) => r === row && c === col);
         if (idx >= 0 && idx < activeClue.cells.length - 1) {
-          const [nr, nc] = activeClue.cells[idx + 1];
+          const [nr, nc] = activeClue.cells[idx + 1]!;
           setActiveCell([nr, nc]);
           focusCell(nr, nc);
         }
@@ -242,7 +242,7 @@ export function Crossword() {
       if (e.key === 'ArrowRight') {
         e.preventDefault();
         selectClue('across', activeClue?.number ?? puzzle.clues.across[0]?.number ?? 1, false);
-        if (col < cols - 1 && puzzle.grid[row][col + 1] !== null) {
+        if (col < cols - 1 && puzzle.grid[row]![col + 1] !== null) {
           setActiveCell([row, col + 1]);
           focusCell(row, col + 1);
         }
@@ -250,7 +250,7 @@ export function Crossword() {
       }
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
-        if (col > 0 && puzzle.grid[row][col - 1] !== null) {
+        if (col > 0 && puzzle.grid[row]![col - 1] !== null) {
           setActiveCell([row, col - 1]);
           focusCell(row, col - 1);
         }
@@ -284,15 +284,15 @@ export function Crossword() {
 
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-        if (puzzle.grid[r][c] === null) continue;
-        const entered = userGrid[r][c];
+        if (puzzle.grid[r]![c] === null) continue;
+        const entered = userGrid[r]![c];
         if (!entered) {
           allCorrect = false;
-          nextStates[r][c] = 'idle';
-        } else if (entered === puzzle.grid[r][c]) {
-          nextStates[r][c] = 'correct';
+          nextStates[r]![c] = 'idle';
+        } else if (entered === puzzle.grid[r]![c]) {
+          nextStates[r]![c] = 'correct';
         } else {
-          nextStates[r][c] = 'incorrect';
+          nextStates[r]![c] = 'incorrect';
           allCorrect = false;
         }
       }
@@ -363,8 +363,8 @@ export function Crossword() {
 
   // Cell background class
   const cellBg = (row: number, col: number): string => {
-    if (puzzle.grid[row][col] === null) return 'bg-ink-900';
-    const state = cellStates[row][col];
+    if (puzzle.grid[row]![col] === null) return 'bg-ink-900';
+    const state = cellStates[row]![col];
     if (state === 'correct') return 'bg-emerald-50';
     if (state === 'incorrect') return 'bg-red-50';
     if (isActiveCell(row, col)) return 'bg-white';
@@ -403,7 +403,7 @@ export function Crossword() {
           >
             {Array.from({ length: rows }, (_, row) =>
               Array.from({ length: cols }, (_, col) => {
-                const isBlack = puzzle.grid[row][col] === null;
+                const isBlack = puzzle.grid[row]![col] === null;
                 const num = cellNumber(row, col);
                 const highlight = isCellHighlighted(row, col);
                 const active = isActiveCell(row, col);
