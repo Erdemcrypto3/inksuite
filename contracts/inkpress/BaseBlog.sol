@@ -80,6 +80,16 @@ contract BaseBlog is
     /// @notice FIX #4: O(1) counter for active articles
     uint256 public activeArticleCount;
 
+    // P012-PAI-0056: supply cap and publish rate limit
+    uint256 public maxMintSupply;
+    mapping(address => uint256) public lastPublishTime;
+    uint256 public publishCooldown;
+
+    // P012-PAI-0058: price change timelock
+    uint256 public pendingMintPrice;
+    uint256 public mintPriceEffectiveTime;
+    uint256 public constant PRICE_CHANGE_DELAY = 24 hours;
+
     // =========================================================================
     //                              EVENTS
     // =========================================================================
@@ -98,6 +108,9 @@ contract BaseBlog is
     event AuthorWithdrawal(address indexed author, uint256 amount);
     event PlatformWithdrawal(address indexed to, uint256 amount);
     event UpgradesRenounced();
+    event MintPriceAnnounced(uint256 newPrice, uint256 effectiveTime); // P012-PAI-0058
+    event MaxMintSupplyUpdated(uint256 newMax); // P012-PAI-0056
+    event PublishCooldownUpdated(uint256 newCooldown); // P012-PAI-0056
 
     // =========================================================================
     //                              ERRORS
@@ -115,6 +128,10 @@ contract BaseBlog is
     error InvalidAddress();
     error TooManyTags();
     error TagTooLong();
+    error SupplyCapReached(); // P012-PAI-0056
+    error PublishOnCooldown(); // P012-PAI-0056
+    error PriceChangeTooEarly(); // P012-PAI-0058
+    error PriceChangeNotAnnounced(); // P012-PAI-0058
 
     // =========================================================================
     //                            MODIFIERS
@@ -193,6 +210,9 @@ contract BaseBlog is
     ) external onlyApprovedAuthor whenNotPaused returns (uint256) {
         if (bytes(walrusBlobId).length == 0) revert EmptyBlobId();
         if (_containsUnsafeChars(bytes(title)) || _containsUnsafeChars(bytes(description))) revert UnsafeString();
+        // P012-PAI-0056: publish rate limit
+        if (publishCooldown > 0 && block.timestamp < lastPublishTime[msg.sender] + publishCooldown) revert PublishOnCooldown();
+        lastPublishTime[msg.sender] = block.timestamp;
 
         uint256 articleId = nextArticleId++;
 
@@ -272,6 +292,7 @@ contract BaseBlog is
         Article storage article = articles[articleId];
         if (!article.active) revert ArticleNotActive();
         if (msg.value != mintPrice) revert IncorrectPayment();
+        if (maxMintSupply > 0 && article.totalMinted >= maxMintSupply) revert SupplyCapReached(); // P012-PAI-0056
 
         _mint(msg.sender, articleId, 1, "");
         article.totalMinted++;
@@ -406,10 +427,20 @@ contract BaseBlog is
         emit AuthorRevoked(author);
     }
 
-    function setMintPrice(uint256 newPrice) external onlyOwner {
+    // P012-PAI-0058: price changes require 24h announce-then-apply
+    function announceMintPrice(uint256 newPrice) external onlyOwner {
+        pendingMintPrice = newPrice;
+        mintPriceEffectiveTime = block.timestamp + PRICE_CHANGE_DELAY;
+        emit MintPriceAnnounced(newPrice, mintPriceEffectiveTime);
+    }
+
+    function applyMintPrice() external onlyOwner {
+        if (mintPriceEffectiveTime == 0) revert PriceChangeNotAnnounced();
+        if (block.timestamp < mintPriceEffectiveTime) revert PriceChangeTooEarly();
         uint256 oldPrice = mintPrice;
-        mintPrice = newPrice;
-        emit MintPriceUpdated(oldPrice, newPrice);
+        mintPrice = pendingMintPrice;
+        mintPriceEffectiveTime = 0;
+        emit MintPriceUpdated(oldPrice, mintPrice);
     }
 
     function setPlatformFee(uint256 newFeeBps) external onlyOwner {
@@ -417,6 +448,17 @@ contract BaseBlog is
         uint256 oldFee = platformFeeBps;
         platformFeeBps = newFeeBps;
         emit PlatformFeeUpdated(oldFee, newFeeBps);
+    }
+
+    // P012-PAI-0056: supply cap and publish cooldown setters
+    function setMaxMintSupply(uint256 _max) external onlyOwner {
+        maxMintSupply = _max;
+        emit MaxMintSupplyUpdated(_max);
+    }
+
+    function setPublishCooldown(uint256 _cooldown) external onlyOwner {
+        publishCooldown = _cooldown;
+        emit PublishCooldownUpdated(_cooldown);
     }
 
     function setWalrusAggregatorUrl(string calldata newUrl) external onlyOwner {
