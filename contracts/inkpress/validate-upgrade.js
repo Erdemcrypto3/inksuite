@@ -26,24 +26,21 @@ async function main() {
   }
   console.log('Proxy bytecode found at', PROXY_ADDRESS, '(', code.length / 2, 'bytes)');
 
-  const BaseBlog = await hre.ethers.getContractFactory('BaseBlog');
+  const InkPress = await hre.ethers.getContractFactory('InkPress');
 
-  // Import existing proxy
   console.log('\nImporting existing proxy...');
-  await hre.upgrades.forceImport(PROXY_ADDRESS, BaseBlog, { kind: 'uups' });
+  await hre.upgrades.forceImport(PROXY_ADDRESS, InkPress, { kind: 'uups' });
   console.log('Import OK');
 
-  // Validate upgrade (storage layout check)
   console.log('\nValidating storage layout compatibility...');
-  await hre.upgrades.validateUpgrade(PROXY_ADDRESS, BaseBlog, {
+  await hre.upgrades.validateUpgrade(PROXY_ADDRESS, InkPress, {
     kind: 'uups',
+    unsafeAllowRenames: true,
   });
   console.log('Storage layout validation PASSED');
 
-  // Dry-run the upgrade on the fork
   console.log('\nDry-run upgrade on fork...');
 
-  // Impersonate the owner (deployer wallet)
   const owner = '0x9E84D77264d94C646dF91A70dbae99C20330eAD0';
   await hre.network.provider.request({
     method: 'hardhat_impersonateAccount',
@@ -51,15 +48,16 @@ async function main() {
   });
   await hre.network.provider.send('hardhat_setBalance', [
     owner,
-    '0x56BC75E2D63100000', // 100 ETH
+    '0x56BC75E2D63100000',
   ]);
 
   const signer = await hre.ethers.getSigner(owner);
-  const BaseBlogAsOwner = BaseBlog.connect(signer);
+  const InkPressAsOwner = InkPress.connect(signer);
 
-  const upgraded = await hre.upgrades.upgradeProxy(PROXY_ADDRESS, BaseBlogAsOwner, {
+  const upgraded = await hre.upgrades.upgradeProxy(PROXY_ADDRESS, InkPressAsOwner, {
     kind: 'uups',
     redeployImplementation: 'always',
+    unsafeAllowRenames: true,
   });
 
   await upgraded.waitForDeployment();
@@ -67,15 +65,18 @@ async function main() {
   console.log('Dry-run upgrade succeeded!');
   console.log('New implementation (fork):', implAddress);
 
-  // Quick smoke: check new state variable defaults
-  const proxy = BaseBlog.attach(PROXY_ADDRESS).connect(signer);
+  const proxy = InkPress.attach(PROXY_ADDRESS).connect(signer);
   const maxSupply = await proxy.maxMintSupply();
   const cooldown = await proxy.publishCooldown();
-  const delay = await proxy.PRICE_CHANGE_DELAY();
-  console.log('\nNew state variable checks:');
+  const delay = await proxy.ADMIN_CHANGE_DELAY();
+  const pendingFee = await proxy.pendingPlatformFee();
+  const pendingGw = await proxy.pendingStorageGatewayUrl();
+  console.log('\nState variable checks:');
   console.log('  maxMintSupply:', maxSupply.toString(), '(expect 0)');
   console.log('  publishCooldown:', cooldown.toString(), '(expect 0)');
-  console.log('  PRICE_CHANGE_DELAY:', delay.toString(), '(expect 86400)');
+  console.log('  ADMIN_CHANGE_DELAY:', delay.toString(), '(expect 86400)');
+  console.log('  pendingPlatformFee:', pendingFee.toString(), '(expect 0)');
+  console.log('  pendingStorageGatewayUrl:', pendingGw, '(expect empty)');
 
   console.log('\n✓ All validations passed. Safe to upgrade on mainnet.');
 }

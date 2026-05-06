@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
  * @title InkMint
  * @notice AI-generated NFT minting on Ink chain.
  *         Users pay 0.000777 ETH to mint. Image generated off-chain via AI,
- *         stored on Walrus, metadata URI set at mint time.
+ *         metadata URI set at mint time.
  */
 contract InkMint is ERC721, Ownable {
     using Strings for uint256;
@@ -18,7 +18,7 @@ contract InkMint is ERC721, Ownable {
     uint256 public totalSupply;
     uint256 public maxSupply = 10000;
 
-    // tokenId => metadata URI (walrus blob or IPFS)
+    // tokenId => metadata URI
     mapping(uint256 => string) private _tokenURIs;
 
     // tokenId => prompt used to generate
@@ -32,7 +32,7 @@ contract InkMint is ERC721, Ownable {
 
     /**
      * @notice Mint an AI-generated NFT
-     * @param uri The metadata URI (Walrus blob ID or full URL)
+     * @param uri The metadata URI
      * @param prompt The prompt used to generate the image
      */
     function mint(string calldata uri, string calldata prompt) external payable {

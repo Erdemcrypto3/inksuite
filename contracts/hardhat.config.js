@@ -9,8 +9,8 @@ const path = require('path');
  * Resolve the deploy key from a platform-native secret store with graceful
  * fallback. Order:
  *   1. process.env.DEPLOY_KEY                       (CI / explicit override)
- *   2. Windows Credential Manager (target=BasePress-DeployKey) on win32
- *   3. macOS Keychain (service=BasePress-DeployKey) on darwin
+ *   2. Windows Credential Manager (target=InkSuite-DeployKey) on win32
+ *   3. macOS Keychain (service=InkSuite-DeployKey) on darwin
  *   4. ~/.config/inksuite/key on linux/darwin       (PAI-0037 fallback)
  *   5. undefined                                    (local hardhat node)
  *
@@ -22,7 +22,7 @@ function getDeployKey() {
   if (process.platform === 'win32') {
     try {
       const key = execSync(
-        `powershell -NoProfile -Command "(Get-StoredCredential -Target BasePress-DeployKey).GetNetworkCredential().Password"`,
+        `powershell -NoProfile -Command "(Get-StoredCredential -Target InkSuite-DeployKey).GetNetworkCredential().Password"`,
         { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] }
       ).trim();
       if (key) return key;
@@ -32,7 +32,7 @@ function getDeployKey() {
   if (process.platform === 'darwin') {
     try {
       const key = execSync(
-        `security find-generic-password -s BasePress-DeployKey -w`,
+        `security find-generic-password -s InkSuite-DeployKey -w`,
         { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] }
       ).trim();
       if (key) return key;

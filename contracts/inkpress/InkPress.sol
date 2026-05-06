@@ -9,33 +9,12 @@ import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
 /**
- * @title BasePress
+ * @title InkPress
  * @author Built by Claude for 2e2c
- * @notice Decentralized blog on Base chain. Articles stored on Walrus (SUI),
- *         mintable as ERC-1155 NFTs by readers. Upgradable via UUPS proxy —
- *         owner can renounce upgrade rights to make it immutable.
- *
- * Features:
- *   - Owner + approved authors can publish articles
- *   - Fixed mint price across all articles (exact payment required)
- *   - Revenue split: author share + platform fee
- *   - Publish / unpublish / republish articles
- *   - Revoked authors lose ALL rights (Mirror.xyz model)
- *   - Pausable for emergency stops
- *   - UUPS upgradable → can be made immutable later
- *
- * Security audit fixes (v2):
- *   - FIX #1: Exact payment required in mintArticle (no overpayment)
- *   - FIX #2: Revoked authors cannot modify their existing articles
- *   - FIX #3: batchMintArticles removed (unnecessary complexity)
- *   - FIX #4: O(1) active article counter instead of O(n) loop
- *   - FIX #5: Zero address validation on approveAuthor
- *   - FIX #6: contractURI returns proper data:application/json URI
- *   - FIX #7: JSON injection prevention in blog metadata + article titles
- *   - FIX #8: uri() returns ERC-1155 compliant metadata JSON
- *   - FIX #9: updateArticleContent blocked during pause
+ * @notice Decentralized publishing on Ink chain. Articles stored off-chain,
+ *         mintable as ERC-1155 NFTs by readers. Upgradable via UUPS proxy.
  */
-contract BaseBlog is
+contract InkPress is
     Initializable,
     ERC1155Upgradeable,
     OwnableUpgradeable,
@@ -48,10 +27,10 @@ contract BaseBlog is
     // =========================================================================
 
     struct Article {
-        string walrusBlobId;
+        string contentId;
         string title;
         string description;
-        string coverImageBlobId;
+        string coverImageId;
         address author;
         uint256 totalMinted;
         uint256 publishedAt;
@@ -62,6 +41,8 @@ contract BaseBlog is
     // =========================================================================
     //                           STATE VARIABLES
     // =========================================================================
+    // UUPS: order and types must match previous versions exactly.
+    // New variables go at the end only.
 
     uint256 public nextArticleId;
     uint256 public mintPrice;
@@ -75,42 +56,47 @@ contract BaseBlog is
 
     string public blogName;
     string public blogDescription;
-    string public walrusAggregatorUrl;
+    string public storageGatewayUrl;
 
-    /// @notice FIX #4: O(1) counter for active articles
     uint256 public activeArticleCount;
 
-    // P012-PAI-0056: supply cap and publish rate limit
     uint256 public maxMintSupply;
     mapping(address => uint256) public lastPublishTime;
     uint256 public publishCooldown;
 
-    // P012-PAI-0058: price change timelock
     uint256 public pendingMintPrice;
     uint256 public mintPriceEffectiveTime;
-    uint256 public constant PRICE_CHANGE_DELAY = 24 hours;
+    uint256 public constant ADMIN_CHANGE_DELAY = 24 hours;
+
+    // V3: platform fee + storage gateway timelocks
+    uint256 public pendingPlatformFee;
+    uint256 public platformFeeEffectiveTime;
+    string public pendingStorageGatewayUrl;
+    uint256 public storageGatewayUrlEffectiveTime;
 
     // =========================================================================
     //                              EVENTS
     // =========================================================================
 
-    event ArticlePublished(uint256 indexed articleId, address indexed author, string walrusBlobId, string title, string description, string coverImageBlobId, string[] tags);
+    event ArticlePublished(uint256 indexed articleId, address indexed author, string contentId, string title, string description, string coverImageId, string[] tags);
     event ArticleUnpublished(uint256 indexed articleId);
     event ArticleRepublished(uint256 indexed articleId);
-    event ArticleUpdated(uint256 indexed articleId, string walrusBlobId);
+    event ArticleUpdated(uint256 indexed articleId, string contentId);
     event ArticleMinted(uint256 indexed articleId, address indexed minter, uint256 totalMinted);
     event AuthorApproved(address indexed author);
     event AuthorRevoked(address indexed author);
     event MintPriceUpdated(uint256 oldPrice, uint256 newPrice);
     event PlatformFeeUpdated(uint256 oldFee, uint256 newFee);
-    event WalrusAggregatorUpdated(string oldUrl, string newUrl);
+    event StorageGatewayUpdated(string oldUrl, string newUrl);
     event BlogMetadataUpdated(string name, string description);
     event AuthorWithdrawal(address indexed author, uint256 amount);
     event PlatformWithdrawal(address indexed to, uint256 amount);
     event UpgradesRenounced();
-    event MintPriceAnnounced(uint256 newPrice, uint256 effectiveTime); // P012-PAI-0058
-    event MaxMintSupplyUpdated(uint256 newMax); // P012-PAI-0056
-    event PublishCooldownUpdated(uint256 newCooldown); // P012-PAI-0056
+    event MintPriceAnnounced(uint256 newPrice, uint256 effectiveTime);
+    event MaxMintSupplyUpdated(uint256 newMax);
+    event PublishCooldownUpdated(uint256 newCooldown);
+    event PlatformFeeAnnounced(uint256 newFee, uint256 effectiveTime);
+    event StorageGatewayAnnounced(string newUrl, uint256 effectiveTime);
 
     // =========================================================================
     //                              ERRORS
@@ -128,10 +114,15 @@ contract BaseBlog is
     error InvalidAddress();
     error TooManyTags();
     error TagTooLong();
-    error SupplyCapReached(); // P012-PAI-0056
-    error PublishOnCooldown(); // P012-PAI-0056
-    error PriceChangeTooEarly(); // P012-PAI-0058
-    error PriceChangeNotAnnounced(); // P012-PAI-0058
+    error SupplyCapReached();
+    error PublishOnCooldown();
+    error PriceChangeTooEarly();
+    error PriceChangeNotAnnounced();
+    error UnsafeString();
+    error FeeChangeTooEarly();
+    error FeeChangeNotAnnounced();
+    error GatewayChangeTooEarly();
+    error GatewayChangeNotAnnounced();
 
     // =========================================================================
     //                            MODIFIERS
@@ -144,8 +135,6 @@ contract BaseBlog is
         _;
     }
 
-    /// @notice FIX #2: Author must be currently approved OR be the owner.
-    ///         Revoked authors lose all access to their articles.
     modifier onlyArticleAuthorOrOwner(uint256 articleId) {
         Article storage article = articles[articleId];
         bool isOwner = msg.sender == owner();
@@ -178,7 +167,7 @@ contract BaseBlog is
         string memory _blogDescription,
         uint256 _mintPrice,
         uint256 _platformFeeBps,
-        string memory _walrusAggregatorUrl
+        string memory _storageGatewayUrl
     ) public initializer {
         if (_platformFeeBps > 1000) revert InvalidFee();
         if (_containsUnsafeChars(bytes(_blogName)) || _containsUnsafeChars(bytes(_blogDescription))) revert UnsafeString();
@@ -193,7 +182,7 @@ contract BaseBlog is
         blogDescription = _blogDescription;
         mintPrice = _mintPrice;
         platformFeeBps = _platformFeeBps;
-        walrusAggregatorUrl = _walrusAggregatorUrl;
+        storageGatewayUrl = _storageGatewayUrl;
         approvedAuthors[_owner] = true;
     }
 
@@ -202,25 +191,26 @@ contract BaseBlog is
     // =========================================================================
 
     function publishArticle(
-        string calldata walrusBlobId,
+        string calldata contentId,
         string calldata title,
         string calldata description,
-        string calldata coverImageBlobId,
+        string calldata coverImageId,
         string[] calldata tags
     ) external onlyApprovedAuthor whenNotPaused returns (uint256) {
-        if (bytes(walrusBlobId).length == 0) revert EmptyBlobId();
+        if (bytes(contentId).length == 0) revert EmptyBlobId();
+        if (_containsUnsafeChars(bytes(contentId))) revert UnsafeString();
+        if (bytes(coverImageId).length > 0 && _containsUnsafeChars(bytes(coverImageId))) revert UnsafeString();
         if (_containsUnsafeChars(bytes(title)) || _containsUnsafeChars(bytes(description))) revert UnsafeString();
-        // P012-PAI-0056: publish rate limit
         if (publishCooldown > 0 && block.timestamp < lastPublishTime[msg.sender] + publishCooldown) revert PublishOnCooldown();
         lastPublishTime[msg.sender] = block.timestamp;
 
         uint256 articleId = nextArticleId++;
 
         Article storage article = articles[articleId];
-        article.walrusBlobId = walrusBlobId;
+        article.contentId = contentId;
         article.title = title;
         article.description = description;
-        article.coverImageBlobId = coverImageBlobId;
+        article.coverImageId = coverImageId;
         article.author = msg.sender;
         article.totalMinted = 0;
         article.publishedAt = block.timestamp;
@@ -232,24 +222,22 @@ contract BaseBlog is
             article.tags.push(tags[i]);
         }
 
-        activeArticleCount++;  // FIX #4
+        activeArticleCount++;
 
-        emit ArticlePublished(articleId, msg.sender, walrusBlobId, title, description, coverImageBlobId, tags);
+        emit ArticlePublished(articleId, msg.sender, contentId, title, description, coverImageId, tags);
         return articleId;
     }
 
-    /// @notice FIX #2: Revoked authors cannot update their articles
-    /// @dev Also paused during emergency — content should not change
     function updateArticleContent(
         uint256 articleId,
-        string calldata newWalrusBlobId
+        string calldata newContentId
     ) external articleExists(articleId) onlyArticleAuthorOrOwner(articleId) whenNotPaused {
-        if (bytes(newWalrusBlobId).length == 0) revert EmptyBlobId();
-        articles[articleId].walrusBlobId = newWalrusBlobId;
-        emit ArticleUpdated(articleId, newWalrusBlobId);
+        if (bytes(newContentId).length == 0) revert EmptyBlobId();
+        if (_containsUnsafeChars(bytes(newContentId))) revert UnsafeString();
+        articles[articleId].contentId = newContentId;
+        emit ArticleUpdated(articleId, newContentId);
     }
 
-    /// @notice FIX #2: Revoked authors cannot unpublish their articles
     function unpublishArticle(uint256 articleId)
         external
         articleExists(articleId)
@@ -258,12 +246,11 @@ contract BaseBlog is
         Article storage article = articles[articleId];
         if (article.active) {
             article.active = false;
-            activeArticleCount--;  // FIX #4
+            activeArticleCount--;
             emit ArticleUnpublished(articleId);
         }
     }
 
-    /// @notice FIX #2: Revoked authors cannot republish their articles
     function republishArticle(uint256 articleId)
         external
         articleExists(articleId)
@@ -272,7 +259,7 @@ contract BaseBlog is
         Article storage article = articles[articleId];
         if (!article.active) {
             article.active = true;
-            activeArticleCount++;  // FIX #4
+            activeArticleCount++;
             emit ArticleRepublished(articleId);
         }
     }
@@ -281,7 +268,6 @@ contract BaseBlog is
     //                        READER FUNCTIONS
     // =========================================================================
 
-    /// @notice FIX #1: Requires exact payment — no overpayment accepted
     function mintArticle(uint256 articleId)
         external
         payable
@@ -292,7 +278,7 @@ contract BaseBlog is
         Article storage article = articles[articleId];
         if (!article.active) revert ArticleNotActive();
         if (msg.value != mintPrice) revert IncorrectPayment();
-        if (maxMintSupply > 0 && article.totalMinted >= maxMintSupply) revert SupplyCapReached(); // P012-PAI-0056
+        if (maxMintSupply > 0 && article.totalMinted >= maxMintSupply) revert SupplyCapReached();
 
         _mint(msg.sender, articleId, 1, "");
         article.totalMinted++;
@@ -368,7 +354,6 @@ contract BaseBlog is
         }
     }
 
-    /// @notice FIX #4: O(1) — reads the counter directly
     function getActiveArticleCount() external view returns (uint256) {
         return activeArticleCount;
     }
@@ -390,21 +375,19 @@ contract BaseBlog is
     {
         Article memory article = articles[articleId];
         string memory contentUrl = string(
-            abi.encodePacked(walrusAggregatorUrl, "/v1/blobs/", article.walrusBlobId)
+            abi.encodePacked(storageGatewayUrl, "/v1/blobs/", article.contentId)
         );
 
-        // Build ERC-1155 compliant metadata JSON
         bytes memory json = abi.encodePacked(
             'data:application/json;utf8,{"name":"', article.title,
             '","description":"', article.description,
             '","external_url":"', contentUrl, '"'
         );
 
-        // Add image if cover exists
-        if (bytes(article.coverImageBlobId).length > 0) {
+        if (bytes(article.coverImageId).length > 0) {
             json = abi.encodePacked(
                 json,
-                ',"image":"', walrusAggregatorUrl, '/v1/blobs/', article.coverImageBlobId, '"'
+                ',"image":"', storageGatewayUrl, '/v1/blobs/', article.coverImageId, '"'
             );
         }
 
@@ -421,16 +404,16 @@ contract BaseBlog is
         emit AuthorApproved(author);
     }
 
-    /// @notice FIX #2: Revoked author loses ALL rights — cannot manage existing articles
     function revokeAuthor(address author) external onlyOwner {
         approvedAuthors[author] = false;
         emit AuthorRevoked(author);
     }
 
-    // P012-PAI-0058: price changes require 24h announce-then-apply
+    // --- Mint price timelock (24h announce-then-apply) ---
+
     function announceMintPrice(uint256 newPrice) external onlyOwner {
         pendingMintPrice = newPrice;
-        mintPriceEffectiveTime = block.timestamp + PRICE_CHANGE_DELAY;
+        mintPriceEffectiveTime = block.timestamp + ADMIN_CHANGE_DELAY;
         emit MintPriceAnnounced(newPrice, mintPriceEffectiveTime);
     }
 
@@ -443,14 +426,44 @@ contract BaseBlog is
         emit MintPriceUpdated(oldPrice, mintPrice);
     }
 
-    function setPlatformFee(uint256 newFeeBps) external onlyOwner {
+    // --- Platform fee timelock (24h announce-then-apply) ---
+
+    function announcePlatformFee(uint256 newFeeBps) external onlyOwner {
         if (newFeeBps > 1000) revert InvalidFee();
-        uint256 oldFee = platformFeeBps;
-        platformFeeBps = newFeeBps;
-        emit PlatformFeeUpdated(oldFee, newFeeBps);
+        pendingPlatformFee = newFeeBps;
+        platformFeeEffectiveTime = block.timestamp + ADMIN_CHANGE_DELAY;
+        emit PlatformFeeAnnounced(newFeeBps, platformFeeEffectiveTime);
     }
 
-    // P012-PAI-0056: supply cap and publish cooldown setters
+    function applyPlatformFee() external onlyOwner {
+        if (platformFeeEffectiveTime == 0) revert FeeChangeNotAnnounced();
+        if (block.timestamp < platformFeeEffectiveTime) revert FeeChangeTooEarly();
+        uint256 oldFee = platformFeeBps;
+        platformFeeBps = pendingPlatformFee;
+        platformFeeEffectiveTime = 0;
+        emit PlatformFeeUpdated(oldFee, platformFeeBps);
+    }
+
+    // --- Storage gateway timelock (24h announce-then-apply) ---
+
+    function announceStorageGateway(string calldata newUrl) external onlyOwner {
+        if (_containsUnsafeChars(bytes(newUrl))) revert UnsafeString();
+        pendingStorageGatewayUrl = newUrl;
+        storageGatewayUrlEffectiveTime = block.timestamp + ADMIN_CHANGE_DELAY;
+        emit StorageGatewayAnnounced(newUrl, storageGatewayUrlEffectiveTime);
+    }
+
+    function applyStorageGateway() external onlyOwner {
+        if (storageGatewayUrlEffectiveTime == 0) revert GatewayChangeNotAnnounced();
+        if (block.timestamp < storageGatewayUrlEffectiveTime) revert GatewayChangeTooEarly();
+        string memory oldUrl = storageGatewayUrl;
+        storageGatewayUrl = pendingStorageGatewayUrl;
+        storageGatewayUrlEffectiveTime = 0;
+        emit StorageGatewayUpdated(oldUrl, storageGatewayUrl);
+    }
+
+    // --- Instant admin setters (low-risk, safe after multisig) ---
+
     function setMaxMintSupply(uint256 _max) external onlyOwner {
         maxMintSupply = _max;
         emit MaxMintSupplyUpdated(_max);
@@ -460,14 +473,6 @@ contract BaseBlog is
         publishCooldown = _cooldown;
         emit PublishCooldownUpdated(_cooldown);
     }
-
-    function setWalrusAggregatorUrl(string calldata newUrl) external onlyOwner {
-        string memory oldUrl = walrusAggregatorUrl;
-        walrusAggregatorUrl = newUrl;
-        emit WalrusAggregatorUpdated(oldUrl, newUrl);
-    }
-
-    error UnsafeString();
 
     function setBlogMetadata(
         string calldata _name,
@@ -479,7 +484,6 @@ contract BaseBlog is
         emit BlogMetadataUpdated(_name, _description);
     }
 
-    /// @dev Rejects strings containing characters that would break JSON: " and \ and control chars
     function _containsUnsafeChars(bytes memory b) internal pure returns (bool) {
         for (uint256 i = 0; i < b.length; i++) {
             bytes1 c = b[i];
@@ -500,7 +504,7 @@ contract BaseBlog is
     //                         UUPS OVERRIDE
     // =========================================================================
 
-    function _authorizeUpgrade(address /*newImplementation*/)
+    function _authorizeUpgrade(address)
         internal
         override
         onlyOwner

@@ -1,9 +1,5 @@
 /**
- * InkPress / BaseBlog UUPS Upgrade Script
- *
- * Upgrades the existing proxy to the new implementation with:
- *   - PAI-0056: maxMintSupply + publishCooldown
- *   - PAI-0058: announceMintPrice / applyMintPrice (24h timelock)
+ * InkPress UUPS Upgrade Script
  *
  * Usage:
  *   COMPILE_INKPRESS=1 npx hardhat run inkpress/upgrade.js --network ink
@@ -26,19 +22,16 @@ async function main() {
     throw new Error('No ETH for gas');
   }
 
-  const BaseBlog = await ethers.getContractFactory('BaseBlog');
+  const InkPress = await ethers.getContractFactory('InkPress');
 
-  // Force-import the existing proxy so hardhat-upgrades can manage it.
-  // This is needed because the proxy was originally deployed outside of
-  // the hardhat-upgrades plugin.
   console.log('\nImporting existing proxy into hardhat-upgrades manifest...');
-  await upgrades.forceImport(PROXY_ADDRESS, BaseBlog, { kind: 'uups' });
+  await upgrades.forceImport(PROXY_ADDRESS, InkPress, { kind: 'uups' });
 
   console.log('Validating storage layout compatibility...');
-  // upgradeProxy validates layout, deploys new impl, calls upgradeTo
-  const upgraded = await upgrades.upgradeProxy(PROXY_ADDRESS, BaseBlog, {
+  const upgraded = await upgrades.upgradeProxy(PROXY_ADDRESS, InkPress, {
     kind: 'uups',
     redeployImplementation: 'always',
+    unsafeAllowRenames: true,
   });
 
   const tx = upgraded.deploymentTransaction();
