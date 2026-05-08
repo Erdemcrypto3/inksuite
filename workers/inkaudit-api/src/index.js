@@ -181,14 +181,17 @@ function checkServer(value) {
 function computeOverall(checks) {
   const totalScore = Object.values(checks).reduce((sum, c) => sum + c.score, 0);
   const maxPossible = 100;
-  const pct = Math.round((totalScore / maxPossible) * 100);
+  // P012-PAI-0085: cap score at maxPossible — individual checks (e.g. CSP base=40)
+  // can push the sum past 100; never return >100% to clients.
+  const cappedScore = Math.min(totalScore, maxPossible);
+  const pct = Math.min(100, Math.round((cappedScore / maxPossible) * 100));
   let grade, label;
   if (pct >= 90) { grade = 'A'; label = 'Excellent'; }
   else if (pct >= 75) { grade = 'B'; label = 'Good'; }
   else if (pct >= 55) { grade = 'C'; label = 'Fair'; }
   else if (pct >= 35) { grade = 'D'; label = 'Poor'; }
   else { grade = 'F'; label = 'Critical'; }
-  return { score: totalScore, maxScore: maxPossible, percentage: pct, grade, label };
+  return { score: cappedScore, maxScore: maxPossible, percentage: pct, grade, label };
 }
 
 // ── GitHub Repo Audit ──
