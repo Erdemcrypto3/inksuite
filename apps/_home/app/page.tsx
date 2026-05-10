@@ -84,12 +84,6 @@ const apps: AppCard[] = [
     subdomain: 'inksight',
     status: 'live',
   },
-  {
-    title: 'InkPress',
-    description: 'Decentralized blog on Ink. Read and collect articles as ERC-1155 NFTs. Apply to write.',
-    subdomain: 'inkpress',
-    status: 'live',
-  },
 ];
 
 function StatusBadge({ status }: { status: AppCard['status'] }) {
