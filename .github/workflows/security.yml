@@ -45,3 +45,22 @@ jobs:
         run: pnpm --filter @inksuite/contracts compile
       - name: Hardhat test
         run: pnpm --filter @inksuite/contracts test
+
+  # P012-PAI-0086: workers/inkmint-api is part of the pnpm workspace (post
+  # PAI-0089). Its 27 Vitest+Miniflare tests had no CI coverage; mirroring
+  # contracts-test so the worker is exercised on every PR/push.
+  inkmint-api-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install with frozen lockfile
+        run: pnpm install --frozen-lockfile
+      - name: Vitest (inkmint-api)
+        run: pnpm --filter inkmint-api test
