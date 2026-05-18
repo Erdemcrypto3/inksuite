@@ -360,8 +360,8 @@ app.post('/upload-score', async (c) => {
       return c.json({ error: 'Only SVG and JSON allowed for score uploads' }, 400);
     }
 
-    if (!(await checkRateLimit(c.req.raw, c.env, 'score-upload', 5, 86400))) {
-      return rateLimitResponse(86400);
+    if (!(await checkRateLimit(c.req.raw, c.env, 'score-upload', 30, 3600))) {
+      return rateLimitResponse(3600);
     }
 
     const contentLengthHint = Number(c.req.header('Content-Length') || 0);

@@ -1,12 +1,25 @@
 'use client';
 
-import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
 import { walletConfig } from './config';
 
 import '@rainbow-me/rainbowkit/styles.css';
+
+// P012-PI-0035: one-shot purge of stale WC v2 + wagmi localStorage keyed to the
+// dead 2026-05-18 Reown projectId. Runs at module-load (before WagmiProvider
+// mounts) so wagmi's reconnect read sees clean storage on first visit, not just
+// on reload. Gated by inksuite-wc-purge-2026-05-18 so it runs once per user.
+if (typeof window !== 'undefined') {
+  const PURGE_KEY = 'inksuite-wc-purge-2026-05-18';
+  if (!window.localStorage.getItem(PURGE_KEY)) {
+    Object.keys(window.localStorage)
+      .filter((k) => k.startsWith('wc@2:') || k.startsWith('wagmi.') || k === 'WALLETCONNECT_DEEPLINK_CHOICE')
+      .forEach((k) => window.localStorage.removeItem(k));
+    window.localStorage.setItem(PURGE_KEY, '1');
+  }
+}
 
 const queryClient = new QueryClient();
 
@@ -20,20 +33,7 @@ const inkTheme = darkTheme({
 inkTheme.colors.modalBackground = '#1a1030';
 inkTheme.colors.profileForeground = '#1a1030';
 
-// One-time purge of stale WC v2 + wagmi localStorage keyed to the dead 2026-05-18 Reown projectId.
-// Disconnect was failing because the session metadata pointed at a relay that no longer accepts the old ID.
-const WC_PURGE_KEY = 'inksuite-wc-purge-2026-05-18';
-
 export function InkWalletProvider({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (window.localStorage.getItem(WC_PURGE_KEY)) return;
-    Object.keys(window.localStorage)
-      .filter((k) => k.startsWith('wc@2:') || k.startsWith('wagmi.') || k === 'WALLETCONNECT_DEEPLINK_CHOICE')
-      .forEach((k) => window.localStorage.removeItem(k));
-    window.localStorage.setItem(WC_PURGE_KEY, '1');
-  }, []);
-
   return (
     <WagmiProvider config={walletConfig}>
       <QueryClientProvider client={queryClient}>

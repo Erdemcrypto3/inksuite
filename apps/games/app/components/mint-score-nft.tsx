@@ -76,7 +76,10 @@ export function MintScoreNFTButton({ gameId, gameTitle, gameIcon, score }: Props
         headers: { 'Content-Type': 'image/svg+xml' },
         body: svg,
       });
-      if (!imgRes.ok) throw new Error('Image upload failed');
+      if (!imgRes.ok) {
+        const detail = await imgRes.text().catch(() => '');
+        throw new Error(`Image upload failed (HTTP ${imgRes.status}): ${detail.slice(0, 120)}`);
+      }
       const imgData = await imgRes.json();
 
       // P012-PAI-0051: score is client-claimed, metadata reflects this
@@ -100,7 +103,10 @@ export function MintScoreNFTButton({ gameId, gameTitle, gameIcon, score }: Props
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(metadata),
       });
-      if (!metaRes.ok) throw new Error('Metadata upload failed');
+      if (!metaRes.ok) {
+        const detail = await metaRes.text().catch(() => '');
+        throw new Error(`Metadata upload failed (HTTP ${metaRes.status}): ${detail.slice(0, 120)}`);
+      }
       const metaData = await metaRes.json();
 
       writeContract(
